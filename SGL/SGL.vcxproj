@@ -101,7 +101,7 @@
     <_ProjectFileVersion>10.0.20506.1</_ProjectFileVersion>
     <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">..\SGL\x64\Debug\</OutDir>
     <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">SGL.dir\x64\Debug\</IntDir>
-	<OutDir Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">..\SGL\x86\Debug\</OutDir>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">..\SGL\x86\Debug\</OutDir>
     <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">SGL.dir\x86\Debug\</IntDir>
     <TargetName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">SDL2</TargetName>
     <TargetName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">SDL2</TargetName>
@@ -109,7 +109,7 @@
     <TargetExt Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">.lib</TargetExt>
     <OutDir Condition="'$(Configuration)|$(Platform)'=='Release|x64'">..\SGL\x64\Release\</OutDir>
     <IntDir Condition="'$(Configuration)|$(Platform)'=='Release|x64'">SGL.dir\x64\Release\</IntDir>
-	<OutDir Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">..\SGL\x86\Release\</OutDir>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">..\SGL\x86\Release\</OutDir>
     <IntDir Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">SGL.dir\x86\Release\</IntDir>
     <TargetName Condition="'$(Configuration)|$(Platform)'=='Release|x64'">SDL2</TargetName>
     <TargetName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">SDL2</TargetName>
@@ -117,7 +117,7 @@
     <TargetExt Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">.lib</TargetExt>
     <OutDir Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">..\SGL\x64\MinSizeRel\</OutDir>
     <IntDir Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">SGL.dir\x64\MinSizeRel\</IntDir>
-	<OutDir Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|Win32'">..\SGL\x86\MinSizeRel\</OutDir>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|Win32'">..\SGL\x86\MinSizeRel\</OutDir>
     <IntDir Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|Win32'">SGL.dir\x86\MinSizeRel\</IntDir>
     <TargetName Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">SDL2</TargetName>
     <TargetName Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|Win32'">SDL2</TargetName>
@@ -125,7 +125,7 @@
     <TargetExt Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|Win32'">.lib</TargetExt>
     <OutDir Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">..\SGL\x64\RelWithDebInfo\</OutDir>
     <IntDir Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">SGL.dir\x64\RelWithDebInfo\</IntDir>
-	<OutDir Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">..\SGL\x86\RelWithDebInfo\</OutDir>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">..\SGL\x86\RelWithDebInfo\</OutDir>
     <IntDir Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">SGL.dir\x86\RelWithDebInfo\</IntDir>
     <TargetName Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">SDL2</TargetName>
     <TargetName Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">SDL2</TargetName>
@@ -134,7 +134,7 @@
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
-      <AdditionalIncludeDirectories>..\SDL2-2.0.4\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\zlib-1.2.8;..\lpng1621;..\SDL2_Image\include;..\SDL2-2.0.4\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AssemblerListingLocation>Debug/</AssemblerListingLocation>
       <BufferSecurityCheck>false</BufferSecurityCheck>
       <CompileAs>CompileAsC</CompileAs>
@@ -146,7 +146,7 @@
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
       <WarningLevel>Level3</WarningLevel>
-      <PreprocessorDefinitions>WIN32;_WINDOWS;_DEBUG;USING_GENERATED_CONFIG_H;CMAKE_INTDIR="Debug";%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;_WINDOWS;LOAD_PNG;LOAD_TGA;_DEBUG;USING_GENERATED_CONFIG_H;CMAKE_INTDIR="Debug";%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ObjectFileName>$(IntDir)</ObjectFileName>
     </ClCompile>
     <ResourceCompile>
@@ -168,7 +168,7 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
-      <AdditionalIncludeDirectories>..\SDL2-2.0.4\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\zlib-1.2.8;..\lpng1621;..\SDL2_Image\include;..\SDL2-2.0.4\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AssemblerListingLocation>Debug/</AssemblerListingLocation>
       <BufferSecurityCheck>false</BufferSecurityCheck>
       <CompileAs>CompileAsC</CompileAs>
@@ -180,7 +180,7 @@
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
       <WarningLevel>Level3</WarningLevel>
-      <PreprocessorDefinitions>WIN32;_WINDOWS;_DEBUG;USING_GENERATED_CONFIG_H;CMAKE_INTDIR="Debug";%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;_WINDOWS;LOAD_PNG;LOAD_TGA;_DEBUG;USING_GENERATED_CONFIG_H;CMAKE_INTDIR="Debug";%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ObjectFileName>$(IntDir)</ObjectFileName>
     </ClCompile>
     <ResourceCompile>
@@ -202,7 +202,7 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
-      <AdditionalIncludeDirectories>..\SDL2-2.0.4\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\zlib-1.2.8;..\lpng1621;..\SDL2_Image\include;..\SDL2-2.0.4\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AssemblerListingLocation>Release/</AssemblerListingLocation>
       <BufferSecurityCheck>false</BufferSecurityCheck>
       <CompileAs>CompileAsC</CompileAs>
@@ -213,7 +213,7 @@
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <WarningLevel>Level3</WarningLevel>
-      <PreprocessorDefinitions>WIN32;_WINDOWS;NDEBUG;USING_GENERATED_CONFIG_H;CMAKE_INTDIR="Release";%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;_WINDOWS;LOAD_PNG;LOAD_TGA;NDEBUG;USING_GENERATED_CONFIG_H;CMAKE_INTDIR="Release";%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ObjectFileName>$(IntDir)</ObjectFileName>
       <DebugInformationFormat>
       </DebugInformationFormat>
@@ -237,7 +237,7 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
-      <AdditionalIncludeDirectories>..\SDL2-2.0.4\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\zlib-1.2.8;..\lpng1621;..\SDL2_Image\include;..\SDL2-2.0.4\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AssemblerListingLocation>Release/</AssemblerListingLocation>
       <BufferSecurityCheck>false</BufferSecurityCheck>
       <CompileAs>CompileAsC</CompileAs>
@@ -248,7 +248,7 @@
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <WarningLevel>Level3</WarningLevel>
-      <PreprocessorDefinitions>WIN32;_WINDOWS;NDEBUG;USING_GENERATED_CONFIG_H;CMAKE_INTDIR="Release";%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;_WINDOWS;LOAD_PNG;LOAD_TGA;NDEBUG;USING_GENERATED_CONFIG_H;CMAKE_INTDIR="Release";%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ObjectFileName>$(IntDir)</ObjectFileName>
       <DebugInformationFormat>
       </DebugInformationFormat>
@@ -272,7 +272,7 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">
     <ClCompile>
-      <AdditionalIncludeDirectories>..\SDL2-2.0.4\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\zlib-1.2.8;..\lpng1621;..\SDL2_Image\include;..\SDL2-2.0.4\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AssemblerListingLocation>MinSizeRel/</AssemblerListingLocation>
       <BufferSecurityCheck>false</BufferSecurityCheck>
       <CompileAs>CompileAsC</CompileAs>
@@ -283,7 +283,7 @@
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <WarningLevel>Level3</WarningLevel>
-      <PreprocessorDefinitions>WIN32;_WINDOWS;NDEBUG;USING_GENERATED_CONFIG_H;CMAKE_INTDIR="MinSizeRel";%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;_WINDOWS;LOAD_PNG;LOAD_TGA;NDEBUG;USING_GENERATED_CONFIG_H;CMAKE_INTDIR="MinSizeRel";%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ObjectFileName>$(IntDir)</ObjectFileName>
       <DebugInformationFormat>
       </DebugInformationFormat>
@@ -307,7 +307,7 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|Win32'">
     <ClCompile>
-      <AdditionalIncludeDirectories>..\SDL2-2.0.4\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\zlib-1.2.8;..\lpng1621;..\SDL2_Image\include;..\SDL2-2.0.4\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AssemblerListingLocation>MinSizeRel/</AssemblerListingLocation>
       <BufferSecurityCheck>false</BufferSecurityCheck>
       <CompileAs>CompileAsC</CompileAs>
@@ -318,7 +318,7 @@
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <WarningLevel>Level3</WarningLevel>
-      <PreprocessorDefinitions>WIN32;_WINDOWS;NDEBUG;USING_GENERATED_CONFIG_H;CMAKE_INTDIR="MinSizeRel";%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;_WINDOWS;LOAD_PNG;LOAD_TGA;NDEBUG;USING_GENERATED_CONFIG_H;CMAKE_INTDIR="MinSizeRel";%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ObjectFileName>$(IntDir)</ObjectFileName>
       <DebugInformationFormat>
       </DebugInformationFormat>
@@ -342,7 +342,7 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">
     <ClCompile>
-      <AdditionalIncludeDirectories>..\SDL2-2.0.4\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\zlib-1.2.8;..\lpng1621;..\SDL2_Image\include;..\SDL2-2.0.4\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AssemblerListingLocation>RelWithDebInfo/</AssemblerListingLocation>
       <BufferSecurityCheck>false</BufferSecurityCheck>
       <CompileAs>CompileAsC</CompileAs>
@@ -354,7 +354,7 @@
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <WarningLevel>Level3</WarningLevel>
-      <PreprocessorDefinitions>WIN32;_WINDOWS;NDEBUG;USING_GENERATED_CONFIG_H;CMAKE_INTDIR="RelWithDebInfo";%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;_WINDOWS;LOAD_PNG;LOAD_TGA;NDEBUG;USING_GENERATED_CONFIG_H;CMAKE_INTDIR="RelWithDebInfo";%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ObjectFileName>$(IntDir)</ObjectFileName>
     </ClCompile>
     <ResourceCompile>
@@ -376,7 +376,7 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">
     <ClCompile>
-      <AdditionalIncludeDirectories>..\SDL2-2.0.4\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\zlib-1.2.8;..\lpng1621;..\SDL2_Image\include;..\SDL2-2.0.4\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AssemblerListingLocation>RelWithDebInfo/</AssemblerListingLocation>
       <BufferSecurityCheck>false</BufferSecurityCheck>
       <CompileAs>CompileAsC</CompileAs>
@@ -388,7 +388,7 @@
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <WarningLevel>Level3</WarningLevel>
-      <PreprocessorDefinitions>WIN32;_WINDOWS;NDEBUG;USING_GENERATED_CONFIG_H;CMAKE_INTDIR="RelWithDebInfo";%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;_WINDOWS;LOAD_PNG;LOAD_TGA;NDEBUG;USING_GENERATED_CONFIG_H;CMAKE_INTDIR="RelWithDebInfo";%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ObjectFileName>$(IntDir)</ObjectFileName>
     </ClCompile>
     <ResourceCompile>
@@ -536,21 +536,50 @@
     <ClCompile Include="..\SDL2-2.0.4\src\haptic\windows\SDL_dinputhaptic.c" />
     <ClCompile Include="..\SDL2-2.0.4\src\haptic\windows\SDL_windowshaptic.c" />
     <ClCompile Include="..\SDL2-2.0.4\src\haptic\windows\SDL_xinputhaptic.c" />
-	<ClCompile Include="..\SDL2_Image\src\IMG.c" />
+    <ClCompile Include="..\SDL2_Image\src\IMG.c" />
     <ClCompile Include="..\SDL2_Image\src\IMG_bmp.c" />
-	<ClCompile Include="..\SDL2_Image\src\IMG_gif.c" />
+    <ClCompile Include="..\SDL2_Image\src\IMG_gif.c" />
     <ClCompile Include="..\SDL2_Image\src\IMG_jpg.c" />
-	<ClCompile Include="..\SDL2_Image\src\IMG_lbm.c" />
+    <ClCompile Include="..\SDL2_Image\src\IMG_lbm.c" />
     <ClCompile Include="..\SDL2_Image\src\IMG_pcx.c" />
-	<ClCompile Include="..\SDL2_Image\src\IMG_png.c" />
+    <ClCompile Include="..\SDL2_Image\src\IMG_png.c" />
     <ClCompile Include="..\SDL2_Image\src\IMG_pnm.c" />
-	<ClCompile Include="..\SDL2_Image\src\IMG_tga.c" />
+    <ClCompile Include="..\SDL2_Image\src\IMG_tga.c" />
     <ClCompile Include="..\SDL2_Image\src\IMG_tif.c" />
-	<ClCompile Include="..\SDL2_Image\src\IMG_webp.c" />
+    <ClCompile Include="..\SDL2_Image\src\IMG_webp.c" />
     <ClCompile Include="..\SDL2_Image\src\IMG_xcf.c" />
-	<ClCompile Include="..\SDL2_Image\src\IMG_xpm.c" />
+    <ClCompile Include="..\SDL2_Image\src\IMG_xpm.c" />
     <ClCompile Include="..\SDL2_Image\src\IMG_xv.c" />
-	<ClCompile Include="..\SDL2_Image\src\IMG_xxx.c" />
+    <ClCompile Include="..\SDL2_Image\src\IMG_xxx.c" />
+    <ClCompile Include="..\zlib-1.2.8\adler32.c" />
+    <ClCompile Include="..\zlib-1.2.8\compress.c" />
+    <ClCompile Include="..\zlib-1.2.8\crc32.c" />
+    <ClCompile Include="..\zlib-1.2.8\deflate.c" />
+    <ClCompile Include="..\zlib-1.2.8\gzclose.c" />
+    <ClCompile Include="..\zlib-1.2.8\gzlib.c" />
+    <ClCompile Include="..\zlib-1.2.8\gzread.c" />
+    <ClCompile Include="..\zlib-1.2.8\gzwrite.c" />
+    <ClCompile Include="..\zlib-1.2.8\inflate.c" />
+    <ClCompile Include="..\zlib-1.2.8\infback.c" />
+    <ClCompile Include="..\zlib-1.2.8\inftrees.c" />
+    <ClCompile Include="..\zlib-1.2.8\inffast.c" />
+    <ClCompile Include="..\zlib-1.2.8\trees.c" />
+    <ClCompile Include="..\zlib-1.2.8\uncompr.c" />
+    <ClCompile Include="..\zlib-1.2.8\zutil.c" />
+    <ClCompile Include="..\lpng1621\pngerror.c" />
+    <ClCompile Include="..\lpng1621\pngget.c" />
+    <ClCompile Include="..\lpng1621\pngmem.c" />
+    <ClCompile Include="..\lpng1621\pngpread.c" />
+    <ClCompile Include="..\lpng1621\pngread.c" />
+    <ClCompile Include="..\lpng1621\pngrio.c" />
+    <ClCompile Include="..\lpng1621\pngrtran.c" />
+    <ClCompile Include="..\lpng1621\pngrutil.c" />
+    <ClCompile Include="..\lpng1621\pngset.c" />
+    <ClCompile Include="..\lpng1621\pngtrans.c" />
+    <ClCompile Include="..\lpng1621\pngwio.c" />
+    <ClCompile Include="..\lpng1621\pngwrite.c" />
+    <ClCompile Include="..\lpng1621\pngwtran.c" />
+    <ClCompile Include="..\lpng1621\pngwutil.c" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
