@@ -517,6 +517,9 @@
     <ClCompile Include="SGL.c">
       <Filter>SGL</Filter>
     </ClCompile>
+    <ClCompile Include="..\SDL2-2.0.4\src\main\windows\SDL_windows_main.c">
+      <Filter>SDL2main</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Source Files">
@@ -536,6 +539,9 @@
     </Filter>
     <Filter Include="SGL">
       <UniqueIdentifier>{90546125-0116-436e-9aa9-61afd4200b94}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="SDL2main">
+      <UniqueIdentifier>{ed744df1-aeb2-4d1a-b9bd-f523149bbe0e}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>

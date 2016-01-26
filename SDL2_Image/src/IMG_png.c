@@ -60,7 +60,7 @@
 
 =============================================================================*/
 
-#include "SDL_endian.h"
+#include "../../SDL2-2.0.4/include/SDL_endian.h"
 
 #ifdef macintosh
 #define MACOS

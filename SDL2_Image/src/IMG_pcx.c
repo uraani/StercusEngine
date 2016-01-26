@@ -35,7 +35,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "SDL_endian.h"
+#include "../../SDL2-2.0.4/include/SDL_endian.h"
 
 #include "SDL_image.h"
 
