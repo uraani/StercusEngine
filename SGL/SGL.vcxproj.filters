@@ -382,6 +382,51 @@
     <ClCompile Include="..\SDL2-2.0.4\src\render\SDL_yuv_sw.c">
       <Filter>SDL2</Filter>
     </ClCompile>
+    <ClCompile Include="..\SDL2_Image\src\IMG_xxx.c">
+      <Filter>SDL2_Image</Filter>
+    </ClCompile>
+    <ClCompile Include="..\SDL2_Image\src\IMG.c">
+      <Filter>SDL2_Image</Filter>
+    </ClCompile>
+    <ClCompile Include="..\SDL2_Image\src\IMG_bmp.c">
+      <Filter>SDL2_Image</Filter>
+    </ClCompile>
+    <ClCompile Include="..\SDL2_Image\src\IMG_gif.c">
+      <Filter>SDL2_Image</Filter>
+    </ClCompile>
+    <ClCompile Include="..\SDL2_Image\src\IMG_jpg.c">
+      <Filter>SDL2_Image</Filter>
+    </ClCompile>
+    <ClCompile Include="..\SDL2_Image\src\IMG_lbm.c">
+      <Filter>SDL2_Image</Filter>
+    </ClCompile>
+    <ClCompile Include="..\SDL2_Image\src\IMG_pcx.c">
+      <Filter>SDL2_Image</Filter>
+    </ClCompile>
+    <ClCompile Include="..\SDL2_Image\src\IMG_png.c">
+      <Filter>SDL2_Image</Filter>
+    </ClCompile>
+    <ClCompile Include="..\SDL2_Image\src\IMG_pnm.c">
+      <Filter>SDL2_Image</Filter>
+    </ClCompile>
+    <ClCompile Include="..\SDL2_Image\src\IMG_tga.c">
+      <Filter>SDL2_Image</Filter>
+    </ClCompile>
+    <ClCompile Include="..\SDL2_Image\src\IMG_tif.c">
+      <Filter>SDL2_Image</Filter>
+    </ClCompile>
+    <ClCompile Include="..\SDL2_Image\src\IMG_webp.c">
+      <Filter>SDL2_Image</Filter>
+    </ClCompile>
+    <ClCompile Include="..\SDL2_Image\src\IMG_xcf.c">
+      <Filter>SDL2_Image</Filter>
+    </ClCompile>
+    <ClCompile Include="..\SDL2_Image\src\IMG_xpm.c">
+      <Filter>SDL2_Image</Filter>
+    </ClCompile>
+    <ClCompile Include="..\SDL2_Image\src\IMG_xv.c">
+      <Filter>SDL2_Image</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Source Files">
@@ -389,6 +434,9 @@
     </Filter>
     <Filter Include="SDL2">
       <UniqueIdentifier>{b72a1743-82a8-4629-8b86-f499ee63da4e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="SDL2_Image">
+      <UniqueIdentifier>{fff19e7d-1d8f-4313-87ff-9a1f00c65711}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
 </Project>

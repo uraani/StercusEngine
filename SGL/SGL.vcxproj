@@ -536,6 +536,21 @@
     <ClCompile Include="..\SDL2-2.0.4\src\haptic\windows\SDL_dinputhaptic.c" />
     <ClCompile Include="..\SDL2-2.0.4\src\haptic\windows\SDL_windowshaptic.c" />
     <ClCompile Include="..\SDL2-2.0.4\src\haptic\windows\SDL_xinputhaptic.c" />
+	<ClCompile Include="..\SDL2_Image\src\IMG.c" />
+    <ClCompile Include="..\SDL2_Image\src\IMG_bmp.c" />
+	<ClCompile Include="..\SDL2_Image\src\IMG_gif.c" />
+    <ClCompile Include="..\SDL2_Image\src\IMG_jpg.c" />
+	<ClCompile Include="..\SDL2_Image\src\IMG_lbm.c" />
+    <ClCompile Include="..\SDL2_Image\src\IMG_pcx.c" />
+	<ClCompile Include="..\SDL2_Image\src\IMG_png.c" />
+    <ClCompile Include="..\SDL2_Image\src\IMG_pnm.c" />
+	<ClCompile Include="..\SDL2_Image\src\IMG_tga.c" />
+    <ClCompile Include="..\SDL2_Image\src\IMG_tif.c" />
+	<ClCompile Include="..\SDL2_Image\src\IMG_webp.c" />
+    <ClCompile Include="..\SDL2_Image\src\IMG_xcf.c" />
+	<ClCompile Include="..\SDL2_Image\src\IMG_xpm.c" />
+    <ClCompile Include="..\SDL2_Image\src\IMG_xv.c" />
+	<ClCompile Include="..\SDL2_Image\src\IMG_xxx.c" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
