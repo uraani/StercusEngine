@@ -514,6 +514,9 @@
     <ClCompile Include="..\lpng1621\pngwutil.c">
       <Filter>libpng</Filter>
     </ClCompile>
+    <ClCompile Include="SGL.c">
+      <Filter>SGL</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Source Files">
@@ -531,5 +534,16 @@
     <Filter Include="libpng">
       <UniqueIdentifier>{1481686d-6947-43fe-93fa-72beba03a55c}</UniqueIdentifier>
     </Filter>
+    <Filter Include="SGL">
+      <UniqueIdentifier>{90546125-0116-436e-9aa9-61afd4200b94}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="SGL.h">
+      <Filter>SGL</Filter>
+    </ClInclude>
+    <ClInclude Include="SGL_window.h">
+      <Filter>SGL</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

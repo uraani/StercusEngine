@@ -580,6 +580,11 @@
     <ClCompile Include="..\lpng1621\pngwrite.c" />
     <ClCompile Include="..\lpng1621\pngwtran.c" />
     <ClCompile Include="..\lpng1621\pngwutil.c" />
+    <ClCompile Include="SGL.c" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="SGL.h" />
+    <ClInclude Include="SGL_window.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
