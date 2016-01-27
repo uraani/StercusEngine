@@ -382,51 +382,6 @@
     <ClCompile Include="..\SDL2-2.0.4\src\render\SDL_yuv_sw.c">
       <Filter>SDL2</Filter>
     </ClCompile>
-    <ClCompile Include="..\SDL2_Image\src\IMG_xxx.c">
-      <Filter>SDL2image</Filter>
-    </ClCompile>
-    <ClCompile Include="..\SDL2_Image\src\IMG.c">
-      <Filter>SDL2image</Filter>
-    </ClCompile>
-    <ClCompile Include="..\SDL2_Image\src\IMG_bmp.c">
-      <Filter>SDL2image</Filter>
-    </ClCompile>
-    <ClCompile Include="..\SDL2_Image\src\IMG_gif.c">
-      <Filter>SDL2image</Filter>
-    </ClCompile>
-    <ClCompile Include="..\SDL2_Image\src\IMG_jpg.c">
-      <Filter>SDL2image</Filter>
-    </ClCompile>
-    <ClCompile Include="..\SDL2_Image\src\IMG_lbm.c">
-      <Filter>SDL2image</Filter>
-    </ClCompile>
-    <ClCompile Include="..\SDL2_Image\src\IMG_pcx.c">
-      <Filter>SDL2image</Filter>
-    </ClCompile>
-    <ClCompile Include="..\SDL2_Image\src\IMG_png.c">
-      <Filter>SDL2image</Filter>
-    </ClCompile>
-    <ClCompile Include="..\SDL2_Image\src\IMG_pnm.c">
-      <Filter>SDL2image</Filter>
-    </ClCompile>
-    <ClCompile Include="..\SDL2_Image\src\IMG_tga.c">
-      <Filter>SDL2image</Filter>
-    </ClCompile>
-    <ClCompile Include="..\SDL2_Image\src\IMG_tif.c">
-      <Filter>SDL2image</Filter>
-    </ClCompile>
-    <ClCompile Include="..\SDL2_Image\src\IMG_webp.c">
-      <Filter>SDL2image</Filter>
-    </ClCompile>
-    <ClCompile Include="..\SDL2_Image\src\IMG_xcf.c">
-      <Filter>SDL2image</Filter>
-    </ClCompile>
-    <ClCompile Include="..\SDL2_Image\src\IMG_xpm.c">
-      <Filter>SDL2image</Filter>
-    </ClCompile>
-    <ClCompile Include="..\SDL2_Image\src\IMG_xv.c">
-      <Filter>SDL2image</Filter>
-    </ClCompile>
     <ClCompile Include="..\zlib-1.2.8\adler32.c">
       <Filter>zlib</Filter>
     </ClCompile>
@@ -519,6 +474,51 @@
     </ClCompile>
     <ClCompile Include="..\SDL2-2.0.4\src\main\windows\SDL_windows_main.c">
       <Filter>SDL2main</Filter>
+    </ClCompile>
+    <ClCompile Include="..\SDL2_image-2.0.1\IMG.c">
+      <Filter>SDL2image</Filter>
+    </ClCompile>
+    <ClCompile Include="..\SDL2_image-2.0.1\IMG_bmp.c">
+      <Filter>SDL2image</Filter>
+    </ClCompile>
+    <ClCompile Include="..\SDL2_image-2.0.1\IMG_gif.c">
+      <Filter>SDL2image</Filter>
+    </ClCompile>
+    <ClCompile Include="..\SDL2_image-2.0.1\IMG_jpg.c">
+      <Filter>SDL2image</Filter>
+    </ClCompile>
+    <ClCompile Include="..\SDL2_image-2.0.1\IMG_lbm.c">
+      <Filter>SDL2image</Filter>
+    </ClCompile>
+    <ClCompile Include="..\SDL2_image-2.0.1\IMG_pcx.c">
+      <Filter>SDL2image</Filter>
+    </ClCompile>
+    <ClCompile Include="..\SDL2_image-2.0.1\IMG_png.c">
+      <Filter>SDL2image</Filter>
+    </ClCompile>
+    <ClCompile Include="..\SDL2_image-2.0.1\IMG_pnm.c">
+      <Filter>SDL2image</Filter>
+    </ClCompile>
+    <ClCompile Include="..\SDL2_image-2.0.1\IMG_tga.c">
+      <Filter>SDL2image</Filter>
+    </ClCompile>
+    <ClCompile Include="..\SDL2_image-2.0.1\IMG_tif.c">
+      <Filter>SDL2image</Filter>
+    </ClCompile>
+    <ClCompile Include="..\SDL2_image-2.0.1\IMG_webp.c">
+      <Filter>SDL2image</Filter>
+    </ClCompile>
+    <ClCompile Include="..\SDL2_image-2.0.1\IMG_xcf.c">
+      <Filter>SDL2image</Filter>
+    </ClCompile>
+    <ClCompile Include="..\SDL2_image-2.0.1\IMG_xpm.c">
+      <Filter>SDL2image</Filter>
+    </ClCompile>
+    <ClCompile Include="..\SDL2_image-2.0.1\IMG_xv.c">
+      <Filter>SDL2image</Filter>
+    </ClCompile>
+    <ClCompile Include="..\SDL2_image-2.0.1\IMG_xxx.c">
+      <Filter>SDL2image</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
