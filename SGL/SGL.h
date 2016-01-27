@@ -1,5 +1,7 @@
 #pragma once
 #include "SDL.h"
+#include "png.h"
+#include "SDL_image.h"
 #include "SGL_window.h"
 #include "begin_code.h"
 #ifdef __cplusplus
