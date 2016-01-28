@@ -176,10 +176,10 @@
     </ClCompile>
     <ResourceCompile>
       <PreprocessorDefinitions>WIN32;_WINDOWS;NDEBUG;_CRT_SECURE_NO_DEPRECATE;CMAKE_INTDIR=\"Release\";%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>C:\Users\Uraani\Downloads\sandox\zlib-1.2.8;C:\Users\Uraani\Downloads\sandox\lpngVC;C:\Users\Uraani\Downloads\sandox\lpng1621;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\zlib-1.2.8;..\lpngVC;..\lpng1621;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ResourceCompile>
     <Midl>
-      <AdditionalIncludeDirectories>C:\Users\Uraani\Downloads\sandox\zlib-1.2.8;C:\Users\Uraani\Downloads\sandox\lpngVC;C:\Users\Uraani\Downloads\sandox\lpng1621;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\zlib-1.2.8;..\lpngVC;..\lpng1621;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
       <HeaderFileName>%(Filename).h</HeaderFileName>
       <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
@@ -213,10 +213,10 @@
     </ClCompile>
     <ResourceCompile>
       <PreprocessorDefinitions>WIN32;_WINDOWS;NDEBUG;_CRT_SECURE_NO_DEPRECATE;CMAKE_INTDIR=\"Release\";%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>C:\Users\Uraani\Downloads\sandox\zlib-1.2.8;C:\Users\Uraani\Downloads\sandox\lpngVC;C:\Users\Uraani\Downloads\sandox\lpng1621;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\zlib-1.2.8;..\lpngVC;..\lpng1621;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ResourceCompile>
     <Midl>
-      <AdditionalIncludeDirectories>C:\Users\Uraani\Downloads\sandox\zlib-1.2.8;C:\Users\Uraani\Downloads\sandox\lpngVC;C:\Users\Uraani\Downloads\sandox\lpng1621;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\zlib-1.2.8;..\lpngVC;..\lpng1621;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
       <HeaderFileName>%(Filename).h</HeaderFileName>
       <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
@@ -249,10 +249,10 @@
     </ClCompile>
     <ResourceCompile>
       <PreprocessorDefinitions>WIN32;_WINDOWS;_DEBUG;_CRT_SECURE_NO_DEPRECATE;CMAKE_INTDIR=\"Debug\";%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>C:\Users\Uraani\Downloads\sandox\zlib-1.2.8;C:\Users\Uraani\Downloads\sandox\lpngVC;C:\Users\Uraani\Downloads\sandox\lpng1621;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\zlib-1.2.8;..\lpngVC;..\lpng1621;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ResourceCompile>
     <Midl>
-      <AdditionalIncludeDirectories>C:\Users\Uraani\Downloads\sandox\zlib-1.2.8;C:\Users\Uraani\Downloads\sandox\lpngVC;C:\Users\Uraani\Downloads\sandox\lpng1621;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\zlib-1.2.8;..\lpngVC;..\lpng1621;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
       <HeaderFileName>%(Filename).h</HeaderFileName>
       <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
@@ -285,10 +285,10 @@
     </ClCompile>
     <ResourceCompile>
       <PreprocessorDefinitions>WIN32;_WINDOWS;_DEBUG;_CRT_SECURE_NO_DEPRECATE;CMAKE_INTDIR=\"Debug\";%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>C:\Users\Uraani\Downloads\sandox\zlib-1.2.8;C:\Users\Uraani\Downloads\sandox\lpngVC;C:\Users\Uraani\Downloads\sandox\lpng1621;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\zlib-1.2.8;..\lpngVC;..\lpng1621;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ResourceCompile>
     <Midl>
-      <AdditionalIncludeDirectories>C:\Users\Uraani\Downloads\sandox\zlib-1.2.8;C:\Users\Uraani\Downloads\sandox\lpngVC;C:\Users\Uraani\Downloads\sandox\lpng1621;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\zlib-1.2.8;..\lpngVC;..\lpng1621;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
       <HeaderFileName>%(Filename).h</HeaderFileName>
       <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
@@ -321,10 +321,10 @@
     </ClCompile>
     <ResourceCompile>
       <PreprocessorDefinitions>WIN32;_WINDOWS;NDEBUG;_CRT_SECURE_NO_DEPRECATE;CMAKE_INTDIR=\"MinSizeRel\";%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>C:\Users\Uraani\Downloads\sandox\zlib-1.2.8;C:\Users\Uraani\Downloads\sandox\lpngVC;C:\Users\Uraani\Downloads\sandox\lpng1621;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\zlib-1.2.8;..\lpngVC;..\lpng1621;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ResourceCompile>
     <Midl>
-      <AdditionalIncludeDirectories>C:\Users\Uraani\Downloads\sandox\zlib-1.2.8;C:\Users\Uraani\Downloads\sandox\lpngVC;C:\Users\Uraani\Downloads\sandox\lpng1621;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\zlib-1.2.8;..\lpngVC;..\lpng1621;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
       <HeaderFileName>%(Filename).h</HeaderFileName>
       <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
@@ -358,10 +358,10 @@
     </ClCompile>
     <ResourceCompile>
       <PreprocessorDefinitions>WIN32;_WINDOWS;NDEBUG;_CRT_SECURE_NO_DEPRECATE;CMAKE_INTDIR=\"MinSizeRel\";%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>C:\Users\Uraani\Downloads\sandox\zlib-1.2.8;C:\Users\Uraani\Downloads\sandox\lpngVC;C:\Users\Uraani\Downloads\sandox\lpng1621;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\zlib-1.2.8;..\lpngVC;..\lpng1621;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ResourceCompile>
     <Midl>
-      <AdditionalIncludeDirectories>C:\Users\Uraani\Downloads\sandox\zlib-1.2.8;C:\Users\Uraani\Downloads\sandox\lpngVC;C:\Users\Uraani\Downloads\sandox\lpng1621;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\zlib-1.2.8;..\lpngVC;..\lpng1621;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
       <HeaderFileName>%(Filename).h</HeaderFileName>
       <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
@@ -393,10 +393,10 @@
     </ClCompile>
     <ResourceCompile>
       <PreprocessorDefinitions>WIN32;_WINDOWS;NDEBUG;_CRT_SECURE_NO_DEPRECATE;CMAKE_INTDIR=\"RelWithDebInfo\";%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>C:\Users\Uraani\Downloads\sandox\zlib-1.2.8;C:\Users\Uraani\Downloads\sandox\lpngVC;C:\Users\Uraani\Downloads\sandox\lpng1621;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\zlib-1.2.8;..\lpngVC;..\lpng1621;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ResourceCompile>
     <Midl>
-      <AdditionalIncludeDirectories>C:\Users\Uraani\Downloads\sandox\zlib-1.2.8;C:\Users\Uraani\Downloads\sandox\lpngVC;C:\Users\Uraani\Downloads\sandox\lpng1621;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\zlib-1.2.8;..\lpngVC;..\lpng1621;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
       <HeaderFileName>%(Filename).h</HeaderFileName>
       <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
@@ -429,10 +429,10 @@
     </ClCompile>
     <ResourceCompile>
       <PreprocessorDefinitions>WIN32;_WINDOWS;NDEBUG;_CRT_SECURE_NO_DEPRECATE;CMAKE_INTDIR=\"RelWithDebInfo\";%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>C:\Users\Uraani\Downloads\sandox\zlib-1.2.8;C:\Users\Uraani\Downloads\sandox\lpngVC;C:\Users\Uraani\Downloads\sandox\lpng1621;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\zlib-1.2.8;..\lpngVC;..\lpng1621;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ResourceCompile>
     <Midl>
-      <AdditionalIncludeDirectories>C:\Users\Uraani\Downloads\sandox\zlib-1.2.8;C:\Users\Uraani\Downloads\sandox\lpngVC;C:\Users\Uraani\Downloads\sandox\lpng1621;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\zlib-1.2.8;..\lpngVC;..\lpng1621;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
       <HeaderFileName>%(Filename).h</HeaderFileName>
       <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
@@ -446,31 +446,31 @@
     </Lib>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="C:\Users\Uraani\Downloads\sandox\lpng1621\png.h" />
-    <ClInclude Include="C:\Users\Uraani\Downloads\sandox\lpng1621\pngconf.h" />
-    <ClInclude Include="C:\Users\Uraani\Downloads\sandox\lpngVC\pnglibconf.h" />
-    <ClInclude Include="C:\Users\Uraani\Downloads\sandox\lpng1621\pngdebug.h" />
-    <ClInclude Include="C:\Users\Uraani\Downloads\sandox\lpng1621\pnginfo.h" />
-    <ClInclude Include="C:\Users\Uraani\Downloads\sandox\lpng1621\pngpriv.h" />
-    <ClInclude Include="C:\Users\Uraani\Downloads\sandox\lpng1621\pngstruct.h" />
-    <ClCompile Include="C:\Users\Uraani\Downloads\sandox\lpng1621\png.c" />
-    <ClCompile Include="C:\Users\Uraani\Downloads\sandox\lpng1621\pngerror.c" />
-    <ClCompile Include="C:\Users\Uraani\Downloads\sandox\lpng1621\pngget.c" />
-    <ClCompile Include="C:\Users\Uraani\Downloads\sandox\lpng1621\pngmem.c" />
-    <ClCompile Include="C:\Users\Uraani\Downloads\sandox\lpng1621\pngpread.c" />
-    <ClCompile Include="C:\Users\Uraani\Downloads\sandox\lpng1621\pngread.c" />
-    <ClCompile Include="C:\Users\Uraani\Downloads\sandox\lpng1621\pngrio.c" />
-    <ClCompile Include="C:\Users\Uraani\Downloads\sandox\lpng1621\pngrtran.c" />
-    <ClCompile Include="C:\Users\Uraani\Downloads\sandox\lpng1621\pngrutil.c" />
-    <ClCompile Include="C:\Users\Uraani\Downloads\sandox\lpng1621\pngset.c" />
-    <ClCompile Include="C:\Users\Uraani\Downloads\sandox\lpng1621\pngtrans.c" />
-    <ClCompile Include="C:\Users\Uraani\Downloads\sandox\lpng1621\pngwio.c" />
-    <ClCompile Include="C:\Users\Uraani\Downloads\sandox\lpng1621\pngwrite.c" />
-    <ClCompile Include="C:\Users\Uraani\Downloads\sandox\lpng1621\pngwtran.c" />
-    <ClCompile Include="C:\Users\Uraani\Downloads\sandox\lpng1621\pngwutil.c" />
+    <ClInclude Include="pnglibconf.h" />
+    <ClInclude Include="..\lpng1621\png.h" />
+    <ClInclude Include="..\lpng1621\pngconf.h" />
+    <ClInclude Include="..\lpng1621\pngdebug.h" />
+    <ClInclude Include="..\lpng1621\pnginfo.h" />
+    <ClInclude Include="..\lpng1621\pngpriv.h" />
+    <ClInclude Include="..\lpng1621\pngstruct.h" />
+    <ClCompile Include="..\lpng1621\png.c" />
+    <ClCompile Include="..\lpng1621\pngerror.c" />
+    <ClCompile Include="..\lpng1621\pngget.c" />
+    <ClCompile Include="..\lpng1621\pngmem.c" />
+    <ClCompile Include="..\lpng1621\pngpread.c" />
+    <ClCompile Include="..\lpng1621\pngread.c" />
+    <ClCompile Include="..\lpng1621\pngrio.c" />
+    <ClCompile Include="..\lpng1621\pngrtran.c" />
+    <ClCompile Include="..\lpng1621\pngrutil.c" />
+    <ClCompile Include="..\lpng1621\pngset.c" />
+    <ClCompile Include="..\lpng1621\pngtrans.c" />
+    <ClCompile Include="..\lpng1621\pngwio.c" />
+    <ClCompile Include="..\lpng1621\pngwrite.c" />
+    <ClCompile Include="..\lpng1621\pngwtran.c" />
+    <ClCompile Include="..\lpng1621\pngwutil.c" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="C:/Users/Uraani/Downloads/sandox/lpngVC/ZERO_CHECK.vcxproj">
+    <ProjectReference Include="ZERO_CHECK.vcxproj">
       <Project>4EE6C03A-C53D-3847-ADC1-C19F9DEF71C6</Project>
     </ProjectReference>
   </ItemGroup>

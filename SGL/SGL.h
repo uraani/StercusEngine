@@ -12,6 +12,8 @@ extern "C" {
 //extern DECLSPEC void SDLCALL SGL_Quit(void);
 extern int SGL_Init(void);
 extern SGL_Window* SGL_CreateWindow(const char* title, int GLMajorVersion, int GLMinorVersion, int x, int y, int w, int h, Uint32 SDLflags);
+extern void SGL_DestroyWindow(SGL_Window* window);
+extern void SGL_ConvertPNGToIconArray(const char* imagePath, const char* fileName);
 extern void SGL_Quit(void);
 #ifdef __cplusplus
 }

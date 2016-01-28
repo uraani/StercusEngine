@@ -2,7 +2,8 @@
 
 int SGL_Init(void)
 {
-	return SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS | SDL_INIT_AUDIO);
+	return SDL_Init(SDL_INIT_EVERYTHING);
+	IMG_Init(IMG_INIT_PNG);
 }
 
 SGL_Window* SGL_CreateWindow(const char* title, int GLMajorVersion, int GLMinorVersion, int x, int y, int w, int h, Uint32 SDLflags)
@@ -26,10 +27,69 @@ SGL_Window* SGL_CreateWindow(const char* title, int GLMajorVersion, int GLMinorV
 			w, h,
 			SDLflags
 		);
+	unsigned char icon[] = { 255, 0, 255, 255, 0, 255, 255, 0, 255, 255, 0, 255, 255, 0, 255, 255, 0, 255, 255, 0, 255, 255, 0, 255, 255, 0, 255, 255, 0, 255, 255, 0, 255, 255, 0, 255, 255, 0, 255, 255, 0, 255, 255, 0, 255, 255, 0, 255, 255, 0, 255, 255, 0, 255, 255, 0, 255, 255, 0, 255, 255, 0, 255, 255, 0, 255, 255, 0, 255, 255, 0, 255, 255, 0, 255, 255, 0, 255, 255, 0, 255, 255, 0, 255, 255, 0, 255, 255, 0, 255, 255, 0, 255, 255, 0, 255, 255, 0, 255, 255, 0, 255, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 255, 0, 255, 255, 0, 255, 255, 0, 255, 255, 0, 255, 255, 0, 255, 255, 0, 255, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 52, 52, 52, 75, 75, 75, 127, 127, 127, 194, 194, 194, 127, 127, 127, 0, 0, 0, 0, 0, 0, 0, 0, 0, 255, 0, 255, 255, 0, 255, 255, 0, 255, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 75, 75, 75, 131, 131, 131, 75, 75, 75, 127, 127, 127, 75, 75, 75, 0, 0, 0, 0, 0, 0, 255, 0, 255, 255, 0, 255, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 75, 75, 75, 193, 193, 193, 25, 25, 25, 0, 0, 0, 0, 0, 0, 255, 0, 255, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 27, 27, 27, 0, 0, 0, 52, 52, 52, 131, 131, 131, 0, 0, 0, 52, 52, 52, 0, 0, 0, 77, 77, 77, 38, 38, 38, 17, 17, 17, 0, 0, 0, 0, 0, 0, 0, 0, 0, 21, 21, 21, 0, 0, 0, 0, 0, 0, 0, 0, 0, 72, 72, 72, 0, 0, 0, 52, 52, 52, 168, 168, 168, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 38, 38, 38, 77, 77, 77, 0, 0, 0, 0, 0, 0, 0, 0, 0, 40, 40, 40, 21, 21, 21, 0, 0, 0, 0, 0, 0, 99, 99, 99, 75, 75, 75, 194, 194, 194, 112, 112, 112, 75, 75, 75, 0, 0, 0, 0, 0, 0, 54, 54, 54, 131, 131, 131, 0, 0, 0, 0, 0, 0, 57, 57, 57, 0, 0, 0, 87, 87, 87, 87, 87, 87, 97, 97, 97, 50, 50, 50, 147, 147, 147, 75, 75, 75, 212, 212, 212, 75, 75, 75, 129, 129, 129, 0, 0, 0, 54, 54, 54, 0, 0, 0, 0, 0, 0, 0, 0, 0, 110, 110, 110, 14, 14, 14, 0, 0, 0, 44, 44, 44, 65, 65, 65, 50, 50, 50, 84, 84, 84, 161, 161, 161, 210, 210, 210, 166, 166, 166, 75, 75, 75, 38, 38, 38, 0, 0, 0, 0, 0, 0, 0, 0, 0, 255, 0, 255, 0, 0, 0, 75, 75, 75, 21, 21, 21, 0, 0, 0, 8, 8, 8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 255, 0, 255, 255, 0, 255, 0, 0, 0, 40, 40, 40, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 39, 39, 39, 39, 39, 39, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 255, 0, 255, 255, 0, 255, 255, 0, 255, 255, 0, 255, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 77, 77, 77, 131, 131, 131, 131, 131, 131, 131, 131, 131, 77, 77, 77, 0, 0, 0, 0, 0, 0, 255, 0, 255, 255, 0, 255, 255, 0, 255, 255, 0, 255, 255, 0, 255, 255, 0, 255, 255, 0, 255, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 255, 0, 255, 255, 0, 255, 255, 0, 255, 255, 0, 255, 255, 0, 255, 255, 0, 255, 255, 0, 255, 255, 0, 255, 255, 0, 255, 255, 0, 255, 255, 0, 255, 255, 0, 255, 255, 0, 255, 255, 0, 255, 255, 0, 255, 255, 0, 255, 255, 0, 255, 255, 0, 255, 255, 0, 255 };
+	SDL_Surface* surface = SDL_CreateRGBSurfaceFrom(icon, 16, 16, 24, 3*16, 0x000000ff, 0x0000ff00, 0x00ff0000, 0xff000000);
+	SDL_SetColorKey(surface, SDL_TRUE, SDL_MapRGB(surface->format, 255, 0, 255));
+	SDL_SetWindowIcon(window->window, surface);
+	SDL_FreeSurface(surface);
 	return window;
+}
+
+void SGL_DestroyWindow(SGL_Window * window)
+{
+	SDL_GL_DeleteContext(window->context);
+	SDL_DestroyWindow(window->window);
+}
+
+void SGL_ConvertPNGToIconArray(const char * imagePath, const char * fileName)
+{
+	SDL_RWops* rwop = SDL_RWFromFile(imagePath, "rb");
+	if (rwop)
+	{
+		SDL_Surface* surf = IMG_LoadPNG_RW(rwop);
+		SDL_RWclose(rwop);
+		SDL_RWops *rw = SDL_RWFromFile(fileName, "w");
+		if (rw)
+		{
+			size_t len = surf->h*surf->w*surf->format->BytesPerPixel;
+			const char start[] = "unsigned char icon[] = { ";
+			SDL_RWwrite(rw, start, 1, SDL_strlen(start));
+			for (size_t i = 0; i < len; i++)
+			{
+				char buffer[5];
+				SDL_snprintf(buffer, 5, "%u", *(((unsigned char*)surf->pixels) + i));
+				//sprintf(buffer, "%u", *(((unsigned char*)surf->pixels) + i));
+				for (size_t l = 1; l < 4; l++)
+				{
+					if (buffer[l] == 0 && i + 1 < len)
+					{
+						buffer[l] = ',';
+						buffer[l + 1] = ' ';
+						SDL_RWwrite(rw, buffer, 1, l + 2);
+						break;
+					}
+				}
+			}
+			char buffer[7];
+			SDL_snprintf(buffer, 7,"%u", *(((unsigned char*)surf->pixels) + (len - 1)));
+			for (size_t l = 1; l < 4; l++)
+			{
+				if (buffer[l] == 0)
+				{
+					buffer[l] = ' ';
+					buffer[l + 1] = '}';
+					buffer[l + 2] = ';';
+					SDL_RWwrite(rw, buffer, 1, l + 3);
+					break;
+				}
+			}
+			SDL_RWclose(rw);
+		}
+	}
 }
 
 void SGL_Quit(void)
 {
+	IMG_Quit();
 	SDL_Quit();
 }

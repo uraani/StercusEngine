@@ -167,10 +167,10 @@
     </ClCompile>
     <ResourceCompile>
       <PreprocessorDefinitions>WIN32;_WINDOWS;NDEBUG;_CRT_SECURE_NO_DEPRECATE;CMAKE_INTDIR=\"Release\";%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>C:\Users\Uraani\Downloads\sandox\zlib-1.2.8;C:\Users\Uraani\Downloads\sandox\lpngVC;C:\Users\Uraani\Downloads\sandox\lpng1621;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\zlib-1.2.8;..\lpngVC;..\lpng1621;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ResourceCompile>
     <Midl>
-      <AdditionalIncludeDirectories>C:\Users\Uraani\Downloads\sandox\zlib-1.2.8;C:\Users\Uraani\Downloads\sandox\lpngVC;C:\Users\Uraani\Downloads\sandox\lpng1621;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\zlib-1.2.8;..\lpngVC;..\lpng1621;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
       <HeaderFileName>%(Filename).h</HeaderFileName>
       <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
@@ -183,7 +183,7 @@
       <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <GenerateDebugInformation>No</GenerateDebugInformation>
       <IgnoreSpecificDefaultLibraries>%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
-      <ImportLibrary>C:/Users/Uraani/Downloads/sandox/lpngVC/x86/Release/pngtest.lib</ImportLibrary>
+      <ImportLibrary>x86/Release/pngtest.lib</ImportLibrary>
       <ProgramDataBaseFile>x86/Release/pngtest.pdb</ProgramDataBaseFile>
       <SubSystem>Console</SubSystem>
       <Version>
@@ -212,10 +212,10 @@
     </ClCompile>
     <ResourceCompile>
       <PreprocessorDefinitions>WIN32;_WINDOWS;NDEBUG;_CRT_SECURE_NO_DEPRECATE;CMAKE_INTDIR=\"Release\";%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>C:\Users\Uraani\Downloads\sandox\zlib-1.2.8;C:\Users\Uraani\Downloads\sandox\lpngVC;C:\Users\Uraani\Downloads\sandox\lpng1621;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\zlib-1.2.8;..\lpngVC;..\lpng1621;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ResourceCompile>
     <Midl>
-      <AdditionalIncludeDirectories>C:\Users\Uraani\Downloads\sandox\zlib-1.2.8;C:\Users\Uraani\Downloads\sandox\lpngVC;C:\Users\Uraani\Downloads\sandox\lpng1621;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\zlib-1.2.8;..\lpngVC;..\lpng1621;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
       <HeaderFileName>%(Filename).h</HeaderFileName>
       <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
@@ -228,7 +228,7 @@
       <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <GenerateDebugInformation>No</GenerateDebugInformation>
       <IgnoreSpecificDefaultLibraries>%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
-      <ImportLibrary>C:/Users/Uraani/Downloads/sandox/lpngVC/x64/Release/pngtest.lib</ImportLibrary>
+      <ImportLibrary>x64/Release/pngtest.lib</ImportLibrary>
       <ProgramDataBaseFile>x64/Release/pngtest.pdb</ProgramDataBaseFile>
       <SubSystem>Console</SubSystem>
       <Version>
@@ -257,10 +257,10 @@
     </ClCompile>
     <ResourceCompile>
       <PreprocessorDefinitions>WIN32;_WINDOWS;_DEBUG;_CRT_SECURE_NO_DEPRECATE;CMAKE_INTDIR=\"Debug\";%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>C:\Users\Uraani\Downloads\sandox\zlib-1.2.8;C:\Users\Uraani\Downloads\sandox\lpngVC;C:\Users\Uraani\Downloads\sandox\lpng1621;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\zlib-1.2.8;..\lpngVC;..\lpng1621;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ResourceCompile>
     <Midl>
-      <AdditionalIncludeDirectories>C:\Users\Uraani\Downloads\sandox\zlib-1.2.8;C:\Users\Uraani\Downloads\sandox\lpngVC;C:\Users\Uraani\Downloads\sandox\lpng1621;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\zlib-1.2.8;..\lpngVC;..\lpng1621;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
       <HeaderFileName>%(Filename).h</HeaderFileName>
       <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
@@ -273,7 +273,7 @@
       <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <GenerateDebugInformation>Debug</GenerateDebugInformation>
       <IgnoreSpecificDefaultLibraries>%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
-      <ImportLibrary>C:/Users/Uraani/Downloads/sandox/lpngVC/x86/Debug/pngtest.lib</ImportLibrary>
+      <ImportLibrary>x86/Debug/pngtest.lib</ImportLibrary>
       <ProgramDataBaseFile>x86/Debug/pngtest.pdb</ProgramDataBaseFile>
       <SubSystem>Console</SubSystem>
       <Version>
@@ -302,10 +302,10 @@
     </ClCompile>
     <ResourceCompile>
       <PreprocessorDefinitions>WIN32;_WINDOWS;_DEBUG;_CRT_SECURE_NO_DEPRECATE;CMAKE_INTDIR=\"Debug\";%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>C:\Users\Uraani\Downloads\sandox\zlib-1.2.8;C:\Users\Uraani\Downloads\sandox\lpngVC;C:\Users\Uraani\Downloads\sandox\lpng1621;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\zlib-1.2.8;..\lpngVC;..\lpng1621;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ResourceCompile>
     <Midl>
-      <AdditionalIncludeDirectories>C:\Users\Uraani\Downloads\sandox\zlib-1.2.8;C:\Users\Uraani\Downloads\sandox\lpngVC;C:\Users\Uraani\Downloads\sandox\lpng1621;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\zlib-1.2.8;..\lpngVC;..\lpng1621;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
       <HeaderFileName>%(Filename).h</HeaderFileName>
       <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
@@ -318,7 +318,7 @@
       <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <GenerateDebugInformation>Debug</GenerateDebugInformation>
       <IgnoreSpecificDefaultLibraries>%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
-      <ImportLibrary>C:/Users/Uraani/Downloads/sandox/lpngVC/x64/Debug/pngtest.lib</ImportLibrary>
+      <ImportLibrary>x64/Debug/pngtest.lib</ImportLibrary>
       <ProgramDataBaseFile>x64/Debug/pngtest.pdb</ProgramDataBaseFile>
       <SubSystem>Console</SubSystem>
       <Version>
@@ -347,10 +347,10 @@
     </ClCompile>
     <ResourceCompile>
       <PreprocessorDefinitions>WIN32;_WINDOWS;NDEBUG;_CRT_SECURE_NO_DEPRECATE;CMAKE_INTDIR=\"MinSizeRel\";%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>C:\Users\Uraani\Downloads\sandox\zlib-1.2.8;C:\Users\Uraani\Downloads\sandox\lpngVC;C:\Users\Uraani\Downloads\sandox\lpng1621;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\zlib-1.2.8;..\lpngVC;..\lpng1621;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ResourceCompile>
     <Midl>
-      <AdditionalIncludeDirectories>C:\Users\Uraani\Downloads\sandox\zlib-1.2.8;C:\Users\Uraani\Downloads\sandox\lpngVC;C:\Users\Uraani\Downloads\sandox\lpng1621;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\zlib-1.2.8;..\lpngVC;..\lpng1621;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
       <HeaderFileName>%(Filename).h</HeaderFileName>
       <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
@@ -363,7 +363,7 @@
       <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <GenerateDebugInformation>No</GenerateDebugInformation>
       <IgnoreSpecificDefaultLibraries>%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
-      <ImportLibrary>C:/Users/Uraani/Downloads/sandox/lpngVC/x86/MinSizeRel/pngtest.lib</ImportLibrary>
+      <ImportLibrary>x86/MinSizeRel/pngtest.lib</ImportLibrary>
       <ProgramDataBaseFile>x86/MinSizeRel/pngtest.pdb</ProgramDataBaseFile>
       <SubSystem>Console</SubSystem>
       <Version>
@@ -392,10 +392,10 @@
     </ClCompile>
     <ResourceCompile>
       <PreprocessorDefinitions>WIN32;_WINDOWS;NDEBUG;_CRT_SECURE_NO_DEPRECATE;CMAKE_INTDIR=\"MinSizeRel\";%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>C:\Users\Uraani\Downloads\sandox\zlib-1.2.8;C:\Users\Uraani\Downloads\sandox\lpngVC;C:\Users\Uraani\Downloads\sandox\lpng1621;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\zlib-1.2.8;..\lpngVC;..\lpng1621;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ResourceCompile>
     <Midl>
-      <AdditionalIncludeDirectories>C:\Users\Uraani\Downloads\sandox\zlib-1.2.8;C:\Users\Uraani\Downloads\sandox\lpngVC;C:\Users\Uraani\Downloads\sandox\lpng1621;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\zlib-1.2.8;..\lpngVC;..\lpng1621;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
       <HeaderFileName>%(Filename).h</HeaderFileName>
       <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
@@ -408,7 +408,7 @@
       <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <GenerateDebugInformation>No</GenerateDebugInformation>
       <IgnoreSpecificDefaultLibraries>%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
-      <ImportLibrary>C:/Users/Uraani/Downloads/sandox/lpngVC/x64/MinSizeRel/pngtest.lib</ImportLibrary>
+      <ImportLibrary>x64/MinSizeRel/pngtest.lib</ImportLibrary>
       <ProgramDataBaseFile>x64/MinSizeRel/pngtest.pdb</ProgramDataBaseFile>
       <SubSystem>Console</SubSystem>
       <Version>
@@ -436,10 +436,10 @@
     </ClCompile>
     <ResourceCompile>
       <PreprocessorDefinitions>WIN32;_WINDOWS;NDEBUG;_CRT_SECURE_NO_DEPRECATE;CMAKE_INTDIR=\"RelWithDebInfo\";%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>C:\Users\Uraani\Downloads\sandox\zlib-1.2.8;C:\Users\Uraani\Downloads\sandox\lpngVC;C:\Users\Uraani\Downloads\sandox\lpng1621;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\zlib-1.2.8;..\lpngVC;..\lpng1621;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ResourceCompile>
     <Midl>
-      <AdditionalIncludeDirectories>C:\Users\Uraani\Downloads\sandox\zlib-1.2.8;C:\Users\Uraani\Downloads\sandox\lpngVC;C:\Users\Uraani\Downloads\sandox\lpng1621;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\zlib-1.2.8;..\lpngVC;..\lpng1621;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
       <HeaderFileName>%(Filename).h</HeaderFileName>
       <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
@@ -452,7 +452,7 @@
       <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <GenerateDebugInformation>Debug</GenerateDebugInformation>
       <IgnoreSpecificDefaultLibraries>%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
-      <ImportLibrary>C:/Users/Uraani/Downloads/sandox/lpngVC/x86/RelWithDebInfo/pngtest.lib</ImportLibrary>
+      <ImportLibrary>x86/RelWithDebInfo/pngtest.lib</ImportLibrary>
       <ProgramDataBaseFile>x86/RelWithDebInfo/pngtest.pdb</ProgramDataBaseFile>
       <SubSystem>Console</SubSystem>
       <Version>
@@ -480,10 +480,10 @@
     </ClCompile>
     <ResourceCompile>
       <PreprocessorDefinitions>WIN32;_WINDOWS;NDEBUG;_CRT_SECURE_NO_DEPRECATE;CMAKE_INTDIR=\"RelWithDebInfo\";%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>C:\Users\Uraani\Downloads\sandox\zlib-1.2.8;C:\Users\Uraani\Downloads\sandox\lpngVC;C:\Users\Uraani\Downloads\sandox\lpng1621;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\zlib-1.2.8;..\lpngVC;..\lpng1621;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ResourceCompile>
     <Midl>
-      <AdditionalIncludeDirectories>C:\Users\Uraani\Downloads\sandox\zlib-1.2.8;C:\Users\Uraani\Downloads\sandox\lpngVC;C:\Users\Uraani\Downloads\sandox\lpng1621;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\zlib-1.2.8;..\lpngVC;..\lpng1621;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
       <HeaderFileName>%(Filename).h</HeaderFileName>
       <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
@@ -496,7 +496,7 @@
       <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <GenerateDebugInformation>Debug</GenerateDebugInformation>
       <IgnoreSpecificDefaultLibraries>%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
-      <ImportLibrary>C:/Users/Uraani/Downloads/sandox/lpngVC/x64/RelWithDebInfo/pngtest.lib</ImportLibrary>
+      <ImportLibrary>x64/RelWithDebInfo/pngtest.lib</ImportLibrary>
       <ProgramDataBaseFile>x64/RelWithDebInfo/pngtest.pdb</ProgramDataBaseFile>
       <SubSystem>Console</SubSystem>
       <Version>
@@ -507,13 +507,13 @@
     </ProjectReference>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="C:\Users\Uraani\Downloads\sandox\lpng1621\pngtest.c" />
+    <ClCompile Include="..\lpng1621\pngtest.c" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="C:/Users/Uraani/Downloads/sandox/lpngVC/ZERO_CHECK.vcxproj">
+    <ProjectReference Include="ZERO_CHECK.vcxproj">
       <Project>4EE6C03A-C53D-3847-ADC1-C19F9DEF71C6</Project>
     </ProjectReference>
-    <ProjectReference Include="C:/Users/Uraani/Downloads/sandox/lpngVC/png16.vcxproj">
+    <ProjectReference Include="png16.vcxproj">
       <Project>847F5343-71C2-3688-A810-6D0146F57B5F</Project>
     </ProjectReference>
   </ItemGroup>
