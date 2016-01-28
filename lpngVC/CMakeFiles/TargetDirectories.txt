@@ -1,0 +1,7 @@
+C:/Users/Uraani/Downloads/sandox/lpngVC/CMakeFiles/png16_static.dir
+C:/Users/Uraani/Downloads/sandox/lpngVC/CMakeFiles/pngvalid.dir
+C:/Users/Uraani/Downloads/sandox/lpngVC/CMakeFiles/pngstest.dir
+C:/Users/Uraani/Downloads/sandox/lpngVC/CMakeFiles/ALL_BUILD.dir
+C:/Users/Uraani/Downloads/sandox/lpngVC/CMakeFiles/ZERO_CHECK.dir
+C:/Users/Uraani/Downloads/sandox/lpngVC/CMakeFiles/pngtest.dir
+C:/Users/Uraani/Downloads/sandox/lpngVC/CMakeFiles/png16.dir

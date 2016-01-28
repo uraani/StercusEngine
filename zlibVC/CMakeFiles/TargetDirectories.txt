@@ -1,0 +1,6 @@
+C:/Users/Uraani/Downloads/sandox/zlibVC/CMakeFiles/zlib.dir
+C:/Users/Uraani/Downloads/sandox/zlibVC/CMakeFiles/example.dir
+C:/Users/Uraani/Downloads/sandox/zlibVC/CMakeFiles/ALL_BUILD.dir
+C:/Users/Uraani/Downloads/sandox/zlibVC/CMakeFiles/ZERO_CHECK.dir
+C:/Users/Uraani/Downloads/sandox/zlibVC/CMakeFiles/zlibstatic.dir
+C:/Users/Uraani/Downloads/sandox/zlibVC/CMakeFiles/minigzip.dir
