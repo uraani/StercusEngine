@@ -39,6 +39,7 @@ SGL_Window* SGL_CreateWindow(const char* title, int GLMajorVersion, int GLMinorV
 	printf("  Shading: %s\n", glGetString(GL_SHADING_LANGUAGE_VERSION));
 	printf("----------------------------------------------------------------\n");
 	SGL_SetWindowIcon(window, NULL);
+
 	return window;
 }
 
