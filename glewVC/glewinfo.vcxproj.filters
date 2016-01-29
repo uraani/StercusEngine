@@ -1,0 +1,11 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="..\glew-1.13.0\src\glewinfo.c" />
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{C47155A2-FED1-3E0F-8B13-5B35B25A5B08}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>

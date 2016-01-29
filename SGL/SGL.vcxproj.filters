@@ -433,6 +433,9 @@
     <ClCompile Include="..\SDL2_image-2.0.1\IMG_xxx.c">
       <Filter>SDL2image</Filter>
     </ClCompile>
+    <ClCompile Include="..\glew-1.13.0\src\glew.c">
+      <Filter>glew</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="SDL2">
@@ -452,6 +455,9 @@
     </Filter>
     <Filter Include="SDL2image">
       <UniqueIdentifier>{fff19e7d-1d8f-4313-87ff-9a1f00c65711}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="glew">
+      <UniqueIdentifier>{430c7aaf-697b-4cb4-9318-30cc90e1c5da}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>

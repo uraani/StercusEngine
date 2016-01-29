@@ -1,0 +1,8 @@
+C:/Users/Uraani/Downloads/glew-1.13.0/glewVC32/CMakeFiles/glewmx_s.dir
+C:/Users/Uraani/Downloads/glew-1.13.0/glewVC32/CMakeFiles/glewinfo.dir
+C:/Users/Uraani/Downloads/glew-1.13.0/glewVC32/CMakeFiles/glew_s.dir
+C:/Users/Uraani/Downloads/glew-1.13.0/glewVC32/CMakeFiles/ALL_BUILD.dir
+C:/Users/Uraani/Downloads/glew-1.13.0/glewVC32/CMakeFiles/glewmx.dir
+C:/Users/Uraani/Downloads/glew-1.13.0/glewVC32/CMakeFiles/ZERO_CHECK.dir
+C:/Users/Uraani/Downloads/glew-1.13.0/glewVC32/CMakeFiles/visualinfo.dir
+C:/Users/Uraani/Downloads/glew-1.13.0/glewVC32/CMakeFiles/glew.dir
