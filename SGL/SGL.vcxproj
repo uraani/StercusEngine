@@ -133,28 +133,28 @@
     <TargetExt Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">.lib</TargetExt>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <LibraryPath>..\lpngVC\x86\Debug;..\zlibVC\x86\Debug;..\glewVC\x86\Debug;$(LibraryPath)</LibraryPath>
+    <LibraryPath>..\lpngVC\x86\Debug;..\zlibVC\x86\Debug;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|Win32'">
-    <LibraryPath>..\lpngVC\x86\MinSizeRel;..\zlibVC\x86\MinSizeRel;..\glewVC\x86\MinSizeRel;$(LibraryPath)</LibraryPath>
+    <LibraryPath>..\lpngVC\x86\MinSizeRel;..\zlibVC\x86\MinSizeRel;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">
-    <LibraryPath>..\lpngVC\x86\RelWithDebInfo;..\zlibVC\x86\RelWithDebInfo;..\glewVC\x86\RelWithDebInfo;$(LibraryPath)</LibraryPath>
+    <LibraryPath>..\lpngVC\x86\RelWithDebInfo;..\zlibVC\x86\RelWithDebInfo;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-    <LibraryPath>..\lpngVC\x86\Release;..\zlibVC\x86\Release;..\glewVC\x86\Release;$(LibraryPath)</LibraryPath>
+    <LibraryPath>..\lpngVC\x86\Release;..\zlibVC\x86\Release;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <LibraryPath>..\lpngVC\x64\Debug;..\zlibVC\x64\Debug;..\glewVC\x64\Debug;$(LibraryPath)</LibraryPath>
+    <LibraryPath>..\lpngVC\x64\Debug;..\zlibVC\x64\Debug;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">
-    <LibraryPath>..\lpngVC\x64\MinSizeRel;..\zlibVC\x64\MinSizeRel;..\glewVC\x64\MinSizeRel;$(LibraryPath)</LibraryPath>
+    <LibraryPath>..\lpngVC\x64\MinSizeRel;..\zlibVC\x64\MinSizeRel;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">
-    <LibraryPath>..\lpngVC\x64\RelWithDebInfo;..\zlibVC\x64\RelWithDebInfo;..\glewVC\x64\RelWithDebInfo;$(LibraryPath)</LibraryPath>
+    <LibraryPath>..\lpngVC\x64\RelWithDebInfo;..\zlibVC\x64\RelWithDebInfo;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <LibraryPath>..\lpngVC\x64\Release;..\zlibVC\x64\Release;..\glewVC\x64\Release;$(LibraryPath)</LibraryPath>
+    <LibraryPath>..\lpngVC\x64\Release;..\zlibVC\x64\Release;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
