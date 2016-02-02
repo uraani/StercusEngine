@@ -125,49 +125,49 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">
-    <IncludePath>..\glew-1.13.0\include;..\lpng1621;..\SGL;..\SDL2-2.0.4\include;..\SDL2_image-2.0.1;$(IncludePath)</IncludePath>
+    <IncludePath>..\glew-1.13.0\include;..\lpng1621;..\SGL;..\SDL2VC;..\SDL2-2.0.4\include;..\SDL2_image-2.0.1;$(IncludePath)</IncludePath>
     <LibraryPath>..\SGL\x86\RelWithDebInfo;$(LibraryPath)</LibraryPath>
     <IntDir>SGLdemo.dir\x86\$(Configuration)\</IntDir>
     <OutDir>x86\$(Configuration)\</OutDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <IncludePath>..\glew-1.13.0\include;..\lpng1621;..\SGL;..\SDL2-2.0.4\include;..\SDL2_image-2.0.1;$(IncludePath)</IncludePath>
+    <IncludePath>..\glew-1.13.0\include;..\lpng1621;..\SGL;..\SDL2VC;..\SDL2-2.0.4\include;..\SDL2_image-2.0.1;$(IncludePath)</IncludePath>
     <LibraryPath>..\SGL\x86\Debug;$(LibraryPath)</LibraryPath>
     <IntDir>SGLdemo.dir\x86\$(Configuration)\</IntDir>
     <OutDir>x86\$(Configuration)\</OutDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|Win32'">
-    <IncludePath>..\glew-1.13.0\include;..\lpng1621;..\SGL;..\SDL2-2.0.4\include;..\SDL2_image-2.0.1;$(IncludePath)</IncludePath>
+    <IncludePath>..\glew-1.13.0\include;..\lpng1621;..\SGL;..\SDL2VC;..\SDL2-2.0.4\include;..\SDL2_image-2.0.1;$(IncludePath)</IncludePath>
     <LibraryPath>..\SGL\x86\MinSizeRel;$(LibraryPath)</LibraryPath>
     <IntDir>SGLdemo.dir\x86\$(Configuration)\</IntDir>
     <OutDir>x86\$(Configuration)\</OutDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-    <IncludePath>..\glew-1.13.0\include;..\lpng1621;..\SGL;..\SDL2-2.0.4\include;..\SDL2_image-2.0.1;$(IncludePath)</IncludePath>
+    <IncludePath>..\glew-1.13.0\include;..\lpng1621;..\SGL;..\SDL2VC;..\SDL2-2.0.4\include;..\SDL2_image-2.0.1;$(IncludePath)</IncludePath>
     <LibraryPath>..\SGL\x86\Release;$(LibraryPath)</LibraryPath>
     <IntDir>SGLdemo.dir\x86\$(Configuration)\</IntDir>
     <OutDir>x86\$(Configuration)\</OutDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">
-    <IncludePath>..\glew-1.13.0\include;..\lpng1621;..\SGL;..\SDL2-2.0.4\include;..\SDL2_image-2.0.1;$(IncludePath)</IncludePath>
+    <IncludePath>..\glew-1.13.0\include;..\lpng1621;..\SGL;..\SDL2VC;..\SDL2-2.0.4\include;..\SDL2_image-2.0.1;$(IncludePath)</IncludePath>
     <LibraryPath>..\SGL\x64\RelWithDebInfo;$(LibraryPath)</LibraryPath>
     <OutDir>$(Platform)\$(Configuration)\</OutDir>
     <IntDir>SGLdemo.dir\$(Platform)\$(Configuration)\</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <IncludePath>..\glew-1.13.0\include;..\lpng1621;..\SGL;..\SDL2-2.0.4\include;..\SDL2_image-2.0.1;$(IncludePath)</IncludePath>
+    <IncludePath>..\glew-1.13.0\include;..\lpng1621;..\SGL;..\SDL2VC;..\SDL2-2.0.4\include;..\SDL2_image-2.0.1;$(IncludePath)</IncludePath>
     <LibraryPath>..\SGL\x64\Debug;$(LibraryPath)</LibraryPath>
     <OutDir>$(Platform)\$(Configuration)\</OutDir>
     <IntDir>SGLdemo.dir\$(Platform)\$(Configuration)\</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">
-    <IncludePath>..\glew-1.13.0\include;..\lpng1621;..\SGL;..\SDL2-2.0.4\include;..\SDL2_image-2.0.1;$(IncludePath)</IncludePath>
+    <IncludePath>..\glew-1.13.0\include;..\lpng1621;..\SGL;..\SDL2VC;..\SDL2-2.0.4\include;..\SDL2_image-2.0.1;$(IncludePath)</IncludePath>
     <LibraryPath>..\SGL\x64\MinSizeRel;$(LibraryPath)</LibraryPath>
     <OutDir>$(Platform)\$(Configuration)\</OutDir>
     <IntDir>SGLdemo.dir\$(Platform)\$(Configuration)\</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <IncludePath>..\glew-1.13.0\include;..\lpng1621;..\SGL;..\SDL2-2.0.4\include;..\SDL2_image-2.0.1;$(IncludePath)</IncludePath>
+    <IncludePath>..\glew-1.13.0\include;..\lpng1621;..\SGL;..\SDL2VC;..\SDL2-2.0.4\include;..\SDL2_image-2.0.1;$(IncludePath)</IncludePath>
     <LibraryPath>..\SGL\x64\Release;$(LibraryPath)</LibraryPath>
     <OutDir>$(Platform)\$(Configuration)\</OutDir>
     <IntDir>SGLdemo.dir\$(Platform)\$(Configuration)\</IntDir>
