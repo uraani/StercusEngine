@@ -158,7 +158,7 @@
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
-      <AdditionalIncludeDirectories>..\glew-1.13.0\include;..\lpng1621;..\zlib-1.2.8;..\SDL2_image-2.0.1;..\SDL2-2.0.4\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\glew-1.13.0\include;..\lpng1621;..\lpngVC;..\zlib-1.2.8;..\zlibVC;..\SDL2_image-2.0.1;..\SDL2-2.0.4\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AssemblerListingLocation>Debug/</AssemblerListingLocation>
       <BufferSecurityCheck>false</BufferSecurityCheck>
       <CompileAs>CompileAsC</CompileAs>
@@ -190,7 +190,7 @@
       <AdditionalOptions>
       </AdditionalOptions>
       <IgnoreAllDefaultLibraries>true</IgnoreAllDefaultLibraries>
-      <AdditionalDependencies>libpng16_staticd.lib;zlibstaticd.lib;opengl32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>opengl32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Lib>
     <ProjectReference>
       <LinkLibraryDependencies>false</LinkLibraryDependencies>
@@ -198,7 +198,7 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
-      <AdditionalIncludeDirectories>..\glew-1.13.0\include;..\lpng1621;..\zlib-1.2.8;..\SDL2_image-2.0.1;..\SDL2-2.0.4\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\glew-1.13.0\include;..\lpng1621;..\lpngVC;..\zlib-1.2.8;..\zlibVC;..\SDL2_image-2.0.1;..\SDL2-2.0.4\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AssemblerListingLocation>Debug/</AssemblerListingLocation>
       <BufferSecurityCheck>false</BufferSecurityCheck>
       <CompileAs>CompileAsC</CompileAs>
@@ -230,13 +230,13 @@
       <AdditionalOptions>
       </AdditionalOptions>
       <IgnoreAllDefaultLibraries>true</IgnoreAllDefaultLibraries>
-      <AdditionalDependencies>libpng16_staticd.lib;zlibstaticd.lib;opengl32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>opengl32.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <TargetMachine>MachineX86</TargetMachine>
     </Lib>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
-      <AdditionalIncludeDirectories>..\glew-1.13.0\include;..\lpng1621;..\zlib-1.2.8;..\SDL2_image-2.0.1;..\SDL2-2.0.4\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\glew-1.13.0\include;..\lpng1621;..\lpngVC;..\zlib-1.2.8;..\zlibVC;..\SDL2_image-2.0.1;..\SDL2-2.0.4\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AssemblerListingLocation>Release/</AssemblerListingLocation>
       <BufferSecurityCheck>false</BufferSecurityCheck>
       <CompileAs>CompileAsC</CompileAs>
@@ -269,12 +269,12 @@
       <AdditionalOptions>
       </AdditionalOptions>
       <IgnoreAllDefaultLibraries>true</IgnoreAllDefaultLibraries>
-      <AdditionalDependencies>libpng16_static.lib;zlibstatic.lib;opengl32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>opengl32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Lib>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
-      <AdditionalIncludeDirectories>..\glew-1.13.0\include;..\lpng1621;..\zlib-1.2.8;..\SDL2_image-2.0.1;..\SDL2-2.0.4\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\glew-1.13.0\include;..\lpng1621;..\lpngVC;..\zlib-1.2.8;..\zlibVC;..\SDL2_image-2.0.1;..\SDL2-2.0.4\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AssemblerListingLocation>Release/</AssemblerListingLocation>
       <BufferSecurityCheck>false</BufferSecurityCheck>
       <CompileAs>CompileAsC</CompileAs>
@@ -307,13 +307,13 @@
       <AdditionalOptions>
       </AdditionalOptions>
       <IgnoreAllDefaultLibraries>true</IgnoreAllDefaultLibraries>
-      <AdditionalDependencies>libpng16_static.lib;zlibstatic.lib;opengl32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>opengl32.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <TargetMachine>MachineX86</TargetMachine>
     </Lib>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">
     <ClCompile>
-      <AdditionalIncludeDirectories>..\glew-1.13.0\include;..\lpng1621;..\zlib-1.2.8;..\SDL2_image-2.0.1;..\SDL2-2.0.4\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\glew-1.13.0\include;..\lpng1621;..\lpngVC;..\zlib-1.2.8;..\zlibVC;..\SDL2_image-2.0.1;..\SDL2-2.0.4\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AssemblerListingLocation>MinSizeRel/</AssemblerListingLocation>
       <BufferSecurityCheck>false</BufferSecurityCheck>
       <CompileAs>CompileAsC</CompileAs>
@@ -346,12 +346,12 @@
       <AdditionalOptions>
       </AdditionalOptions>
       <IgnoreAllDefaultLibraries>true</IgnoreAllDefaultLibraries>
-      <AdditionalDependencies>libpng16_static.lib;zlibstatic.lib;opengl32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>opengl32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Lib>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|Win32'">
     <ClCompile>
-      <AdditionalIncludeDirectories>..\glew-1.13.0\include;..\lpng1621;..\zlib-1.2.8;..\SDL2_image-2.0.1;..\SDL2-2.0.4\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\glew-1.13.0\include;..\lpng1621;..\lpngVC;..\zlib-1.2.8;..\zlibVC;..\SDL2_image-2.0.1;..\SDL2-2.0.4\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AssemblerListingLocation>MinSizeRel/</AssemblerListingLocation>
       <BufferSecurityCheck>false</BufferSecurityCheck>
       <CompileAs>CompileAsC</CompileAs>
@@ -384,13 +384,13 @@
       <AdditionalOptions>
       </AdditionalOptions>
       <IgnoreAllDefaultLibraries>true</IgnoreAllDefaultLibraries>
-      <AdditionalDependencies>libpng16_static.lib;zlibstatic.lib;opengl32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>opengl32.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <TargetMachine>MachineX86</TargetMachine>
     </Lib>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">
     <ClCompile>
-      <AdditionalIncludeDirectories>..\glew-1.13.0\include;..\lpng1621;..\zlib-1.2.8;..\SDL2_image-2.0.1;..\SDL2-2.0.4\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\glew-1.13.0\include;..\lpng1621;..\lpngVC;..\zlib-1.2.8;..\zlibVC;..\SDL2_image-2.0.1;..\SDL2-2.0.4\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AssemblerListingLocation>RelWithDebInfo/</AssemblerListingLocation>
       <BufferSecurityCheck>false</BufferSecurityCheck>
       <CompileAs>CompileAsC</CompileAs>
@@ -422,12 +422,12 @@
       <AdditionalOptions>
       </AdditionalOptions>
       <IgnoreAllDefaultLibraries>true</IgnoreAllDefaultLibraries>
-      <AdditionalDependencies>libpng16_static.lib;zlibstatic.lib;opengl32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>opengl32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Lib>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">
     <ClCompile>
-      <AdditionalIncludeDirectories>..\glew-1.13.0\include;..\lpng1621;..\zlib-1.2.8;..\SDL2_image-2.0.1;..\SDL2-2.0.4\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\glew-1.13.0\include;..\lpng1621;..\lpngVC;..\zlib-1.2.8;..\zlibVC;..\SDL2_image-2.0.1;..\SDL2-2.0.4\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AssemblerListingLocation>RelWithDebInfo/</AssemblerListingLocation>
       <BufferSecurityCheck>false</BufferSecurityCheck>
       <CompileAs>CompileAsC</CompileAs>
@@ -459,12 +459,27 @@
       <AdditionalOptions>
       </AdditionalOptions>
       <IgnoreAllDefaultLibraries>true</IgnoreAllDefaultLibraries>
-      <AdditionalDependencies>libpng16_static.lib;zlibstatic.lib;opengl32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>opengl32.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <TargetMachine>MachineX86</TargetMachine>
     </Lib>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="..\glew-1.13.0\src\glew.c" />
+    <ClCompile Include="..\lpng1621\png.c" />
+    <ClCompile Include="..\lpng1621\pngerror.c" />
+    <ClCompile Include="..\lpng1621\pngget.c" />
+    <ClCompile Include="..\lpng1621\pngmem.c" />
+    <ClCompile Include="..\lpng1621\pngpread.c" />
+    <ClCompile Include="..\lpng1621\pngread.c" />
+    <ClCompile Include="..\lpng1621\pngrio.c" />
+    <ClCompile Include="..\lpng1621\pngrtran.c" />
+    <ClCompile Include="..\lpng1621\pngrutil.c" />
+    <ClCompile Include="..\lpng1621\pngset.c" />
+    <ClCompile Include="..\lpng1621\pngtrans.c" />
+    <ClCompile Include="..\lpng1621\pngwio.c" />
+    <ClCompile Include="..\lpng1621\pngwrite.c" />
+    <ClCompile Include="..\lpng1621\pngwtran.c" />
+    <ClCompile Include="..\lpng1621\pngwutil.c" />
     <ClCompile Include="..\SDL2-2.0.4\src\SDL.c" />
     <ClCompile Include="..\SDL2-2.0.4\src\SDL_assert.c" />
     <ClCompile Include="..\SDL2-2.0.4\src\SDL_error.c" />
@@ -608,6 +623,21 @@
     <ClCompile Include="..\SDL2_image-2.0.1\IMG_xpm.c" />
     <ClCompile Include="..\SDL2_image-2.0.1\IMG_xv.c" />
     <ClCompile Include="..\SDL2_image-2.0.1\IMG_xxx.c" />
+    <ClCompile Include="..\zlib-1.2.8\adler32.c" />
+    <ClCompile Include="..\zlib-1.2.8\compress.c" />
+    <ClCompile Include="..\zlib-1.2.8\crc32.c" />
+    <ClCompile Include="..\zlib-1.2.8\deflate.c" />
+    <ClCompile Include="..\zlib-1.2.8\gzclose.c" />
+    <ClCompile Include="..\zlib-1.2.8\gzlib.c" />
+    <ClCompile Include="..\zlib-1.2.8\gzread.c" />
+    <ClCompile Include="..\zlib-1.2.8\gzwrite.c" />
+    <ClCompile Include="..\zlib-1.2.8\infback.c" />
+    <ClCompile Include="..\zlib-1.2.8\inffast.c" />
+    <ClCompile Include="..\zlib-1.2.8\inflate.c" />
+    <ClCompile Include="..\zlib-1.2.8\inftrees.c" />
+    <ClCompile Include="..\zlib-1.2.8\trees.c" />
+    <ClCompile Include="..\zlib-1.2.8\uncompr.c" />
+    <ClCompile Include="..\zlib-1.2.8\zutil.c" />
     <ClCompile Include="SGL.c" />
   </ItemGroup>
   <ItemGroup>
