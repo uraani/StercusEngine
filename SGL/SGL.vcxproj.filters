@@ -382,9 +382,6 @@
     <ClCompile Include="..\SDL2-2.0.4\src\render\SDL_yuv_sw.c">
       <Filter>SDL2</Filter>
     </ClCompile>
-    <ClCompile Include="SGL.c">
-      <Filter>SGL</Filter>
-    </ClCompile>
     <ClCompile Include="..\SDL2-2.0.4\src\main\windows\SDL_windows_main.c">
       <Filter>SDL2main</Filter>
     </ClCompile>
@@ -525,6 +522,9 @@
     </ClCompile>
     <ClCompile Include="..\lpng1621\pngwutil.c">
       <Filter>libpng</Filter>
+    </ClCompile>
+    <ClCompile Include="SGL.c">
+      <Filter>SGL</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

@@ -15,8 +15,14 @@ SGL_Window* SGL_CreateWindow(const char* title, int GLMajorVersion, int GLMinorV
 	}
 	SDL_DisplayMode closestMode;
 	SDL_GetClosestDisplayMode(0, &targetMode, &closestMode);
+#if defined(_WINDOWS)
 	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, GLMajorVersion);
 	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, GLMinorVersion);
+#elif defined(ANDROID)
+	SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_ES);
+	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, GLMajorVersion > 3 ? GLMajorVersion : 3);
+	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 0);
+#endif
 	SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
 	SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
 	SGL_Window* window = SDL_malloc(sizeof(SGL_Window));
