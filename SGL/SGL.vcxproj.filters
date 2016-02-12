@@ -557,5 +557,11 @@
     <ClInclude Include="SGL_window.h">
       <Filter>SGL</Filter>
     </ClInclude>
+    <ClInclude Include="SGL_camera.h">
+      <Filter>SGL</Filter>
+    </ClInclude>
+    <ClInclude Include="SGL_mathTypes.h">
+      <Filter>SGL</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

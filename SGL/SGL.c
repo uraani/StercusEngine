@@ -2,12 +2,14 @@
 
 int SGL_Init(void)
 {
-	return SDL_Init(SDL_INIT_EVERYTHING);
+	SDL_Init(SDL_INIT_EVERYTHING);
 	IMG_Init(IMG_INIT_PNG);
+	return 1;
 }
 
 SGL_Window* SGL_CreateWindow(const char* title, int GLMajorVersion, int GLMinorVersion, int x, int y, int w, int h, Uint32 SDLflags)
 {
+#if defined(_WINDOWS)
 	SDL_DisplayMode targetMode;
 	if (SDL_GetCurrentDisplayMode(0, &targetMode))
 	{
@@ -15,14 +17,8 @@ SGL_Window* SGL_CreateWindow(const char* title, int GLMajorVersion, int GLMinorV
 	}
 	SDL_DisplayMode closestMode;
 	SDL_GetClosestDisplayMode(0, &targetMode, &closestMode);
-#if defined(_WINDOWS)
 	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, GLMajorVersion);
 	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, GLMinorVersion);
-#elif defined(ANDROID)
-	SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_ES);
-	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, GLMajorVersion > 3 ? GLMajorVersion : 3);
-	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 0);
-#endif
 	SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
 	SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
 	SGL_Window* window = SDL_malloc(sizeof(SGL_Window));
@@ -36,16 +32,34 @@ SGL_Window* SGL_CreateWindow(const char* title, int GLMajorVersion, int GLMinorV
 	window->context = SDL_GL_CreateContext(window->window);
 	glewExperimental = GL_TRUE;
 	glewInit();
-	printf("----------------------------------------------------------------\n");
-	printf("Graphics Successfully Initialized For Window: %s\n", title);
-	printf("OpenGL Info\n");
-	printf("  Version: %s\n", glGetString(GL_VERSION));
-	printf("   Vendor: %s\n", glGetString(GL_VENDOR));
-	printf(" Renderer: %s\n", glGetString(GL_RENDERER));
-	printf("  Shading: %s\n", glGetString(GL_SHADING_LANGUAGE_VERSION));
-	printf("----------------------------------------------------------------\n");
+#elif defined(ANDROID)
+	SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_ES);
+	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, GLMajorVersion > 3 ? GLMajorVersion : 3);
+	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 0);
+	SGL_Window* window = SDL_malloc(sizeof(SGL_Window));
+	SDL_DisplayMode displayMode;
+	if (SDL_GetCurrentDisplayMode(0, &displayMode))
+	{
+		return NULL;
+	}
+	window->window = SDL_CreateWindow
+		(
+			title,
+			SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED,
+			displayMode.w, displayMode.h,
+			SDLflags
+			);
+	window->context = SDL_GL_CreateContext(window->window);
+#endif
+	SDL_Log("----------------------------------------------------------------\n");
+	SDL_Log("Graphics Successfully Initialized For Window: %s\n", title);
+	SDL_Log("OpenGL Info\n");
+	SDL_Log("  Version: %s\n", glGetString(GL_VERSION));
+	SDL_Log("   Vendor: %s\n", glGetString(GL_VENDOR));
+	SDL_Log(" Renderer: %s\n", glGetString(GL_RENDERER));
+	SDL_Log("  Shading: %s\n", glGetString(GL_SHADING_LANGUAGE_VERSION));
+	SDL_Log("----------------------------------------------------------------\n");
 	SGL_SetWindowIcon(window, NULL);
-
 	return window;
 }
 
@@ -70,6 +84,7 @@ void SGL_DestroyWindow(SGL_Window * window)
 {
 	SDL_GL_DeleteContext(window->context);
 	SDL_DestroyWindow(window->window);
+	SDL_free(window);
 }
 
 void SGL_ConvertPNGToIconArray(const char * imagePath, const char * fileName)
@@ -85,12 +100,14 @@ void SGL_ConvertPNGToIconArray(const char * imagePath, const char * fileName)
 			size_t len = surf->h*surf->w*surf->format->BytesPerPixel;
 			const char start[] = "unsigned char icon[] = { ";
 			SDL_RWwrite(rw, start, 1, SDL_strlen(start));
-			for (size_t i = 0; i < len; i++)
+			size_t i;
+			for (i = 0; i < len; i++)
 			{
 				char buffer[5];
 				SDL_snprintf(buffer, 5, "%u", *(((unsigned char*)surf->pixels) + i));
 				//sprintf(buffer, "%u", *(((unsigned char*)surf->pixels) + i));
-				for (size_t l = 1; l < 4; l++)
+				size_t l;
+				for (l = 1; l < 4; l++)
 				{
 					if (buffer[l] == 0 && i + 1 < len)
 					{
@@ -103,7 +120,8 @@ void SGL_ConvertPNGToIconArray(const char * imagePath, const char * fileName)
 			}
 			char buffer[7];
 			SDL_snprintf(buffer, 7,"%u", *(((unsigned char*)surf->pixels) + (len - 1)));
-			for (size_t l = 1; l < 4; l++)
+			size_t l;
+			for (l = 1; l < 4; l++)
 			{
 				if (buffer[l] == 0)
 				{
@@ -124,35 +142,35 @@ void SGL_RunGLTest(SGL_Window* window)
 	glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 	glClear(GL_COLOR_BUFFER_BIT);
 	SDL_GL_SwapWindow(window->window);
-	SDL_Delay(1000);
+	SDL_Delay(200);
 	glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
 	glClear(GL_COLOR_BUFFER_BIT);
 	SDL_GL_SwapWindow(window->window);
-	SDL_Delay(1000);
+	SDL_Delay(200);
 	glClearColor(1.0f, 0.0f, 0.0f, 1.0f);
 	glClear(GL_COLOR_BUFFER_BIT);
 	SDL_GL_SwapWindow(window->window);
-	SDL_Delay(1000);
+	SDL_Delay(200);
 	glClearColor(1.0f, 1.0f, 0.0f, 1.0f);
 	glClear(GL_COLOR_BUFFER_BIT);
 	SDL_GL_SwapWindow(window->window);
-	SDL_Delay(1000);
+	SDL_Delay(200);
 	glClearColor(0.0f, 1.0f, 0.0f, 1.0f);
 	glClear(GL_COLOR_BUFFER_BIT);
 	SDL_GL_SwapWindow(window->window);
-	SDL_Delay(1000);
+	SDL_Delay(200);
 	glClearColor(0.0f, 1.0f, 1.0f, 1.0f);
 	glClear(GL_COLOR_BUFFER_BIT);
 	SDL_GL_SwapWindow(window->window);
-	SDL_Delay(1000);
+	SDL_Delay(200);
 	glClearColor(0.0f, 0.0f, 1.0f, 1.0f);
 	glClear(GL_COLOR_BUFFER_BIT);
 	SDL_GL_SwapWindow(window->window);
-	SDL_Delay(1000);
+	SDL_Delay(200);
 	glClearColor(1.0f, 0.0f, 1.0f, 1.0f);
 	glClear(GL_COLOR_BUFFER_BIT);
 	SDL_GL_SwapWindow(window->window);
-	SDL_Delay(1000);
+	SDL_Delay(200);
 	glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 	glClear(GL_COLOR_BUFFER_BIT);
 	SDL_GL_SwapWindow(window->window);

@@ -642,6 +642,8 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="SGL.h" />
+    <ClInclude Include="SGL_camera.h" />
+    <ClInclude Include="SGL_mathTypes.h" />
     <ClInclude Include="SGL_window.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

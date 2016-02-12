@@ -1,0 +1,1 @@
+adb logcat -s "SDL", "SDL/APP"
