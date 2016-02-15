@@ -639,11 +639,12 @@
     <ClCompile Include="..\zlib-1.2.8\uncompr.c" />
     <ClCompile Include="..\zlib-1.2.8\zutil.c" />
     <ClCompile Include="SGL.c" />
+    <ClCompile Include="SGL_camera.c" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="SGL.h" />
     <ClInclude Include="SGL_camera.h" />
-    <ClInclude Include="SGL_mathTypes.h" />
+    <ClInclude Include="SGL_math.h" />
     <ClInclude Include="SGL_window.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

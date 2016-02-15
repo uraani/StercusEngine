@@ -2,9 +2,19 @@
 
 int SGL_Init(void)
 {
-	SDL_Init(SDL_INIT_EVERYTHING);
-	IMG_Init(IMG_INIT_PNG);
-	return 1;
+	int error = SDL_Init(SDL_INIT_EVERYTHING);
+	if(error != 0)
+	{
+		SDL_LogCritical(SDL_LOG_CATEGORY_APPLICATION, SDL_GetError());
+		return error;
+	}
+	error = IMG_Init(IMG_INIT_PNG);
+	if (error == 0)
+	{
+		SDL_LogCritical(SDL_LOG_CATEGORY_APPLICATION, SDL_GetError());
+		return error;
+	}
+	return 0;
 }
 
 SGL_Window* SGL_CreateWindow(const char* title, int GLMajorVersion, int GLMinorVersion, int x, int y, int w, int h, Uint32 SDLflags)
@@ -84,6 +94,7 @@ void SGL_DestroyWindow(SGL_Window * window)
 {
 	SDL_GL_DeleteContext(window->context);
 	SDL_DestroyWindow(window->window);
+	SDL_free(window);
 }
 
 void SGL_ConvertPNGToIconArray(const char * imagePath, const char * fileName)

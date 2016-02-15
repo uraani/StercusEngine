@@ -4,12 +4,25 @@
 //[4 ][5 ][6 ][7 ]
 //[8 ][9 ][10][11]
 //[12][13][14][15]
+#if !defined(ANDROID)
+__declspec(align(16))
+#endif
+
 struct SGL_Vec4
 {
-	float x;
-	float y;
-	float z;
-	float w;
+	union
+	{
+		struct
+		{
+			float x;
+			float y;
+			float z;
+			float w;
+		};
+#if !defined(ANDROID)
+		__m128 v;
+#endif
+	};
 }typedef SGL_Vec4;
 struct SGL_Vec3
 {
@@ -22,7 +35,15 @@ struct SGL_Vec2
 	float x;
 	float y;
 }typedef SGL_Vec2;
-__declspec(align(16)) struct SGL_Mat4
+struct SGL_Vec2i
+{
+	int x;
+	int y;
+}typedef SGL_Vec2i;
+#if !defined(ANDROID)
+__declspec(align(16))
+#endif
+struct SGL_Mat4
 {
 	union 
 	{
@@ -59,6 +80,15 @@ struct SGL_Mat3
 	float m[9];
 
 }typedef SGL_Mat3;
+inline const SGL_Mat4 SM_IdentityMat4()
+{
+	SGL_Mat4 r;
+	r.m00 = 1.0f; r.m01 = 0.0f; r.m02 = 0.0f; r.m03 = 0.0f;
+	r.m10 = 0.0f; r.m11 = 1.0f; r.m12 = 0.0f; r.m13 = 0.0f;
+	r.m20 = 0.0f; r.m21 = 0.0f; r.m22 = 1.0f; r.m23 = 0.0f;
+	r.m30 = 0.0f; r.m31 = 0.0f; r.m32 = 0.0f; r.m33 = 1.0f;
+	return r;
+}
 inline const SGL_Mat4 SM_Multiply(const SGL_Mat4* a, const SGL_Mat4* b)
 {
 	SGL_Mat4 r;

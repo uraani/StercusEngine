@@ -526,6 +526,9 @@
     <ClCompile Include="SGL.c">
       <Filter>SGL</Filter>
     </ClCompile>
+    <ClCompile Include="SGL_camera.c">
+      <Filter>SGL</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="SDL2">
@@ -560,7 +563,7 @@
     <ClInclude Include="SGL_camera.h">
       <Filter>SGL</Filter>
     </ClInclude>
-    <ClInclude Include="SGL_mathTypes.h">
+    <ClInclude Include="SGL_math.h">
       <Filter>SGL</Filter>
     </ClInclude>
   </ItemGroup>

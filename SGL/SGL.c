@@ -1,19 +1,31 @@
 #include "SGL.h"
-
 int SGL_Init(void)
 {
-	SDL_Init(SDL_INIT_EVERYTHING);
-	IMG_Init(IMG_INIT_PNG);
-	return 1;
+	int error = SDL_Init(SDL_INIT_EVERYTHING);
+	if(error != 0)
+	{
+		SDL_LogCritical(SDL_LOG_CATEGORY_APPLICATION, SDL_GetError());
+		return error;
+	}
+	error = IMG_Init(IMG_INIT_PNG);
+	if (error == 0)
+	{
+		SDL_LogCritical(SDL_LOG_CATEGORY_APPLICATION, SDL_GetError());
+		return error;
+	}
+	return 0;
 }
 
-SGL_Window* SGL_CreateWindow(const char* title, int GLMajorVersion, int GLMinorVersion, int x, int y, int w, int h, Uint32 SDLflags)
+SGL_Window SGL_CreateWindow(const char* title, int GLMajorVersion, int GLMinorVersion, int x, int y, int w, int h, Uint32 SDLflags)
 {
 #if defined(_WINDOWS)
 	SDL_DisplayMode targetMode;
 	if (SDL_GetCurrentDisplayMode(0, &targetMode))
 	{
-		return NULL;
+		SGL_Window window;
+		window.glContext = NULL;
+		window.handle = NULL;
+		return window;
 	}
 	SDL_DisplayMode closestMode;
 	SDL_GetClosestDisplayMode(0, &targetMode, &closestMode);
@@ -21,15 +33,15 @@ SGL_Window* SGL_CreateWindow(const char* title, int GLMajorVersion, int GLMinorV
 	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, GLMinorVersion);
 	SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
 	SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
-	SGL_Window* window = SDL_malloc(sizeof(SGL_Window));
-	window->window = SDL_CreateWindow
+	SGL_Window window;
+	window.handle = SDL_CreateWindow
 		(
 			title,
 			x, y,
 			w, h,
 			SDLflags
 		);
-	window->context = SDL_GL_CreateContext(window->window);
+	window.glContext = SDL_GL_CreateContext(window.handle);
 	glewExperimental = GL_TRUE;
 	glewInit();
 #elif defined(ANDROID)
@@ -59,11 +71,18 @@ SGL_Window* SGL_CreateWindow(const char* title, int GLMajorVersion, int GLMinorV
 	SDL_Log(" Renderer: %s\n", glGetString(GL_RENDERER));
 	SDL_Log("  Shading: %s\n", glGetString(GL_SHADING_LANGUAGE_VERSION));
 	SDL_Log("----------------------------------------------------------------\n");
-	SGL_SetWindowIcon(window, NULL);
+	SGL_SetWindowIcon(&window, NULL);
+	SDL_GetWindowSize(window.handle, &window.rContext.windowSize.x, &window.rContext.windowSize.y);
+	window.rContext.windowHalfSizef.x = (float)window.rContext.windowSize.x*0.5f;
+	window.rContext.windowHalfSizef.y = (float)window.rContext.windowSize.y*0.5f;
+	for (size_t i = 0; i < SGL_CAMERA_COUNT; i++)
+	{
+		window.rContext.cameras[i].camType = 0;
+	}
 	return window;
 }
 
-void SGL_SetWindowIcon(SGL_Window* window, void * pixels)
+void SGL_SetWindowIcon(const SGL_Window* window, void * pixels)
 {
 	SDL_Surface* surface;
 	if (pixels == NULL)
@@ -76,15 +95,14 @@ void SGL_SetWindowIcon(SGL_Window* window, void * pixels)
 		surface = SDL_CreateRGBSurfaceFrom(pixels, 16, 16, 24, 3 * 16, 0x000000ff, 0x0000ff00, 0x00ff0000, 0xff000000);
 	}
 	SDL_SetColorKey(surface, SDL_TRUE, SDL_MapRGB(surface->format, 255, 0, 255));
-	SDL_SetWindowIcon(window->window, surface);
+	SDL_SetWindowIcon(window->handle, surface);
 	SDL_FreeSurface(surface);
 }
 
-void SGL_DestroyWindow(SGL_Window * window)
+void SGL_DestroyWindow(const SGL_Window* window)
 {
-	SDL_GL_DeleteContext(window->context);
-	SDL_DestroyWindow(window->window);
-	SDL_free(window);
+	SDL_GL_DeleteContext(window->glContext);
+	SDL_DestroyWindow(window->handle);
 }
 
 void SGL_ConvertPNGToIconArray(const char * imagePath, const char * fileName)
@@ -137,43 +155,43 @@ void SGL_ConvertPNGToIconArray(const char * imagePath, const char * fileName)
 	}
 }
 
-void SGL_RunGLTest(SGL_Window* window)
+void SGL_RunGLTest(const SGL_Window* window)
 {
 	glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 	glClear(GL_COLOR_BUFFER_BIT);
-	SDL_GL_SwapWindow(window->window);
+	SDL_GL_SwapWindow(window->handle);
 	SDL_Delay(200);
 	glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
 	glClear(GL_COLOR_BUFFER_BIT);
-	SDL_GL_SwapWindow(window->window);
+	SDL_GL_SwapWindow(window->handle);
 	SDL_Delay(200);
 	glClearColor(1.0f, 0.0f, 0.0f, 1.0f);
 	glClear(GL_COLOR_BUFFER_BIT);
-	SDL_GL_SwapWindow(window->window);
+	SDL_GL_SwapWindow(window->handle);
 	SDL_Delay(200);
 	glClearColor(1.0f, 1.0f, 0.0f, 1.0f);
 	glClear(GL_COLOR_BUFFER_BIT);
-	SDL_GL_SwapWindow(window->window);
+	SDL_GL_SwapWindow(window->handle);
 	SDL_Delay(200);
 	glClearColor(0.0f, 1.0f, 0.0f, 1.0f);
 	glClear(GL_COLOR_BUFFER_BIT);
-	SDL_GL_SwapWindow(window->window);
+	SDL_GL_SwapWindow(window->handle);
 	SDL_Delay(200);
 	glClearColor(0.0f, 1.0f, 1.0f, 1.0f);
 	glClear(GL_COLOR_BUFFER_BIT);
-	SDL_GL_SwapWindow(window->window);
+	SDL_GL_SwapWindow(window->handle);
 	SDL_Delay(200);
 	glClearColor(0.0f, 0.0f, 1.0f, 1.0f);
 	glClear(GL_COLOR_BUFFER_BIT);
-	SDL_GL_SwapWindow(window->window);
+	SDL_GL_SwapWindow(window->handle);
 	SDL_Delay(200);
 	glClearColor(1.0f, 0.0f, 1.0f, 1.0f);
 	glClear(GL_COLOR_BUFFER_BIT);
-	SDL_GL_SwapWindow(window->window);
+	SDL_GL_SwapWindow(window->handle);
 	SDL_Delay(200);
 	glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 	glClear(GL_COLOR_BUFFER_BIT);
-	SDL_GL_SwapWindow(window->window);
+	SDL_GL_SwapWindow(window->handle);
 }
 
 void SGL_Quit(void)
