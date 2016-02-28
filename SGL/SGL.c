@@ -602,10 +602,6 @@ struct texture_object *tex_obj,
 	VkImageUsageFlags usage,
 	VkFlags required_props) 
 {
-	if (tex_obj->tex_width != 0)
-	{
-
-	}
 	if(tex_obj->surf == NULL)
 	{ 
 		tex_obj->surf = SGL_DataLoadImage("chimppiVulkant0");
