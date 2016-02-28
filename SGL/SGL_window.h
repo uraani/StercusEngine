@@ -1,17 +1,40 @@
 #pragma once
+#include "SDL.h"
+#include "SDL_syswm.h"
+#ifndef SDL_VIDEO_OPENGL
+#include "SGL_vk.h"
+#endif
 #include "SGL_camera.h"
 typedef struct SDL_Window SDL_Window;
-typedef void* SDL_GLContext;
-struct SGL_RenderContext
+#ifdef _WIN32
+typedef struct SDL_WindowData
 {
-	SGL_Camera cameras[SGL_CAMERA_COUNT];
-	SGL_Vec2 windowHalfSizef;
-	SGL_Vec2i windowSize;
-}typedef SGL_RenderContext;
-struct SGL_Window
+	SDL_Window *window;
+	HWND hwnd;
+	HDC hdc;
+	HDC mdc;
+	HBITMAP hbm;
+	WNDPROC wndproc;
+	SDL_bool created;
+	WPARAM mouse_button_flags;
+	SDL_bool initializing;
+	SDL_bool expected_resize;
+	SDL_bool in_border_change;
+	SDL_bool in_title_click;
+	SDL_bool focus_click_pending;
+	SDL_bool windowed_mode_was_maximized;
+	SDL_bool in_window_deactivation;
+	struct SDL_VideoData *videodata;
+#if SDL_VIDEO_OPENGL_EGL  
+	EGLSurface egl_surface;
+#endif
+} SDL_WindowData;
+#endif
+typedef void* SDL_GLContext;
+typedef struct SGL_Window
 {
 	SGL_RenderContext rContext;
+	SGL_VkContext vkContext;
 	SDL_Window* handle;
-	SDL_GLContext glContext;
-}typedef SGL_Window;
-//typedef struct SGL_Window SGL_Window;
+	//SDL_GLContext glContext;
+} SGL_Window;

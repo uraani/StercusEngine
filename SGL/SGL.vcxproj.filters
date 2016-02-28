@@ -529,6 +529,15 @@
     <ClCompile Include="SGL_camera.c">
       <Filter>SGL</Filter>
     </ClCompile>
+    <ClCompile Include="SGL_vk.c">
+      <Filter>SGL</Filter>
+    </ClCompile>
+    <ClCompile Include="SGL_data.c">
+      <Filter>SGL</Filter>
+    </ClCompile>
+    <ClCompile Include="murmur3.c">
+      <Filter>SGL</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="SDL2">
@@ -564,6 +573,21 @@
       <Filter>SGL</Filter>
     </ClInclude>
     <ClInclude Include="SGL_math.h">
+      <Filter>SGL</Filter>
+    </ClInclude>
+    <ClInclude Include="SGL_vk.h">
+      <Filter>SGL</Filter>
+    </ClInclude>
+    <ClInclude Include="SGL_data.h">
+      <Filter>SGL</Filter>
+    </ClInclude>
+    <ClInclude Include="SGL_types.h">
+      <Filter>SGL</Filter>
+    </ClInclude>
+    <ClInclude Include="murmur3.h">
+      <Filter>SGL</Filter>
+    </ClInclude>
+    <ClInclude Include="linmath.h">
       <Filter>SGL</Filter>
     </ClInclude>
   </ItemGroup>

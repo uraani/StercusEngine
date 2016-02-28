@@ -1,6 +1,5 @@
 #pragma once
 #include "SGL_math.h"
-struct SGL_RenderContext;
 typedef enum SGL_CameraID
 {
 	SGL_CAMERA_GUI,
@@ -24,9 +23,17 @@ struct SGL_Camera
 	SGL_Mat4 vPMatrix;
 	SGL_Vec4 rotation;
 	SGL_Vec3 position;
-	float near;
-	float far;
+	float nearPlane;
+	float farPlane;
 	float FOWY;
 	float scale;
-	Uint32 camType;
+	U32 camType;
 }typedef SGL_Camera;
+typedef struct SGL_RenderContext
+{
+	SGL_Camera cameras[SGL_CAMERA_COUNT];
+	SGL_Vec2 windowHalfSizef;
+	SGL_Vec2i windowSize;
+} SGL_RenderContext;
+
+extern SGL_Camera* SGL_CreateCamera(SGL_RenderContext* rContext, const unsigned int type, const unsigned int id, const float near, const float far, const float FOWY, const float scale);
