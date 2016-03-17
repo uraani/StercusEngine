@@ -1,6 +1,6 @@
-#include "SGL_camera.h"
+#include "SGL_vk.h"
 //#include "SDL.h"
-SGL_Camera* SGL_CreateCamera(SGL_RenderContext* rContext, const unsigned int type, const unsigned int id, const float nearPlane, const float farPlane, const float FOWY, const float scale)
+SGL_Camera* SGL_CreateCamera(SGL_VkSwapChain* rContext, const unsigned int type, const unsigned int id, const float nearPlane, const float farPlane, const float FOWY, const float scale)
 {
 	rContext->cameras[id].rotation.x = 0.0f;
 	rContext->cameras[id].rotation.y = 0.0f;
@@ -67,7 +67,7 @@ SGL_Camera* SGL_CreateCamera(SGL_RenderContext* rContext, const unsigned int typ
 	}
 	return &rContext->cameras[id];
 }
-SGL_UpdateCameras(SGL_RenderContext* rContext)
+SGL_UpdateCameras(SGL_VkSwapChain* rContext)
 {
 	unsigned int i;
 	for (i = 0; i < SGL_CAMERA_COUNT; i++)

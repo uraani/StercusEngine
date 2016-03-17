@@ -561,6 +561,9 @@
     <Filter Include="glew">
       <UniqueIdentifier>{430c7aaf-697b-4cb4-9318-30cc90e1c5da}</UniqueIdentifier>
     </Filter>
+    <Filter Include="vulkan">
+      <UniqueIdentifier>{36384398-258b-4992-b7ff-fd94a87b8a09}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="SGL.h">
@@ -588,6 +591,9 @@
       <Filter>SGL</Filter>
     </ClInclude>
     <ClInclude Include="linmath.h">
+      <Filter>SGL</Filter>
+    </ClInclude>
+    <ClInclude Include="SGL_Texture.h">
       <Filter>SGL</Filter>
     </ClInclude>
   </ItemGroup>

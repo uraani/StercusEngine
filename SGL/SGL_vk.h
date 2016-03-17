@@ -1,5 +1,6 @@
 #pragma once
 #include "SDL.h"
+#include "SGL_camera.h"
 #include "SGL_types.h"
 #include "SGL_math.h"
 #include "linmath.h"
@@ -55,6 +56,7 @@ static PFN_vkGetDeviceProcAddr g_gdpa = NULL;
                      "vkGetDeviceProcAddr Failure");                           \
         }                                                                      \
     }
+typedef struct _SGL_Window SGL_Window;
 struct vkcube_vs_uniform 
 {
 	// Must start with MVP
@@ -83,15 +85,136 @@ struct texture_object
 	I32 tex_width, tex_height;
 	SDL_Surface*  surf;
 };
-
-typedef struct SwapchainBuffers
+typedef struct _SGL_Texture
+{
+	VkSampler sampler;
+	VkImage image;
+	VkImageLayout imageLayout;
+	VkDeviceMemory deviceMem;
+	VkImageView view;
+	VkFormat format;
+	U32 w, h;
+	U32 mipLevels;
+	SDL_Surface* surf;
+} SGL_Texture;
+typedef struct _SwapchainBuffers
 {
 	VkImage image;
 	VkCommandBuffer cmd;
 	VkImageView view;
 } SwapchainBuffers;
+typedef struct _SwapChainBuffer 
+{
+	VkImage image;
+	VkImageView view;
+} SwapChainBuffer;
+typedef struct _DepthStencil
+{
+	VkImage image;
+	VkDeviceMemory mem;
+	VkImageView view;
+} DepthStencil;
+typedef struct _SGL_VertexBuffer
+{
+	VkBuffer buf;
+	VkDeviceMemory mem;
+	VkVertexInputBindingDescription* bindingDescriptions;
+	VkVertexInputAttributeDescription* attributeDescriptions;
+	U32 bindingCount;
+	U32 attributeCount;
+	VkPipelineVertexInputStateCreateInfo inputState;
+} SGL_VertexBuffer;
+typedef struct _SGL_IndexBuffer
+{
+	VkBuffer buf;
+	VkDeviceMemory mem;
+	U32 count;
+} SGL_IndexBuffer;
+typedef struct _SGL_UBO
+{
+	SGL_Mat4 projection;
+	SGL_Mat4 model;
+	float lodBias;
+} SGL_UBO;
+typedef struct _SGL_UniformBuffer
+{
+	VkBuffer buffer;
+	VkDeviceMemory memory;
+	VkDescriptorBufferInfo descriptor;
+	U32 allocSize;
+} SGL_UniformBuffer;
+//#undef NDEBUG
+typedef struct _SGL_VkSwapChain
+{
+	//pointer types
+	VkInstance inst;
+	VkSurfaceKHR surf;
+	VkDevice device;
+	VkQueue queue;
+	VkPhysicalDevice gpu;
+	VkCommandPool cmdPool;
+	VkSwapchainKHR swapChain;
+	VkRenderPass renderPass;
+	VkPipeline mainPipeline;
+	VkPipelineCache pipelineCache;
+	VkCommandBuffer setupCmdBuffer;
+	VkCommandBuffer postPresentCmdBuffer;
+	VkCommandBuffer prePresentCmdBuffer;
+	VkDescriptorPool descriptorPool;
+	VkDescriptorSet descriptorSet;
+	VkDescriptorSetLayout descriptorSetLayout;
+	VkPipelineLayout pipelineLayout;
+	VkShaderModule* shaders;
+	VkImage* images;
+	SwapChainBuffer* buffers;
+	VkCommandBuffer* drawCmdBuffers;
+	VkFramebuffer* frameBuffers;
 
-typedef struct SGL_VkContext
+	//function pointer types
+	PFN_vkGetPhysicalDeviceSurfaceSupportKHR fpGetPhysicalDeviceSurfaceSupportKHR;
+	PFN_vkGetPhysicalDeviceSurfaceCapabilitiesKHR fpGetPhysicalDeviceSurfaceCapabilitiesKHR;
+	PFN_vkGetPhysicalDeviceSurfaceFormatsKHR fpGetPhysicalDeviceSurfaceFormatsKHR;
+	PFN_vkGetPhysicalDeviceSurfacePresentModesKHR fpGetPhysicalDeviceSurfacePresentModesKHR;
+	PFN_vkCreateSwapchainKHR fpCreateSwapchainKHR;
+	PFN_vkDestroySwapchainKHR fpDestroySwapchainKHR;
+	PFN_vkGetSwapchainImagesKHR fpGetSwapchainImagesKHR;
+	PFN_vkAcquireNextImageKHR fpAcquireNextImageKHR;
+	PFN_vkQueuePresentKHR fpQueuePresentKHR;
+#ifndef NDEBUG
+	PFN_vkCreateDebugReportCallbackEXT CreateDebugReportCallback;
+	PFN_vkDestroyDebugReportCallbackEXT DestroyDebugReportCallback;
+	VkDebugReportCallbackEXT msgCallback;
+#endif
+	//large structs
+	VkPhysicalDeviceProperties gpuProps;
+	VkPhysicalDeviceMemoryProperties memoryProperties;
+	DepthStencil depthStencil;
+	SGL_Texture tex;
+	SGL_VertexBuffer vertexBuffer;
+	SGL_IndexBuffer indexBuffer;
+	SGL_UniformBuffer uniformBuffer;
+	SGL_UBO ubo;
+	SGL_Camera cameras[SGL_CAMERA_COUNT];
+	SGL_Vec2 windowHalfSizef;
+	SGL_Vec2i windowSize;
+	VkFormat colorFormat;
+	VkFormat depthFormat;
+	VkColorSpaceKHR colorSpace;
+	//example code shit
+	SGL_Vec3 rotation;
+	F32 zoom;
+	SGL_Vec2 mousePos;
+
+	U32 prepared;
+	U32 currentBuffer;
+	U32 queueNodeIndex;
+	U32 shaderCount;
+	U32 imageCount;
+	U32 maxImageCount;
+	U32 bufferCount;
+	U32 maxBufferCount;
+}SGL_VkSwapChain;
+typedef struct _SGL_VkContext
 {
 #ifdef _WIN32
 	HINSTANCE connection;        // hInstance - Windows Instance
@@ -140,7 +263,9 @@ typedef struct SGL_VkContext
 	uint32_t swapchainImageCount;
 	VkSwapchainKHR swapchain;
 	SwapchainBuffers *buffers;
-
+	VkCommandBuffer postPresentCmdBuffer;
+	VkCommandBuffer prePresentCmdBuffer;
+	VkCommandBuffer cmd; // Buffer for initialization commands
 	VkCommandPool cmd_pool;
 
 	struct {
@@ -161,7 +286,6 @@ typedef struct SGL_VkContext
 		VkDescriptorBufferInfo buffer_info;
 	} uniform_data;
 
-	VkCommandBuffer cmd; // Buffer for initialization commands
 	VkPipelineLayout pipeline_layout;
 	VkDescriptorSetLayout desc_layout;
 	VkPipelineCache pipelineCache;
@@ -251,4 +375,129 @@ inline VkFormat SGL_PixelFormatToVkFormat(const U32 pixelFormat)
 		return VK_FORMAT_UNDEFINED;
 	}
 	}
+}
+U32 SGL_InitVulkan(SGL_Window* window);
+U32 SGL_PrepareVulkan(SGL_VkSwapChain* swapChain);
+U32 SGL_PrepareVertices(SGL_VkSwapChain* swapChain);
+U32 SGL_PrepareUniformBuffers(SGL_VkSwapChain* swapChain);
+U32 SGL_PreparePipelines(SGL_VkSwapChain* swapChain);
+U32 SGL_SetupDescriptorSetLayout(SGL_VkSwapChain* swapChain);
+U32 SGL_SetupDescriptorPool(SGL_VkSwapChain* swapChain);
+U32 SGL_SetupDescriptorSet(SGL_VkSwapChain* swapChain);
+U32 SGL_BuildCommandBuffers(SGL_VkSwapChain* swapChain);
+U32 SGL_PrepareTexture(SGL_VkSwapChain * swapChain, SGL_Texture* tex, VkImageTiling tiling, VkImageUsageFlags usage, VkFlags requiredProps);
+U32 SGL_PrepareTextureToOptimalTiling(SGL_VkSwapChain * swapChain, SGL_Texture* tex);
+U32 SGL_PrepareTextureTest(SGL_VkSwapChain * swapChain, SGL_Texture* tex);
+inline void SGL_Draw(SGL_VkSwapChain* swapChain)
+{
+	VkResult err;
+	VkSemaphore presentCompleteSemaphore;
+	VkSemaphoreCreateInfo presentCompleteSemaphoreCreateInfo;
+	presentCompleteSemaphoreCreateInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
+	presentCompleteSemaphoreCreateInfo.pNext = VK_NULL_HANDLE;
+	presentCompleteSemaphoreCreateInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
+
+	err = vkCreateSemaphore(swapChain->device, &presentCompleteSemaphoreCreateInfo, VK_NULL_HANDLE, &presentCompleteSemaphore);
+	SDL_assert(!err);
+
+	// Get next image in the swap chain (back/front buffer)
+	err = swapChain->fpAcquireNextImageKHR(swapChain->device, swapChain->swapChain, UINT64_MAX, presentCompleteSemaphore, (VkFence)VK_NULL_HANDLE, &swapChain->currentBuffer);
+	assert(!err);
+	{
+		VkSubmitInfo submitInfo;
+		submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+		submitInfo.pNext = NULL;
+		submitInfo.waitSemaphoreCount = 1;
+		submitInfo.pWaitSemaphores = &presentCompleteSemaphore;
+		submitInfo.commandBufferCount = 1;
+		submitInfo.pCommandBuffers = &swapChain->drawCmdBuffers[swapChain->currentBuffer];
+		submitInfo.signalSemaphoreCount = 0;
+		submitInfo.pSignalSemaphores = VK_NULL_HANDLE;
+
+		// Submit draw command buffer
+		err = vkQueueSubmit(swapChain->queue, 1, &submitInfo, VK_NULL_HANDLE);
+		assert(!err);
+		{
+			VkPresentInfoKHR presentInfo;
+			presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
+			presentInfo.pNext = NULL;
+			presentInfo.waitSemaphoreCount = 0;
+			presentInfo.pWaitSemaphores = VK_NULL_HANDLE;
+			presentInfo.swapchainCount = 1;
+			presentInfo.pSwapchains = &swapChain->swapChain;
+			presentInfo.pImageIndices = &swapChain->currentBuffer;
+			presentInfo.pResults = VK_NULL_HANDLE;
+
+			err = swapChain->fpQueuePresentKHR(swapChain->queue, &presentInfo);
+			assert(!err);
+		}
+		vkDestroySemaphore(swapChain->device, presentCompleteSemaphore, VK_NULL_HANDLE);
+	}
+	{
+		// alla tämä funktio
+		VkCommandBufferBeginInfo cmdBufInfo;
+		cmdBufInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+		cmdBufInfo.pNext = VK_NULL_HANDLE;
+		cmdBufInfo.flags = 0;
+		cmdBufInfo.pInheritanceInfo = VK_NULL_HANDLE;
+
+		err = vkBeginCommandBuffer(swapChain->postPresentCmdBuffer, &cmdBufInfo);
+		assert(!err);
+
+		VkImageMemoryBarrier postPresentBarrier;
+		postPresentBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+		postPresentBarrier.pNext = VK_NULL_HANDLE;
+		postPresentBarrier.srcAccessMask = 0;
+		postPresentBarrier.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+		postPresentBarrier.oldLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+		postPresentBarrier.newLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+		postPresentBarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+		postPresentBarrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+		postPresentBarrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+		postPresentBarrier.subresourceRange.baseMipLevel = 0;
+		postPresentBarrier.subresourceRange.levelCount = 1;
+		postPresentBarrier.subresourceRange.baseArrayLayer = 0;
+		postPresentBarrier.subresourceRange.layerCount = 1;
+		postPresentBarrier.image = swapChain->buffers[swapChain->currentBuffer].image;
+
+		vkCmdPipelineBarrier(
+			swapChain->postPresentCmdBuffer,
+			VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
+			VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
+			0,
+			0, VK_NULL_HANDLE, // No memory barriers,
+			0, VK_NULL_HANDLE, // No buffer barriers,
+			1, &postPresentBarrier);
+
+		err = vkEndCommandBuffer(swapChain->postPresentCmdBuffer);
+		assert(!err);
+
+
+		VkSubmitInfo submitInfo;
+		submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+		submitInfo.pNext = VK_NULL_HANDLE;
+		submitInfo.waitSemaphoreCount = 0;
+		submitInfo.pWaitSemaphores = VK_NULL_HANDLE;
+		submitInfo.pWaitDstStageMask = VK_NULL_HANDLE;
+		submitInfo.commandBufferCount = 1;
+		submitInfo.pCommandBuffers = &swapChain->postPresentCmdBuffer;
+		submitInfo.signalSemaphoreCount = 0;
+		submitInfo.pSignalSemaphores = VK_NULL_HANDLE;
+
+		err = vkQueueSubmit(swapChain->queue, 1, &submitInfo, VK_NULL_HANDLE);
+		assert(!err);
+	}
+
+	err = vkQueueWaitIdle(swapChain->queue);
+	assert(!err);
+}
+inline void SGL_Render(SGL_VkSwapChain* swapChain)
+{
+	if (!swapChain->prepared)
+	{
+		return;
+	}
+	vkDeviceWaitIdle(swapChain->device);
+	SGL_Draw(swapChain);
+	vkDeviceWaitIdle(swapChain->device);
 }

@@ -1,7 +1,6 @@
-#include "SDL.h"
 #include "SGL_data.h"
-#include "murmur3.h"
 #include "SGL_vk.h"
+#include "murmur3.h"
 typedef struct _SGL_DataBlock
 {
 	U32 seed;
@@ -47,7 +46,7 @@ typedef struct _SGL_FileSurface
 SGL_Data targetData;
 inline U32 AddNode(const U32 hash, const U32 loc)
 {
-	SDL_RWops* rw = SDL_RWFromFile(targetData.headerPath, "r+");
+	SDL_RWops* rw = SDL_RWFromFile(targetData.headerPath, "rb+");
 	if (rw == NULL)
 	{
 		SDL_Log("AddNode couldn't open file in path: %s, SDL_Error: %s", targetData.headerPath, SDL_GetError());
@@ -77,7 +76,7 @@ inline U32 AddNode(const U32 hash, const U32 loc)
 			}
 		} while (temp != 0);
 		*lastTemp = targetData.treeSize;
-		location = ((U8*)lastTemp - (U8*)targetData.root);
+		location = (U32)((U8*)lastTemp - (U8*)targetData.root);
 		/*
 		In x64 the pointers are 8 bytes each so sizeof(SGL_BstNode) != sizeof(SGL_FileBstNode)
 		this line fixes the alignment issues that might occur on x64
@@ -227,7 +226,7 @@ U32 SGL_DataSelect(const char * filePath)
 	targetData.headerPath[len + 4] = 0;
 	SDL_RWops* rw;
 	{
-		rw = SDL_RWFromFile(targetData.path, "r");
+		rw = SDL_RWFromFile(targetData.path, "rb");
 		if (rw == NULL)
 		{
 			SDL_Log("SGL_DataSelect couldn't open file in path: %s, SDL_Error:%s", targetData.path, SDL_GetError());
@@ -242,7 +241,7 @@ U32 SGL_DataSelect(const char * filePath)
 		}
 		SDL_RWclose(rw);
 	}
-	rw = SDL_RWFromFile(targetData.headerPath, "r");
+	rw = SDL_RWFromFile(targetData.headerPath, "rb");
 	if (rw == NULL)
 	{
 		SDL_Log("SGL_DataSelect couldn't open file in path: %s, SDL_Error:%s", targetData.headerPath, SDL_GetError());
@@ -253,7 +252,7 @@ U32 SGL_DataSelect(const char * filePath)
 	{
 		targetData.root = malloc(nodeCount);
 		nodeCount /= sizeof(SGL_FileBstNode);
-		targetData.treeSize = nodeCount;
+		targetData.treeSize = (U32)nodeCount;
 		SDL_RWseek(rw, 0, RW_SEEK_SET);
 		if (SDL_RWread(rw, targetData.root, sizeof(SGL_FileBstNode), nodeCount) != nodeCount)
 		{
@@ -266,7 +265,7 @@ U32 SGL_DataSelect(const char * filePath)
 	return SGL_TRUE;
 }
 
-U32 SGL_DataSaveImage(const char* name, const SDL_Surface * surf)
+U32 SGL_DataSaveImage(const char* name, SDL_Surface * surf)
 {
 	U32 loc;
 	U32 hash;
@@ -301,13 +300,13 @@ U32 SGL_DataSaveImage(const char* name, const SDL_Surface * surf)
 	}
 	targetData.block.imageCount++;
 	{
-		SDL_RWops* rw = SDL_RWFromFile(targetData.path, "r+");
+		SDL_RWops* rw = SDL_RWFromFile(targetData.path, "rb+");
 		if (rw == NULL)
 		{
 			SDL_Log("SGL_DataSaveImage couldn't open file in path: %s, SDL_Error:%s", targetData.path, SDL_GetError());
 			return SGL_FALSE;
 		}
-		loc = SDL_RWseek(rw, 0, RW_SEEK_END);
+		loc = (U32)SDL_RWseek(rw, 0, RW_SEEK_END);
 		const SGL_FileSurface surfData = 
 		{ 
 			convSurf->flags, 
@@ -328,7 +327,7 @@ U32 SGL_DataSaveImage(const char* name, const SDL_Surface * surf)
 			//this prolly hurts the writing speed but this is done only when saving the textures
 			for (y = surfData.h-1; y >= 0; y--)
 			{
-				U32 x;
+				I32 x;
 				for (x = 0; x < surfData.w; x++)
 				{
 					SDL_RWwrite(rw, ((U8*)convSurf->pixels)+(y*surfData.w*pixelSize)+(x*pixelSize), pixelSize, 1);
@@ -344,19 +343,78 @@ U32 SGL_DataSaveImage(const char* name, const SDL_Surface * surf)
 		}
 		SDL_RWclose(rw);
 	}
-	MurmurHash3_x86_32(name, SDL_strlen(name), targetData.block.seed, &hash);
+	MurmurHash3_x86_32(name, (I32)SDL_strlen(name), targetData.block.seed, &hash);
 	return AddNode(hash, loc);
+}
+U32 SGL_DataSaveShader(const char * filePath, const char* name)
+{
+	U32 loc;
+	U32 hash;
+	SDL_RWops* rw;
+	U32 size;
+	U8* shaderData;
+	{
+		rw = SDL_RWFromFile(filePath, "rb");
+		if (rw == NULL)
+		{
+			SDL_Log("SGL_DataSaveShader couldn't open file in path: %s, SDL_Error:%s", filePath, SDL_GetError());
+			return SGL_FALSE;
+		}
+		size = SDL_RWseek(rw, 0, RW_SEEK_END);
+		shaderData = SDL_malloc(size);
+		SDL_RWseek(rw, 0, RW_SEEK_SET);
+		if (SDL_RWread(rw, shaderData, size, 1) != 1)
+		{
+			SDL_RWclose(rw);
+			SDL_Log("SGL_DataSaveShader couldn't read data from file in path: %s", filePath);
+			return SGL_FALSE;
+		}
+		SDL_RWclose(rw);
+	}
+	targetData.block.shaderCount++;
+	{
+		rw = SDL_RWFromFile(targetData.path, "rb+");
+		if (rw == NULL)
+		{
+			SDL_Log("SGL_DataSaveShader couldn't open file in path: %s, SDL_Error:%s", targetData.path, SDL_GetError());
+			return SGL_FALSE;
+		}
+		loc = (U32)SDL_RWseek(rw, 0, RW_SEEK_END);
+		if (SDL_RWwrite(rw, &size, sizeof(U32), 1) != 1)
+		{
+			SDL_RWclose(rw);
+			SDL_Log("SGL_DataSaveShader couldn't write to data file in path: %s", targetData.path);
+			return SGL_FALSE;
+		}
+		if (SDL_RWwrite(rw, shaderData, size, 1) != 1)
+		{
+			SDL_RWclose(rw);
+			SDL_Log("SGL_DataSaveShader couldn't write to data file in path: %s", targetData.path);
+			return SGL_FALSE;
+		}
+		SDL_RWseek(rw, 0, RW_SEEK_SET);
+		if (SDL_RWwrite(rw, &targetData.block, sizeof(SGL_DataBlock), 1) != 1)
+		{
+			SDL_RWclose(rw);
+			SDL_Log("SGL_DataSaveShader couldn't write to data file in path: %s, SDL_Error: %s", targetData.path, SDL_GetError());
+			return SGL_FALSE;
+		}
+		SDL_RWclose(rw);
+	}
+	MurmurHash3_x86_32(name, (I32)SDL_strlen(name), targetData.block.seed, &hash);
+	return AddNode(hash, loc);
+	return SGL_TRUE;
 }
 SDL_Surface * SGL_DataLoadImage(const char * imageName)
 {
 	U32 hash;
-	MurmurHash3_x86_32(imageName, SDL_strlen(imageName), targetData.block.seed, &hash);
+	MurmurHash3_x86_32(imageName, (I32)SDL_strlen(imageName), targetData.block.seed, &hash);
 	U32 loc = FindNodeLoc(hash);
 	if (loc == SGL_FALSE)
 	{
 		return NULL;
 	}
-	SDL_RWops* rw = SDL_RWFromFile(targetData.path, "r");
+	SDL_RWops* rw = SDL_RWFromFile(targetData.path, "rb");
 	if (rw == NULL)
 	{
 		SDL_Log("SGL_DataLoadImage couldn't open file in path: %s, SDL_Error:%s", targetData.path, SDL_GetError());
@@ -379,4 +437,48 @@ SDL_Surface * SGL_DataLoadImage(const char * imageName)
 		return NULL;
 	}
 	return SDL_CreateRGBSurfaceFrom(pixels, surfData.w, surfData.h, surfData.depth, surfData.w*(surfData.depth / 8), surfData.Rmask, surfData.Gmask, surfData.Bmask, surfData.Amask);
+}
+
+SGL_Shader SGL_DataLoadShader(const char * shaderName)
+{
+	SGL_Shader shader =
+	{
+		.data = NULL,
+		.size = 0
+	};
+	U32 hash;
+	U32 loc;
+	MurmurHash3_x86_32(shaderName, (I32)SDL_strlen(shaderName), targetData.block.seed, &hash);
+	loc = FindNodeLoc(hash);
+	if (loc == SGL_FALSE)
+	{
+		return shader;
+	}
+	SDL_RWops* rw = SDL_RWFromFile(targetData.path, "rb");
+	if (rw == NULL)
+	{
+		SDL_Log("SGL_DataLoadShader couldn't open file in path: %s, SDL_Error:%s", targetData.path, SDL_GetError());
+		return shader;
+	}
+	SDL_RWseek(rw, loc, RW_SEEK_SET);
+	if (SDL_RWread(rw, &shader.size, sizeof(U32), 1) != 1)
+	{
+		SDL_RWclose(rw);
+		shader.size = 0;
+		SDL_Log("SGL_DataLoadShader couldn't read data from file in path: %s", targetData.path);
+		return shader;
+	}
+	//SDL_RWseek(rw, loc + sizeof(U32), RW_SEEK_SET);
+	shader.data = SDL_malloc(shader.size);
+	if (SDL_RWread(rw, shader.data, 1, shader.size) != shader.size)
+	{
+		SDL_RWclose(rw);
+		SDL_free(shader.data);
+		shader.data = NULL;
+		shader.size = 0;
+		SDL_Log("SGL_DataLoadShader couldn't read data from file in path: %s", targetData.path);
+		return shader;
+	}
+	SDL_RWclose(rw);
+	return shader;
 }

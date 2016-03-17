@@ -3,7 +3,8 @@
 #include "SGL_types.h"
 #ifndef _SGL_math_h
 #define _SGL_math_h
-#define degreesToRadians(angleDegrees) (angleDegrees * M_PI / 180.0)
+#define degreesToRadians(angleDegrees) (angleDegrees * (float)(M_PI / 180.0))
+#define isPowerOfTwo(x) ((x & (x - 1)) == 0);
 //MATRIX INDEXES ARE ARRANGED LIKE THIS:
 //[0 ][1 ][2 ][3 ]
 //[4 ][5 ][6 ][7 ]
@@ -14,7 +15,7 @@ __declspec(align(16))
 #else
 #pragma message ("CREATE ARM NEON IMPLEMENTATIONS FOR VEC4")
 #endif
-struct SGL_Vec4
+typedef struct _SGL_Vec4
 {
 	union
 	{
@@ -29,29 +30,34 @@ struct SGL_Vec4
 		__m128 v;
 #endif
 	};
-}typedef SGL_Vec4;
-struct SGL_Vec3
+} SGL_Vec4;
+typedef struct _SGL_Vec3
 {
 	float x;
 	float y;
 	float z;
-}typedef SGL_Vec3;
-struct SGL_Vec2
+} SGL_Vec3;
+typedef struct _SGL_Vec2
 {
 	float x;
 	float y;
-}typedef SGL_Vec2;
-struct SGL_Vec2i
+} SGL_Vec2;
+typedef struct _SGL_Vec2i16
+{
+	I16 x;
+	I16 y;
+} SGL_Vec2i16;
+typedef struct _SGL_Vec2i
 {
 	I32 x;
 	I32 y;
-}typedef SGL_Vec2i;
+} SGL_Vec2i;
 #if !defined(ANDROID)
 __declspec(align(16))
 #else
 #pragma message ("CREATE ARM NEON IMPLEMENTATIONS FOR MAT4")
 #endif
-struct SGL_Mat4
+typedef struct _SGL_Mat4
 {
 	union 
 	{
@@ -78,12 +84,12 @@ struct SGL_Mat4
 		};
 #endif
 	};
-}typedef SGL_Mat4;
+} SGL_Mat4;
 //MATRIX INDEXES ARE ARRANGED LIKE THIS:
 //[0 ][1 ][2 ]
 //[3 ][4 ][5 ]
 //[6 ][7 ][8 ]
-struct SGL_Mat3
+typedef struct _SGL_Mat3
 {
 	union
 	{
@@ -103,7 +109,7 @@ struct SGL_Mat3
 		};
 	};
 
-}typedef SGL_Mat3;
+} SGL_Mat3;
 inline const SGL_Mat4 SM_IdentityMat4()
 {
 	SGL_Mat4 r;
@@ -111,6 +117,15 @@ inline const SGL_Mat4 SM_IdentityMat4()
 	r.m10 = 0.0f; r.m11 = 1.0f; r.m12 = 0.0f; r.m13 = 0.0f;
 	r.m20 = 0.0f; r.m21 = 0.0f; r.m22 = 1.0f; r.m23 = 0.0f;
 	r.m30 = 0.0f; r.m31 = 0.0f; r.m32 = 0.0f; r.m33 = 1.0f;
+	return r;
+}
+inline const SGL_Vec4 SM_IdentityVec4()
+{
+	SGL_Vec4 r;
+	r.x = 0.0f;
+	r.y = 0.0f;
+	r.z = 0.0f;
+	r.w = 1.0f;
 	return r;
 }
 inline const SGL_Mat4 SM_QuatToMat4(const SGL_Vec4* q)
@@ -383,62 +398,49 @@ inline const SGL_Mat4 SM_LookAt(const SGL_Vec4* eye, const SGL_Vec4* center, con
 	r.m33 = 1.0f;
 	return r;
 }
-inline const SGL_Mat4 SM_Rotate(const SGL_Mat4* m, float angle, const SGL_Vec4* v)
+inline const SGL_Mat4 SM_Translate(const SGL_Mat4* m, const SGL_Vec4* v)
 {
-	SGL_Mat4 rot;
+	SGL_Mat4 r = *m;
+	r.m30 = m->m00 * v->x + m->m10 * v->y + m->m20 * v->z + m->m30;
+	r.m31 = m->m01 * v->x + m->m11 * v->y + m->m21 * v->z + m->m31;
+	r.m32 = m->m02 * v->x + m->m12 * v->y + m->m22 * v->z + m->m32;
+	r.m33 = m->m03 * v->x + m->m13 * v->y + m->m23 * v->z + m->m33;
+	return r;
+};
+inline const SGL_Mat4 SM_Rotate(const SGL_Mat4* m, const float angle, const SGL_Vec4* v)
+{
 	SGL_Mat4 r;
-	float const a = angle;
-	float const c = SDL_cos(a);
-	float const s = SDL_sin(a);
-	SGL_Vec4 axis = SM_V4NormalizePrecise(v);
-	SGL_Vec4 temp = { 1.0f - c, 1.0f - c, 1.0f - c, 0.0f };
+	const float c = SDL_cosf(angle);
+	const float s = SDL_sinf(angle);
+	const SGL_Vec4 vC = { c, c, c, 0 };
+	const SGL_Vec4 axis = SM_V4NormalizePrecise(v);
+	SGL_Vec4 sinA = { s, s, s, 0 };
+	sinA = SM_V4Multiply(&sinA, &axis);
+
+	SGL_Vec4 temp = { 1.0f, 1.0f, 1.0f, 0.0f };
+	temp = SM_V4Subtract(&temp, &vC);
 	temp = SM_V4Multiply(&temp, &axis);
+	SGL_Vec4 tempAC = SM_V4Multiply(&temp, &axis);
+	tempAC = SM_V4Add(&tempAC, &vC);
+	temp.x = temp.x * axis.y;
+	temp.y = temp.x * axis.z;
+	temp.z = temp.y * axis.z;
 
-	rot.m00 = c + temp.x * axis.x;
-	rot.m01 = 0.0f + temp.x * axis.y + s * axis.z;
-	rot.m02 = 0.0f + temp.x * axis.z - s * axis.y;
-	rot.m03 = 0.0f;
+	r.m00 = tempAC.x;
+	r.m01 = temp.x + sinA.z;
+	r.m02 = temp.y - sinA.y;
+	r.m03 = 0.0f;
+	r.m10 = temp.x - sinA.z;
+	r.m11 = tempAC.y;
+	r.m12 = temp.z + sinA.x;
+	r.m13 = 0.0f;
+	r.m20 = temp.y + sinA.y;
+	r.m21 = temp.z - sinA.x;
+	r.m22 = tempAC.z;
+	r.m23 = 0.0f;
 
-	rot.m10 = 0.0f + temp.y * axis.x - s * axis.z;
-	rot.m11 = c + temp.y * axis.y;
-	rot.m12 = 0.0f + temp.y * axis.z + s * axis.x;
-	rot.m13 = 0.0f;
-
-	rot.m20 = 0.0f + temp.z * axis.x + s * axis.y;
-	rot.m21 = 0.0f + temp.z * axis.y - s * axis.x;
-	rot.m22 = c + temp.z * axis.z;
-	rot.m23 = 0.0f;
-
-	rot.m30 = 0.0f;
-	rot.m31 = 0.0f;
-	rot.m32 = 0.0f;
-	rot.m33 = 1.0f;
-	r = SM_M4Multiply(m, &rot);
-	/*T const a = angle;
-		T const c = cos(a);
-		T const s = sin(a);
-
-		tvec3<T, P> axis(normalize(v));
-		tvec3<T, P> temp((T(1) - c) * axis);
-
-		tmat4x4<T, P> Rotate(uninitialize);
-		Rotate[0][0] = c + temp[0] * axis[0];
-		Rotate[0][1] = 0 + temp[0] * axis[1] + s * axis[2];
-		Rotate[0][2] = 0 + temp[0] * axis[2] - s * axis[1];
-
-		Rotate[1][0] = 0 + temp[1] * axis[0] - s * axis[2];
-		Rotate[1][1] = c + temp[1] * axis[1];
-		Rotate[1][2] = 0 + temp[1] * axis[2] + s * axis[0];
-
-		Rotate[2][0] = 0 + temp[2] * axis[0] + s * axis[1];
-		Rotate[2][1] = 0 + temp[2] * axis[1] - s * axis[0];
-		Rotate[2][2] = c + temp[2] * axis[2];
-
-		tmat4x4<T, P> Result(uninitialize);
-		Result[0] = m[0] * Rotate[0][0] + m[1] * Rotate[0][1] + m[2] * Rotate[0][2];
-		Result[1] = m[0] * Rotate[1][0] + m[1] * Rotate[1][1] + m[2] * Rotate[1][2];
-		Result[2] = m[0] * Rotate[2][0] + m[1] * Rotate[2][1] + m[2] * Rotate[2][2];
-		Result[3] = m[3];*/
+	r = SM_M4Multiply(m, &r);
+	r.v3 = m->v3;
 	return r;
 }
 inline const SGL_Mat4 SM_Perspective(const float FOWY,const float aspect,const float nearPlane,const float farPlane)

@@ -63,7 +63,7 @@
 /* Useful headers */
 /* #undef HAVE_ALLOCA_H */
 /* #undef HAVE_SYS_TYPES_H */
-#define HAVE_STDIO_H 1
+//#define HAVE_STDIO_H 1
 #define STDC_HEADERS 1
 /* #undef HAVE_STDLIB_H */
 /* #undef HAVE_STDARG_H */

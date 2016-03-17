@@ -269,7 +269,7 @@
       <AdditionalOptions>
       </AdditionalOptions>
       <IgnoreAllDefaultLibraries>true</IgnoreAllDefaultLibraries>
-      <AdditionalDependencies>opengl32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>..\vulkan\source\lib\vulkan-1.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Lib>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -424,7 +424,7 @@
       <AdditionalOptions>
       </AdditionalOptions>
       <IgnoreAllDefaultLibraries>true</IgnoreAllDefaultLibraries>
-      <AdditionalDependencies>opengl32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>..\vulkan\source\lib\vulkan-1.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Lib>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">
@@ -653,6 +653,7 @@
     <ClInclude Include="SGL_camera.h" />
     <ClInclude Include="SGL_data.h" />
     <ClInclude Include="SGL_math.h" />
+    <ClInclude Include="SGL_Texture.h" />
     <ClInclude Include="SGL_types.h" />
     <ClInclude Include="SGL_vk.h" />
     <ClInclude Include="SGL_window.h" />

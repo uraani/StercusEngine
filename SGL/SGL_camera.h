@@ -1,6 +1,6 @@
 #pragma once
 #include "SGL_math.h"
-typedef enum SGL_CameraID
+typedef enum _SGL_CameraID
 {
 	SGL_CAMERA_GUI,
 	SGL_CAMERA_ORTHO,
@@ -18,7 +18,7 @@ typedef enum SGL_CameraType
 	SGL_CAMERA_TYPE_ORTHO,
 	SGL_CAMERA_TYPE_PERSPECTIVE
 } SGL_CameraType;
-struct SGL_Camera
+typedef struct _SGL_Camera
 {
 	SGL_Mat4 vPMatrix;
 	SGL_Vec4 rotation;
@@ -28,12 +28,6 @@ struct SGL_Camera
 	float FOWY;
 	float scale;
 	U32 camType;
-}typedef SGL_Camera;
-typedef struct SGL_RenderContext
-{
-	SGL_Camera cameras[SGL_CAMERA_COUNT];
-	SGL_Vec2 windowHalfSizef;
-	SGL_Vec2i windowSize;
-} SGL_RenderContext;
-
-extern SGL_Camera* SGL_CreateCamera(SGL_RenderContext* rContext, const unsigned int type, const unsigned int id, const float near, const float far, const float FOWY, const float scale);
+} SGL_Camera;
+typedef struct _SGL_VkSwapChain SGL_VkSwapChain;
+extern SGL_Camera* SGL_CreateCamera(SGL_VkSwapChain* rContext, const unsigned int type, const unsigned int id, const float near, const float far, const float FOWY, const float scale);

@@ -17,7 +17,8 @@ int SGL_Init(void)
 	SGL_InitDataSystem();
 	return 0;
 }
-static const float g_vertex_buffer_data[] = {
+static const float g_vertex_buffer_data[] = 
+{
 	-1.0f,-1.0f,-1.0f,  // -X side
 	-1.0f,-1.0f, 1.0f,
 	-1.0f, 1.0f, 1.0f,
@@ -232,26 +233,29 @@ demo_prepare_shader_module(SGL_VkContext* vkContext, const void *code, size_t si
 }
 
 char* demo_read_spv(const char *filename, size_t *psize) {
-	long int size;
+	size_t size;
 	size_t U_ASSERT_ONLY retval;
 	void *shader_code;
 
-	FILE *fp = fopen(filename, "rb");
-	if (!fp)
-		return NULL;
-
-	fseek(fp, 0L, SEEK_END);
-	size = ftell(fp);
-
-	fseek(fp, 0L, SEEK_SET);
+	SDL_RWops* rw = SDL_RWFromFile(filename, "rb");
+	//FILE *fp = fopen(filename, "rb");
+	//if (!fp)
+	//	return NULL;
+	size = SDL_RWseek(rw, 0, RW_SEEK_END);
+	//fseek(fp, 0L, SEEK_END);
+	//size = ftell(fp);
+	SDL_RWseek(rw, 0, RW_SEEK_SET);
+	//fseek(fp, 0L, SEEK_SET);
 
 	shader_code = malloc(size);
-	retval = fread(shader_code, size, 1, fp);
-	assert(retval == 1);
+	retval = SDL_RWread(rw, shader_code, size, 1);
+	//retval = fread(shader_code, size, 1, fp);
+	SDL_assert(retval == 1);
 
 	*psize = size;
 
-	fclose(fp);
+	SDL_RWclose(rw);
+	//fclose(fp);
 	return shader_code;
 }
 
@@ -549,7 +553,7 @@ static SGL_bool memory_type_from_properties(SGL_VkContext* vkContext, uint32_t t
 	// No memory types matched, return failure
 	return SGL_FALSE;
 }
-SGL_bool loadTexture(const char *filename, uint8_t *rgba_data,
+/*SGL_bool loadTexture(const char *filename, uint8_t *rgba_data,
 	VkSubresourceLayout *layout, int32_t *width, int32_t *height) {
 	FILE *fPtr = fopen(filename, "rb");
 	char header[256], *cPtr, *tmp;
@@ -588,14 +592,14 @@ SGL_bool loadTexture(const char *filename, uint8_t *rgba_data,
 		for (int x = 0; x < *width; x++) {
 			size_t s = fread(rowPtr, 3, 1, fPtr);
 			(void)s;
-			rowPtr[3] = 255; /* Alpha of 1 */
+			rowPtr[3] = 255; 
 			rowPtr += 4;
 		}
 		rgba_data += layout->rowPitch;
 	}
 	fclose(fPtr);
 	return SGL_TRUE;
-}
+}*/
 static void demo_prepare_texture_image(SGL_VkContext* vkContext, const char *filename,
 struct texture_object *tex_obj,
 	VkImageTiling tiling,
@@ -608,13 +612,14 @@ struct texture_object *tex_obj,
 	}
 	if (!tex_obj->surf)
 	{
-		printf("Failed to load textures\n");
-		fflush(stdout);
+		SDL_Log("Failed to load textures\n");
+		//fflush(stdout);
 		exit(1);
 	}
 	const VkFormat tex_format = SGL_PixelFormatToVkFormat(tex_obj->surf->format->format);
-	int32_t tex_width;
-	int32_t tex_height;
+	//const VkFormat tex_format = VK_FORMAT_R8G8B8A8_UNORM;
+	//U32 tex_width;
+	//U32 tex_height;
 	VkResult U_ASSERT_ONLY err;
 	SGL_bool U_ASSERT_ONLY pass;
 	//if (!loadTexture(filename, NULL, NULL, &tex_width, &tex_height)) {
@@ -829,9 +834,9 @@ void demo_prepare_cube_data_buffer(SGL_VkContext* vkContext) {
 	U8 *pData;
 	int i;
 	SGL_Mat4 MVP, VP;
-	mat4x4 projection;
-	mat4x4 view;
-	mat4x4 mvp0,vp0;
+	//mat4x4 projection;
+	//mat4x4 view;
+	//mat4x4 mvp0,vp0;
 	VkResult U_ASSERT_ONLY err;
 	SGL_bool U_ASSERT_ONLY pass;
 	struct vktexcube_vs_uniform data;
@@ -1409,40 +1414,40 @@ static void demo_create_device(SGL_VkContext *vkContext)
 	assert(!err);
 }
 VKAPI_ATTR VkBool32 VKAPI_CALL
-dbgFunc(VkFlags msgFlags, VkDebugReportObjectTypeEXT objType,
-	uint64_t srcObject, size_t location, int32_t msgCode,
-	const char *pLayerPrefix, const char *pMsg, void *pUserData)
+dbgFunc(VkFlags msgFlags, VkDebugReportObjectTypeEXT objType, uint64_t srcObject, size_t location, int32_t msgCode, const char *pLayerPrefix, const char *pMsg, void *pUserData)
 {
-	char *message = (char *)malloc(strlen(pMsg) + 100);
+	//10 is the maximum characters that int32_t can contain
+	//strlen("VK WARNING: [] Code  : ") + '\0' == 25
+	const size_t titleLenght = strlen(pLayerPrefix) + 10 + strlen(pLayerPrefix) + 25;
+	char *message = (char*)malloc(strlen(pMsg) + titleLenght);
+	SDL_strlcpy(message, pMsg, strlen(pMsg));
+	char* messageTitle = (char*)malloc(titleLenght);
 
-	assert(message);
-
-	if (msgFlags & VK_DEBUG_REPORT_ERROR_BIT_EXT) {
-		SDL_Log("ERROR: [%s] Code %d : %s", pLayerPrefix, msgCode,
-			pMsg);
+	if (msgFlags & VK_DEBUG_REPORT_ERROR_BIT_EXT) 
+	{
+		SDL_snprintf(messageTitle, titleLenght, "VK ERROR: [%s] Code %d : ", pLayerPrefix, msgCode);
+		SDL_snprintf(message, strlen(pMsg) + titleLenght, "%s%s", messageTitle, pMsg);
+		SDL_Log(message);
 	}
-	else if (msgFlags & VK_DEBUG_REPORT_WARNING_BIT_EXT) {
+	else if (msgFlags & VK_DEBUG_REPORT_WARNING_BIT_EXT) 
+	{
 		// We know that we're submitting queues without fences, ignore this
 		// warning
-		if (strstr(pMsg,
-			"vkQueueSubmit parameter, VkFence fence, is null pointer")) {
-			return SGL_FALSE;
-		}
-		SDL_Log("WARNING: [%s] Code %d : %s", pLayerPrefix, msgCode,
-			pMsg);
+		//if (SDL_strstr(pMsg, "vkQueueSubmit parameter, VkFence fence, is null pointer")) 
+		//{
+		//	return SGL_FALSE;
+		//}
+		SDL_snprintf(messageTitle, titleLenght, "VK WARNING: [%s] Code %d : ", pLayerPrefix, msgCode);
+		SDL_snprintf(message, strlen(pMsg) + titleLenght, "%s%s", messageTitle, pMsg);
+		SDL_Log(message);
 	}
-	else {
+	else 
+	{
 		return SGL_FALSE;
 	}
-
-#ifdef _WIN32
-	MessageBox(NULL, message, "Alert", MB_OK);
-#else
-	printf("%s\n", message);
-	fflush(stdout);
-#endif
+	SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, messageTitle, message, NULL);
 	free(message);
-
+	free(messageTitle);
 	/*
 	* false indicates that layer should not bail-out of an
 	* API call that had validation failures. This may mean that the
@@ -1484,8 +1489,8 @@ void SGL_Vk_CreateContext(SGL_Window* window)
 	uint32_t device_validation_layer_count = 0;
 	uint32_t enabled_extension_count = 0;
 	uint32_t enabled_layer_count = 0;
-	window->vkContext.width = window->rContext.windowSize.x;
-	window->vkContext.height = window->rContext.windowSize.y;
+	window->vkContext.width = window->windowSize.x;
+	window->vkContext.height = window->windowSize.y;
 
 	char* instance_validation_layers[] = {
 		"VK_LAYER_LUNARG_threading",      "VK_LAYER_LUNARG_mem_tracker",
@@ -2054,13 +2059,9 @@ SGL_Window SGL_CreateWindow(const char* title, int x, int y, int w, int h, Uint3
 	window->context = SDL_GL_CreateContext(window->handle);
 #endif
 	SGL_SetWindowIcon(&window, NULL);
-	SDL_GetWindowSize(window.handle, &window.rContext.windowSize.x, &window.rContext.windowSize.y);
-	window.rContext.windowHalfSizef.x = (float)window.rContext.windowSize.x*0.5f;
-	window.rContext.windowHalfSizef.y = (float)window.rContext.windowSize.y*0.5f;
-	for (size_t i = 0; i < SGL_CAMERA_COUNT; i++)
-	{
-		window.rContext.cameras[i].camType = 0;
-	}
+	SDL_GetWindowSize(window.handle, &window.windowSize.x, &window.windowSize.y);
+	window.windowHalfSizef.x = (float)window.windowSize.x*0.5f;
+	window.windowHalfSizef.y = (float)window.windowSize.y*0.5f;
 	return window;
 }
 
@@ -2404,8 +2405,8 @@ static void demo_init(SGL_VkContext* vkContext)
 	vec3 eye0 = { 0.0f, 3.0f, 5.0f};
 	vec3 origin0 = { 0.0f, 0.0f, 0.0f};
 	vec3 up0 = { 0.0f, 1.0f, 0.0f};
-	mat4x4 testMat;
-	mat4x4 testMat0;
+//	mat4x4 testMat;
+//	mat4x4 testMat0;
 	vkContext->spin_angle = 0.01f;
 	vkContext->spin_increment = 0.01f;
 	//OK
