@@ -90,24 +90,30 @@ typedef struct _SGL_Texture
 	VkSampler sampler;
 	VkImage image;
 	VkImageLayout imageLayout;
-	VkDeviceMemory deviceMem;
+	VkMemoryAllocateInfo mem_alloc;
+	VkDeviceMemory mem;
 	VkImageView view;
 	VkFormat format;
 	U32 w, h;
 	U32 mipLevels;
 	SDL_Surface* surf;
 } SGL_Texture;
-typedef struct _SwapchainBuffers
+/*struct texture_object 
+{
+	VkSampler sampler;
+	VkImage image;
+	VkImageLayout imageLayout;
+	VkMemoryAllocateInfo mem_alloc;
+	VkDeviceMemory mem;
+	VkImageView view;
+	U32 width, height;
+};*/
+typedef struct _SwapchainImage
 {
 	VkImage image;
 	VkCommandBuffer cmd;
 	VkImageView view;
-} SwapchainBuffers;
-typedef struct _SwapChainBuffer 
-{
-	VkImage image;
-	VkImageView view;
-} SwapChainBuffer;
+} SwapchainImage;
 typedef struct _DepthStencil
 {
 	VkImage image;
@@ -153,7 +159,7 @@ typedef struct _SGL_VkSwapChain
 	VkQueue queue;
 	VkPhysicalDevice gpu;
 	VkCommandPool cmdPool;
-	VkSwapchainKHR swapChain;
+	VkSwapchainKHR swapchain;
 	VkRenderPass renderPass;
 	VkPipeline mainPipeline;
 	VkPipelineCache pipelineCache;
@@ -166,9 +172,10 @@ typedef struct _SGL_VkSwapChain
 	VkPipelineLayout pipelineLayout;
 	VkShaderModule* shaders;
 	VkImage* images;
-	SwapChainBuffer* buffers;
-	VkCommandBuffer* drawCmdBuffers;
-	VkFramebuffer* frameBuffers;
+	VkImage swapchainImages[2];
+	VkCommandBuffer swapchainCmdBuffers[2];
+	VkImageView swapchainViews[2];
+	VkFramebuffer* framebuffers;
 
 	//function pointer types
 	PFN_vkGetPhysicalDeviceSurfaceSupportKHR fpGetPhysicalDeviceSurfaceSupportKHR;
@@ -193,6 +200,11 @@ typedef struct _SGL_VkSwapChain
 	SGL_VertexBuffer vertexBuffer;
 	SGL_IndexBuffer indexBuffer;
 	SGL_UniformBuffer uniformBuffer;
+	SGL_Mat4 projection_matrix;
+	SGL_Mat4 view_matrix;
+	SGL_Mat4 model_matrix;
+	float spin_angle;
+	float spin_increment;
 	SGL_UBO ubo;
 	SGL_Camera cameras[SGL_CAMERA_COUNT];
 	SGL_Vec2 windowHalfSizef;
@@ -205,14 +217,17 @@ typedef struct _SGL_VkSwapChain
 	F32 zoom;
 	SGL_Vec2 mousePos;
 
+
 	U32 prepared;
 	U32 currentBuffer;
 	U32 queueNodeIndex;
 	U32 shaderCount;
+	U32 maxShaderCount;
 	U32 imageCount;
 	U32 maxImageCount;
 	U32 bufferCount;
 	U32 maxBufferCount;
+	U32 swapchainImageCount;
 }SGL_VkSwapChain;
 typedef struct _SGL_VkContext
 {
@@ -262,7 +277,7 @@ typedef struct _SGL_VkContext
 	PFN_vkQueuePresentKHR fpQueuePresentKHR;
 	uint32_t swapchainImageCount;
 	VkSwapchainKHR swapchain;
-	SwapchainBuffers *buffers;
+	SwapchainImage *buffers;
 	VkCommandBuffer postPresentCmdBuffer;
 	VkCommandBuffer prePresentCmdBuffer;
 	VkCommandBuffer cmd; // Buffer for initialization commands
@@ -378,126 +393,18 @@ inline VkFormat SGL_PixelFormatToVkFormat(const U32 pixelFormat)
 }
 U32 SGL_InitVulkan(SGL_Window* window);
 U32 SGL_PrepareVulkan(SGL_VkSwapChain* swapChain);
-U32 SGL_PrepareVertices(SGL_VkSwapChain* swapChain);
-U32 SGL_PrepareUniformBuffers(SGL_VkSwapChain* swapChain);
-U32 SGL_PreparePipelines(SGL_VkSwapChain* swapChain);
-U32 SGL_SetupDescriptorSetLayout(SGL_VkSwapChain* swapChain);
-U32 SGL_SetupDescriptorPool(SGL_VkSwapChain* swapChain);
-U32 SGL_SetupDescriptorSet(SGL_VkSwapChain* swapChain);
-U32 SGL_BuildCommandBuffers(SGL_VkSwapChain* swapChain);
-U32 SGL_PrepareTexture(SGL_VkSwapChain * swapChain, SGL_Texture* tex, VkImageTiling tiling, VkImageUsageFlags usage, VkFlags requiredProps);
-U32 SGL_PrepareTextureToOptimalTiling(SGL_VkSwapChain * swapChain, SGL_Texture* tex);
-U32 SGL_PrepareTextureTest(SGL_VkSwapChain * swapChain, SGL_Texture* tex);
-inline void SGL_Draw(SGL_VkSwapChain* swapChain)
-{
-	VkResult err;
-	VkSemaphore presentCompleteSemaphore;
-	VkSemaphoreCreateInfo presentCompleteSemaphoreCreateInfo;
-	presentCompleteSemaphoreCreateInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
-	presentCompleteSemaphoreCreateInfo.pNext = VK_NULL_HANDLE;
-	presentCompleteSemaphoreCreateInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
-
-	err = vkCreateSemaphore(swapChain->device, &presentCompleteSemaphoreCreateInfo, VK_NULL_HANDLE, &presentCompleteSemaphore);
-	SDL_assert(!err);
-
-	// Get next image in the swap chain (back/front buffer)
-	err = swapChain->fpAcquireNextImageKHR(swapChain->device, swapChain->swapChain, UINT64_MAX, presentCompleteSemaphore, (VkFence)VK_NULL_HANDLE, &swapChain->currentBuffer);
-	assert(!err);
-	{
-		VkSubmitInfo submitInfo;
-		submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-		submitInfo.pNext = NULL;
-		submitInfo.waitSemaphoreCount = 1;
-		submitInfo.pWaitSemaphores = &presentCompleteSemaphore;
-		submitInfo.commandBufferCount = 1;
-		submitInfo.pCommandBuffers = &swapChain->drawCmdBuffers[swapChain->currentBuffer];
-		submitInfo.signalSemaphoreCount = 0;
-		submitInfo.pSignalSemaphores = VK_NULL_HANDLE;
-
-		// Submit draw command buffer
-		err = vkQueueSubmit(swapChain->queue, 1, &submitInfo, VK_NULL_HANDLE);
-		assert(!err);
-		{
-			VkPresentInfoKHR presentInfo;
-			presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
-			presentInfo.pNext = NULL;
-			presentInfo.waitSemaphoreCount = 0;
-			presentInfo.pWaitSemaphores = VK_NULL_HANDLE;
-			presentInfo.swapchainCount = 1;
-			presentInfo.pSwapchains = &swapChain->swapChain;
-			presentInfo.pImageIndices = &swapChain->currentBuffer;
-			presentInfo.pResults = VK_NULL_HANDLE;
-
-			err = swapChain->fpQueuePresentKHR(swapChain->queue, &presentInfo);
-			assert(!err);
-		}
-		vkDestroySemaphore(swapChain->device, presentCompleteSemaphore, VK_NULL_HANDLE);
-	}
-	{
-		// alla tämä funktio
-		VkCommandBufferBeginInfo cmdBufInfo;
-		cmdBufInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-		cmdBufInfo.pNext = VK_NULL_HANDLE;
-		cmdBufInfo.flags = 0;
-		cmdBufInfo.pInheritanceInfo = VK_NULL_HANDLE;
-
-		err = vkBeginCommandBuffer(swapChain->postPresentCmdBuffer, &cmdBufInfo);
-		assert(!err);
-
-		VkImageMemoryBarrier postPresentBarrier;
-		postPresentBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
-		postPresentBarrier.pNext = VK_NULL_HANDLE;
-		postPresentBarrier.srcAccessMask = 0;
-		postPresentBarrier.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
-		postPresentBarrier.oldLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-		postPresentBarrier.newLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
-		postPresentBarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-		postPresentBarrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-		postPresentBarrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-		postPresentBarrier.subresourceRange.baseMipLevel = 0;
-		postPresentBarrier.subresourceRange.levelCount = 1;
-		postPresentBarrier.subresourceRange.baseArrayLayer = 0;
-		postPresentBarrier.subresourceRange.layerCount = 1;
-		postPresentBarrier.image = swapChain->buffers[swapChain->currentBuffer].image;
-
-		vkCmdPipelineBarrier(
-			swapChain->postPresentCmdBuffer,
-			VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
-			VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
-			0,
-			0, VK_NULL_HANDLE, // No memory barriers,
-			0, VK_NULL_HANDLE, // No buffer barriers,
-			1, &postPresentBarrier);
-
-		err = vkEndCommandBuffer(swapChain->postPresentCmdBuffer);
-		assert(!err);
-
-
-		VkSubmitInfo submitInfo;
-		submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-		submitInfo.pNext = VK_NULL_HANDLE;
-		submitInfo.waitSemaphoreCount = 0;
-		submitInfo.pWaitSemaphores = VK_NULL_HANDLE;
-		submitInfo.pWaitDstStageMask = VK_NULL_HANDLE;
-		submitInfo.commandBufferCount = 1;
-		submitInfo.pCommandBuffers = &swapChain->postPresentCmdBuffer;
-		submitInfo.signalSemaphoreCount = 0;
-		submitInfo.pSignalSemaphores = VK_NULL_HANDLE;
-
-		err = vkQueueSubmit(swapChain->queue, 1, &submitInfo, VK_NULL_HANDLE);
-		assert(!err);
-	}
-
-	err = vkQueueWaitIdle(swapChain->queue);
-	assert(!err);
-}
+U32 SGL_UpdateUniforms(SGL_VkSwapChain* swapchain);
+U32 SGL_Draw(SGL_VkSwapChain* swapchain);
 inline void SGL_Render(SGL_VkSwapChain* swapChain)
 {
 	if (!swapChain->prepared)
-	{
 		return;
-	}
+	// Wait for work to finish before updating MVP.
 	vkDeviceWaitIdle(swapChain->device);
+	SGL_UpdateUniforms(swapChain);
+
 	SGL_Draw(swapChain);
+
+	// Wait for work to finish before updating MVP.
 	vkDeviceWaitIdle(swapChain->device);
 }

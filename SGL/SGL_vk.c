@@ -721,1037 +721,756 @@ U32 SGL_InitVulkan(SGL_Window * window)
 	SDL_Log("Vulkan initialized successfully\n\n");//*/
 	return SGL_TRUE;
 }
-void SetImageLayout(const VkCommandBuffer cmdBuffer, VkImage image, VkImageAspectFlags aspectMask, VkImageLayout oldImageLayout, VkImageLayout newImageLayout)
-{
-	// Create an image barrier object
-	VkImageMemoryBarrier imageMemoryBarrier = 
-	{
-		.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER,
-		.pNext = NULL,
-		.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
-		.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
-		.oldLayout = oldImageLayout,
-		.newLayout = newImageLayout,
-		.image = image,
-		.subresourceRange.aspectMask = aspectMask,
-		.subresourceRange.baseMipLevel = 0,
-		.subresourceRange.levelCount = 1,
-		.subresourceRange.layerCount = 1
-	};
-	// Source layouts (old)
-
-	// Undefined layout
-	// Only allowed as initial layout!
-	// Make sure any writes to the image have been finished
-	if (oldImageLayout == VK_IMAGE_LAYOUT_PREINITIALIZED)
-	{
-		imageMemoryBarrier.srcAccessMask = VK_ACCESS_HOST_WRITE_BIT;
-	}
-
-	// Old layout is color attachment
-	// Make sure any writes to the color buffer have been finished
-	if (oldImageLayout == VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL)
-	{
-		imageMemoryBarrier.srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
-	}
-
-	// Old layout is depth/stencil attachment
-	// Make sure any writes to the depth/stencil buffer have been finished
-	if (oldImageLayout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL)
-	{
-		imageMemoryBarrier.srcAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
-	}
-
-	// Old layout is transfer source
-	// Make sure any reads from the image have been finished
-	if (oldImageLayout == VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL)
-	{
-		imageMemoryBarrier.srcAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
-	}
-
-	// Old layout is shader read (sampler, input attachment)
-	// Make sure any shader reads from the image have been finished
-	if (oldImageLayout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL)
-	{
-		imageMemoryBarrier.srcAccessMask = VK_ACCESS_SHADER_READ_BIT;
-	}
-
-	// Target layouts (new)
-
-	// New layout is transfer destination (copy, blit)
-	// Make sure any copyies to the image have been finished
-	if (newImageLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL)
-	{
-		imageMemoryBarrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
-	}
-
-	// New layout is transfer source (copy, blit)
-	// Make sure any reads from and writes to the image have been finished
-	if (newImageLayout == VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL)
-	{
-		imageMemoryBarrier.srcAccessMask = imageMemoryBarrier.srcAccessMask | VK_ACCESS_TRANSFER_READ_BIT;
-		imageMemoryBarrier.dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
-	}
-
-	// New layout is color attachment
-	// Make sure any writes to the color buffer hav been finished
-	if (newImageLayout == VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL)
-	{
-		imageMemoryBarrier.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
-		imageMemoryBarrier.srcAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
-	}
-
-	// New layout is depth attachment
-	// Make sure any writes to depth/stencil buffer have been finished
-	if (newImageLayout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL)
-	{
-		imageMemoryBarrier.dstAccessMask = imageMemoryBarrier.dstAccessMask | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
-	}
-
-	// New layout is shader read (sampler, input attachment)
-	// Make sure any writes to the image have been finished
-	if (newImageLayout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL)
-	{
-		if (oldImageLayout != VK_IMAGE_LAYOUT_UNDEFINED)
-		{
-			imageMemoryBarrier.srcAccessMask = VK_ACCESS_HOST_WRITE_BIT | VK_ACCESS_TRANSFER_WRITE_BIT;
-		}
-		imageMemoryBarrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
-	}
-
-
-	// Put barrier on top
-	VkPipelineStageFlags srcStageFlags = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
-	VkPipelineStageFlags destStageFlags = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
-
-	// Put barrier inside setup command buffer
-	vkCmdPipelineBarrier(cmdBuffer, srcStageFlags, destStageFlags, 0, 0, VK_NULL_HANDLE, 0, VK_NULL_HANDLE, 1, &imageMemoryBarrier);
-	U32 asd = 0;
-}
-inline void CreateCommandPool(SGL_VkSwapChain * swapChain)
-{
-	VkCommandPoolCreateInfo cmdPoolInfo = 
-	{
-		.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO,
-		.queueFamilyIndex = swapChain->queueNodeIndex,
-		.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT
-	};
-	VkResult vkRes = vkCreateCommandPool(swapChain->device, &cmdPoolInfo, NULL, &swapChain->cmdPool);
-	SDL_assert(!vkRes);
-}
-inline void CreateSetupCommandBuffer(SGL_VkSwapChain * swapChain)
-{
-	if (swapChain->setupCmdBuffer != VK_NULL_HANDLE)
-	{
-		vkFreeCommandBuffers(swapChain->device, swapChain->cmdPool, 1, &swapChain->setupCmdBuffer);
-		swapChain->setupCmdBuffer = VK_NULL_HANDLE; // todo : check if still necessary
-	}
-	VkCommandBufferAllocateInfo cmdBufferAllocInfo = 
-	{
-		.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO,
-		.commandPool = swapChain->cmdPool,
-		.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY,
-		.commandBufferCount = 1
-	};
-	VkResult vkRes = vkAllocateCommandBuffers(swapChain->device, &cmdBufferAllocInfo, &swapChain->setupCmdBuffer);
-	assert(!vkRes);
-
-	// todo : Command buffer is also started here, better put somewhere else
-	// todo : Check if necessaray at all...
-	VkCommandBufferBeginInfo cmdBufInfo = 
-	{
-		.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO
-	};
-	// todo : check null handles, flags?
-
-	vkRes = vkBeginCommandBuffer(swapChain->setupCmdBuffer, &cmdBufInfo);
-	assert(!vkRes);
-}
-inline void CreateSwapChain(SGL_VkSwapChain* swapChain)
-{
-	VkResult err;
-	VkSwapchainKHR oldSwapchain = swapChain->swapChain;
-
-	// Get physical device surface properties and formats
-	VkSurfaceCapabilitiesKHR surfCaps;
-	err = swapChain->fpGetPhysicalDeviceSurfaceCapabilitiesKHR(swapChain->gpu, swapChain->surf, &surfCaps);
-	if (err != VK_SUCCESS)
-	{
-		SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "fpGetPhysicalDeviceSurfaceCapabilitiesKHR Failure",
-			"Couldnt find surface capabilities\n\n"
-			"Please uninstall your life.\n", NULL);
-	}
-	assert(!err);
-
-	// Get available present modes
-	uint32_t presentModeCount;
-	err = swapChain->fpGetPhysicalDeviceSurfacePresentModesKHR(swapChain->gpu, swapChain->surf, &presentModeCount, NULL);
-	assert(!err);
-	assert(presentModeCount > 0);
-
-	VkPresentModeKHR* presentModes = SDL_malloc(presentModeCount*sizeof(VkPresentModeKHR));
-
-	err = swapChain->fpGetPhysicalDeviceSurfacePresentModesKHR(swapChain->gpu, swapChain->surf, &presentModeCount, presentModes);
-	assert(!err);
-
-	VkExtent2D swapchainExtent = { 
-		.width = swapChain->windowSize.x,
-		.height = swapChain->windowSize.y
-	};
-	// the special value (0xFFFFFFFF,0xFFFFFFFF) indicating that the surface size will be determined by the extent of a swapchain targeting the surface.
-	if (surfCaps.currentExtent.width != 0xFFFFFFFF)
-	{
-		swapchainExtent = surfCaps.currentExtent;
-		swapChain->windowSize.x = surfCaps.currentExtent.width;
-		swapChain->windowSize.y = surfCaps.currentExtent.height;
-	}
-
-	// Prefer mailbox mode if present, it's the lowest latency non-tearing present  mode
-	VkPresentModeKHR swapchainPresentMode = VK_PRESENT_MODE_FIFO_KHR;
-	for (size_t i = 0; i < presentModeCount; i++)
-	{
-		if (presentModes[i] == VK_PRESENT_MODE_MAILBOX_KHR)
-		{
-			swapchainPresentMode = VK_PRESENT_MODE_MAILBOX_KHR;
-			break;
-		}
-		if ((swapchainPresentMode != VK_PRESENT_MODE_MAILBOX_KHR) && (presentModes[i] == VK_PRESENT_MODE_IMMEDIATE_KHR))
-		{
-			swapchainPresentMode = VK_PRESENT_MODE_IMMEDIATE_KHR;
-		}
-	}
-
-	// Determine the number of images
-	U32 desiredNumberOfSwapchainImages = surfCaps.minImageCount + 1;
-	if ((surfCaps.maxImageCount > 0) && (desiredNumberOfSwapchainImages > surfCaps.maxImageCount))
-	{
-		desiredNumberOfSwapchainImages = surfCaps.maxImageCount;
-	}
-
-	VkSurfaceTransformFlagsKHR preTransform;
-	if (surfCaps.supportedTransforms & VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR)
-	{
-		preTransform = VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR;
-	}
-	else
-	{
-		preTransform = surfCaps.currentTransform;
-	}
-
-	VkSwapchainCreateInfoKHR swapchainCI = 
-	{
-		.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR,
-		.pNext = NULL,
-		.surface = swapChain->surf,
-		.minImageCount = desiredNumberOfSwapchainImages,
-		.imageFormat = swapChain->colorFormat,
-		.imageColorSpace = swapChain->colorSpace,
-		.imageExtent = { swapchainExtent.width, swapchainExtent.height },
-		.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
-		.preTransform = (VkSurfaceTransformFlagBitsKHR)preTransform,
-		.imageArrayLayers = 1,
-		.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE,
-		.queueFamilyIndexCount = 0,
-		.pQueueFamilyIndices = VK_NULL_HANDLE,
-		.presentMode = swapchainPresentMode,
-		.oldSwapchain = oldSwapchain,
-		.clipped = VK_TRUE,
-		.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR,
-	};
-
-	err = swapChain->fpCreateSwapchainKHR(swapChain->device, &swapchainCI, VK_NULL_HANDLE, &swapChain->swapChain);
-	assert(!err);
-
-	// If an existing sawp chain is re-created, destroy the old swap chain
-	// This also cleans up all the presentable images
-	if (oldSwapchain != VK_NULL_HANDLE)
-	{
-		swapChain->fpDestroySwapchainKHR(swapChain->device, oldSwapchain, VK_NULL_HANDLE);
-	}
-
-	err = swapChain->fpGetSwapchainImagesKHR(swapChain->device, swapChain->swapChain, &swapChain->imageCount, NULL);
-	assert(!err);
-
-	// Get the swap chain images
-	swapChain->images = (VkImage*)SDL_realloc(swapChain->images, swapChain->imageCount*sizeof(VkImage));
-	err = swapChain->fpGetSwapchainImagesKHR(swapChain->device, swapChain->swapChain, &swapChain->imageCount, swapChain->images);
-	assert(!err);
-
-	// Get the swap chain buffers containing the image and imageview
-	swapChain->buffers = (SwapChainBuffer*)SDL_realloc(swapChain->buffers, swapChain->imageCount*sizeof(SwapChainBuffer));
-	for (uint32_t i = 0; i < swapChain->imageCount; i++)
-	{
-		VkImageViewCreateInfo colorAttachmentView = {
-			.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
-			.pNext = NULL,
-			.format = swapChain->colorFormat,
-			.components = {VK_COMPONENT_SWIZZLE_R, VK_COMPONENT_SWIZZLE_G, VK_COMPONENT_SWIZZLE_B, VK_COMPONENT_SWIZZLE_A},
-			.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
-			.subresourceRange.baseMipLevel = 0,
-			.subresourceRange.levelCount = 1,
-			.subresourceRange.baseArrayLayer = 0,
-			.subresourceRange.layerCount = 1,
-			.viewType = VK_IMAGE_VIEW_TYPE_2D,
-			.flags = 0
-		};
-
-		swapChain->buffers[i].image = swapChain->images[i];
-
-		// Transform images from initial (undefined) to present layout
-		SetImageLayout(swapChain->setupCmdBuffer, swapChain->buffers[i].image, VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
-
-		colorAttachmentView.image = swapChain->buffers[i].image;
-
-		err = vkCreateImageView(swapChain->device, &colorAttachmentView, VK_NULL_HANDLE, &swapChain->buffers[i].view);
-		assert(!err);
-	}
-}
-inline void CreateCommandBuffers(SGL_VkSwapChain* swapChain)
-{
-	// Create one command buffer per frame buffer 
-	// in the swap chain
-	// Command buffers store a reference to the 
-	// frame buffer inside their render pass info
-	// so for static usage withouth having to rebuild 
-	// them each frame, we use one per frame buffer
-	swapChain->drawCmdBuffers = (VkCommandBuffer*)SDL_realloc(swapChain->drawCmdBuffers, swapChain->imageCount*sizeof(VkCommandBuffer));
-
-	VkCommandBufferAllocateInfo cmdBufferAllocInfo = 
-	{
-	.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO,
-	.commandPool = swapChain->cmdPool,
-	.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY,
-	.commandBufferCount = swapChain->imageCount,
-	};
-	VkResult vkRes = vkAllocateCommandBuffers(swapChain->device, &cmdBufferAllocInfo, swapChain->drawCmdBuffers);
-	assert(!vkRes);
-
-	// Command buffers for submitting present barriers
-	cmdBufferAllocInfo.commandBufferCount = 1;
-	// Pre present
-	vkRes = vkAllocateCommandBuffers(swapChain->device, &cmdBufferAllocInfo, &swapChain->prePresentCmdBuffer);
-	assert(!vkRes);
-	// Post present
-	vkRes = vkAllocateCommandBuffers(swapChain->device, &cmdBufferAllocInfo, &swapChain->postPresentCmdBuffer);
-	assert(!vkRes);
-}
-inline VkBool32 GetMemoryType(const VkPhysicalDeviceMemoryProperties* memProps, U32 typeBits, VkFlags properties, U32 * typeIndex)
-{
-	for (U32 i = 0; i < 32; i++)
-	{
-		if ((typeBits & 1) == 1)
-		{
-			if ((memProps->memoryTypes[i].propertyFlags & properties) == properties)
-			{
+static inline SGL_bool memory_type_from_properties(SGL_VkSwapChain * swapchain, uint32_t typeBits,
+	VkFlags requirements_mask,
+	uint32_t *typeIndex) {
+	// Search memtypes to find first index with those properties
+	for (uint32_t i = 0; i < 32; i++) {
+		if ((typeBits & 1) == 1) {
+			// Type is available, does it match user properties?
+			if ((swapchain->memoryProperties.memoryTypes[i].propertyFlags &
+				requirements_mask) == requirements_mask) {
 				*typeIndex = i;
-				return VK_TRUE;
+				return SGL_TRUE;
 			}
 		}
 		typeBits >>= 1;
 	}
-	return VK_FALSE;
+	// No memory types matched, return failure
+	return SGL_FALSE;
 }
-//TODO: IN 2D rendering engine theres no need for depth buffer
-inline void SetupDepthStencil(SGL_VkSwapChain* swapChain)
+static inline void InitCommandBuffer(SGL_VkSwapChain* swapchain, VkCommandBuffer* cmdBuffer)
 {
-	VkImageCreateInfo image = 
+	VkResult err;
+	const VkCommandBufferAllocateInfo cmd = {
+		.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO,
+		.pNext = NULL,
+		.commandPool = swapchain->cmdPool,
+		.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY,
+		.commandBufferCount = 1,
+	};
+
+	err = vkAllocateCommandBuffers(swapchain->device, &cmd, cmdBuffer);
+	SDL_assert(!err);
+
+	VkCommandBufferInheritanceInfo cmd_buf_hinfo = {
+		.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_INFO,
+		.pNext = NULL,
+		.renderPass = VK_NULL_HANDLE,
+		.subpass = 0,
+		.framebuffer = VK_NULL_HANDLE,
+		.occlusionQueryEnable = VK_FALSE,
+		.queryFlags = 0,
+		.pipelineStatistics = 0,
+	};
+	VkCommandBufferBeginInfo cmd_buf_info = {
+		.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
+		.pNext = NULL,
+		.flags = 0,
+		.pInheritanceInfo = &cmd_buf_hinfo,
+	};
+	err = vkBeginCommandBuffer(*cmdBuffer, &cmd_buf_info);
+	SDL_assert(!err);
+}
+static inline void demo_flush_init_cmd(SGL_VkSwapChain * swapchain) 
+{
+	VkResult U_ASSERT_ONLY err;
+
+	if (swapchain->setupCmdBuffer == VK_NULL_HANDLE)
 	{
+		int asd = 0;
+		return;
+	}
+
+	err = vkEndCommandBuffer(swapchain->setupCmdBuffer);
+	assert(!err);
+
+	const VkCommandBuffer cmd_bufs[] = { swapchain->setupCmdBuffer };
+	VkFence nullFence = VK_NULL_HANDLE;
+	VkSubmitInfo submit_info = { .sType = VK_STRUCTURE_TYPE_SUBMIT_INFO,
+		.pNext = NULL,
+		.waitSemaphoreCount = 0,
+		.pWaitSemaphores = NULL,
+		.pWaitDstStageMask = NULL,
+		.commandBufferCount = 1,
+		.pCommandBuffers = cmd_bufs,
+		.signalSemaphoreCount = 0,
+		.pSignalSemaphores = NULL };
+
+	err = vkQueueSubmit(swapchain->queue, 1, &submit_info, nullFence);
+	assert(!err);
+
+	err = vkQueueWaitIdle(swapchain->queue);
+	assert(!err);
+
+	vkFreeCommandBuffers(swapchain->device, swapchain->cmdPool, 1, cmd_bufs);
+	swapchain->setupCmdBuffer = VK_NULL_HANDLE;
+}
+//why cant i use the same commandbuffer for everything??
+static void demo_set_image_layout(SGL_VkSwapChain* swapchain, VkCommandBuffer* cmdBuffer, VkImage image, VkImageAspectFlags aspectMask, VkImageLayout old_image_layout, VkImageLayout new_image_layout, VkAccessFlagBits srcAccessMask, VkAccessFlagBits dstAccessMask)
+{
+	VkResult U_ASSERT_ONLY err;
+
+	if (*cmdBuffer == VK_NULL_HANDLE) 
+	{
+		//SDL_Log("cmdBuffer is NULL, fix the function under this log message");
+		const VkCommandBufferAllocateInfo cmd = {
+			.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO,
+			.pNext = NULL,
+			.commandPool = swapchain->cmdPool,
+			.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY,
+			.commandBufferCount = 1,
+		};
+
+		err = vkAllocateCommandBuffers(swapchain->device, &cmd, cmdBuffer);
+		assert(!err);
+
+		VkCommandBufferInheritanceInfo cmd_buf_hinfo = {
+			.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_INFO,
+			.pNext = NULL,
+			.renderPass = VK_NULL_HANDLE,
+			.subpass = 0,
+			.framebuffer = VK_NULL_HANDLE,
+			.occlusionQueryEnable = VK_FALSE,
+			.queryFlags = 0,
+			.pipelineStatistics = 0,
+		};
+		VkCommandBufferBeginInfo cmd_buf_info = {
+			.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
+			.pNext = NULL,
+			.flags = 0,
+			.pInheritanceInfo = &cmd_buf_hinfo,
+		};
+		err = vkBeginCommandBuffer(*cmdBuffer, &cmd_buf_info);
+		assert(!err);
+	}
+
+	VkImageMemoryBarrier image_memory_barrier =
+	{
+		.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER,
+		.pNext = NULL,
+		.srcAccessMask = srcAccessMask,
+		.dstAccessMask = dstAccessMask,
+		.oldLayout = old_image_layout,
+		.newLayout = new_image_layout,
+		.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+		.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+		.image = image,
+		.subresourceRange = { aspectMask, 0, 1, 0, 1 }
+	};
+	//switch (new_image_layout)
+	//{
+	//case VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL:
+	//{
+	//	image_memory_barrier.dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
+	//	break;
+	//}
+	//case VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL:
+	//{
+	//	image_memory_barrier.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+	//	break;
+	//}
+	//case VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL:
+	//{
+	//	image_memory_barrier.dstAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+	//	break;
+	//}
+	//case VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL:
+	//{
+	//	image_memory_barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_INPUT_ATTACHMENT_READ_BIT;
+	//	break;
+	//}
+	//case VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL:
+	//{
+	//	image_memory_barrier.dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
+	//	break;
+	//}
+	//default:
+	//	break;
+	//}
+	//if (new_image_layout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL) 
+	//{
+	//	/* Make sure anything that was copying from this image has completed */
+	//	image_memory_barrier.dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
+	//}
+	//
+	//if (new_image_layout == VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL) 
+	//{
+	//	image_memory_barrier.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+	//}
+	//
+	//if (new_image_layout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL) 
+	//{
+	//	image_memory_barrier.dstAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+	//}
+	//
+	//if (new_image_layout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL) 
+	//{
+	//	/* Make sure any Copy or CPU writes to image are flushed */
+	//	image_memory_barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_INPUT_ATTACHMENT_READ_BIT;
+	//}
+
+	VkPipelineStageFlags src_stages = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+	VkPipelineStageFlags dest_stages = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+	const char* layoutArray[] = 
+	{
+		"VK_IMAGE_LAYOUT_UNDEFINED",
+		"VK_IMAGE_LAYOUT_GENERAL",
+		"VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL",
+		"VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL",
+		"VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL",
+		"VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL",
+		"VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL",
+		"VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL",
+		"VK_IMAGE_LAYOUT_PREINITIALIZED",
+	};
+	/*
+	const char* oldLayout = image_memory_barrier.oldLayout < 9 ? layoutArray[image_memory_barrier.oldLayout] : "VK_IMAGE_LAYOUT_PRESENT_SRC_KHR";
+	const char* newLayout = image_memory_barrier.newLayout < 9 ? layoutArray[image_memory_barrier.newLayout] : "VK_IMAGE_LAYOUT_PRESENT_SRC_KHR";
+	char * dstText = SDL_malloc(sizeof(char) * 256);
+	dstText[0] = '0';
+	dstText[1] = '\0';
+	U32 dstTextIndex = 0;
+	{
+	if (image_memory_barrier.srcAccessMask & VK_ACCESS_SHADER_READ_BIT)
+	{
+		if (dstTextIndex != 0)
+		{
+			dstText[dstTextIndex++] = ' ';
+			dstText[dstTextIndex++] = '|';
+			dstText[dstTextIndex++] = ' ';
+		}
+		U32 size = sizeof("VK_ACCESS_SHADER_READ_BIT");
+		SDL_strlcpy(&dstText[dstTextIndex], "VK_ACCESS_SHADER_READ_BIT", size);
+		dstTextIndex += --size;
+	}
+	if (image_memory_barrier.srcAccessMask & VK_ACCESS_SHADER_WRITE_BIT)
+	{
+		if (dstTextIndex != 0)
+		{
+			dstText[dstTextIndex++] = ' ';
+			dstText[dstTextIndex++] = '|';
+			dstText[dstTextIndex++] = ' ';
+		}
+		U32 size = sizeof("VK_ACCESS_SHADER_WRITE_BIT");
+		SDL_strlcpy(&dstText[dstTextIndex], "VK_ACCESS_SHADER_WRITE_BIT", size);
+		dstTextIndex += --size;
+	}
+	if (image_memory_barrier.srcAccessMask & VK_ACCESS_COLOR_ATTACHMENT_READ_BIT)
+	{
+		if (dstTextIndex != 0)
+		{
+			dstText[dstTextIndex++] = ' ';
+			dstText[dstTextIndex++] = '|';
+			dstText[dstTextIndex++] = ' ';
+		}
+		U32 size = sizeof("VK_ACCESS_COLOR_ATTACHMENT_READ_BIT");
+		SDL_strlcpy(&dstText[dstTextIndex], "VK_ACCESS_COLOR_ATTACHMENT_READ_BIT", size);
+		dstTextIndex += --size;
+	}
+	if (image_memory_barrier.srcAccessMask & VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT)
+	{
+		if (dstTextIndex != 0)
+		{
+			dstText[dstTextIndex++] = ' ';
+			dstText[dstTextIndex++] = '|';
+			dstText[dstTextIndex++] = ' ';
+		}
+		U32 size = sizeof("VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT");
+		SDL_strlcpy(&dstText[dstTextIndex], "VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT", size);
+		dstTextIndex += --size;
+	}
+	if (image_memory_barrier.srcAccessMask & VK_ACCESS_TRANSFER_READ_BIT)
+	{
+		if (dstTextIndex != 0)
+		{
+			dstText[dstTextIndex++] = ' ';
+			dstText[dstTextIndex++] = '|';
+			dstText[dstTextIndex++] = ' ';
+		}
+		U32 size = sizeof("VK_ACCESS_TRANSFER_READ_BIT");
+		SDL_strlcpy(&dstText[dstTextIndex], "VK_ACCESS_TRANSFER_READ_BIT", size);
+		dstTextIndex += --size;
+	}
+	if (image_memory_barrier.srcAccessMask & VK_ACCESS_TRANSFER_WRITE_BIT)
+	{
+		if (dstTextIndex != 0)
+		{
+			dstText[dstTextIndex++] = ' ';
+			dstText[dstTextIndex++] = '|';
+			dstText[dstTextIndex++] = ' ';
+		}
+		U32 size = sizeof("VK_ACCESS_TRANSFER_WRITE_BIT");
+		SDL_strlcpy(&dstText[dstTextIndex], "VK_ACCESS_TRANSFER_WRITE_BIT", size);
+		dstTextIndex += --size;
+	}
+	if (image_memory_barrier.srcAccessMask & VK_ACCESS_HOST_READ_BIT)
+	{
+		if (dstTextIndex != 0)
+		{
+			dstText[dstTextIndex++] = ' ';
+			dstText[dstTextIndex++] = '|';
+			dstText[dstTextIndex++] = ' ';
+		}
+		U32 size = sizeof("VK_ACCESS_HOST_READ_BIT");
+		SDL_strlcpy(&dstText[dstTextIndex], "VK_ACCESS_HOST_READ_BIT", size);
+		dstTextIndex += --size;
+	}
+	if (image_memory_barrier.srcAccessMask & VK_ACCESS_HOST_WRITE_BIT)
+	{
+		if (dstTextIndex != 0)
+		{
+			dstText[dstTextIndex++] = ' ';
+			dstText[dstTextIndex++] = '|';
+			dstText[dstTextIndex++] = ' ';
+		}
+		U32 size = sizeof("VK_ACCESS_HOST_WRITE_BIT");
+		SDL_strlcpy(&dstText[dstTextIndex], "VK_ACCESS_HOST_WRITE_BIT", size);
+		dstTextIndex += --size;
+	}
+	if (image_memory_barrier.srcAccessMask & VK_ACCESS_MEMORY_READ_BIT)
+	{
+		if (dstTextIndex != 0)
+		{
+			dstText[dstTextIndex++] = ' ';
+			dstText[dstTextIndex++] = '|';
+			dstText[dstTextIndex++] = ' ';
+		}
+		U32 size = sizeof("VK_ACCESS_MEMORY_READ_BIT");
+		SDL_strlcpy(&dstText[dstTextIndex], "VK_ACCESS_MEMORY_READ_BIT", size);
+		dstTextIndex += --size;
+	}
+	if (image_memory_barrier.srcAccessMask & VK_ACCESS_MEMORY_READ_BIT)
+	{
+		if (dstTextIndex != 0)
+		{
+			dstText[dstTextIndex++] = ' ';
+			dstText[dstTextIndex++] = '|';
+			dstText[dstTextIndex++] = ' ';
+		}
+		U32 size = sizeof("VK_ACCESS_MEMORY_READ_BIT");
+		SDL_strlcpy(&dstText[dstTextIndex], "VK_ACCESS_MEMORY_READ_BIT", size);
+		dstTextIndex += --size;
+	}
+	}
+	char * srcText = SDL_malloc(sizeof(char) * 256);
+	srcText[0] = '0';
+	srcText[1] = '\0';
+	U32 srcTextIndex = 0;
+	{
+	if (image_memory_barrier.srcAccessMask & VK_ACCESS_SHADER_READ_BIT)
+	{
+		if (srcTextIndex != 0)
+		{
+			srcText[srcTextIndex++] = ' ';
+			srcText[srcTextIndex++] = '|';
+			srcText[srcTextIndex++] = ' ';
+		}
+		U32 size = sizeof("VK_ACCESS_SHADER_READ_BIT");
+		SDL_strlcpy(&srcText[srcTextIndex], "VK_ACCESS_SHADER_READ_BIT", size);
+		srcTextIndex += --size;
+	}
+	if (image_memory_barrier.srcAccessMask & VK_ACCESS_SHADER_WRITE_BIT)
+	{
+		if (srcTextIndex != 0)
+		{
+			srcText[srcTextIndex++] = ' ';
+			srcText[srcTextIndex++] = '|';
+			srcText[srcTextIndex++] = ' ';
+		}
+		U32 size = sizeof("VK_ACCESS_SHADER_WRITE_BIT");
+		SDL_strlcpy(&srcText[srcTextIndex], "VK_ACCESS_SHADER_WRITE_BIT", size);
+		srcTextIndex += --size;
+	}
+	if (image_memory_barrier.srcAccessMask & VK_ACCESS_COLOR_ATTACHMENT_READ_BIT)
+	{
+		if (srcTextIndex != 0)
+		{
+			srcText[srcTextIndex++] = ' ';
+			srcText[srcTextIndex++] = '|';
+			srcText[srcTextIndex++] = ' ';
+		}
+		U32 size = sizeof("VK_ACCESS_COLOR_ATTACHMENT_READ_BIT");
+		SDL_strlcpy(&srcText[srcTextIndex], "VK_ACCESS_COLOR_ATTACHMENT_READ_BIT", size);
+		srcTextIndex += --size;
+	}
+	if (image_memory_barrier.srcAccessMask & VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT)
+	{
+		if (srcTextIndex != 0)
+		{
+			srcText[srcTextIndex++] = ' ';
+			srcText[srcTextIndex++] = '|';
+			srcText[srcTextIndex++] = ' ';
+		}
+		U32 size = sizeof("VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT");
+		SDL_strlcpy(&srcText[srcTextIndex], "VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT", size);
+		srcTextIndex += --size;
+	}
+	if (image_memory_barrier.srcAccessMask & VK_ACCESS_TRANSFER_READ_BIT)
+	{
+		if (srcTextIndex != 0)
+		{
+			srcText[srcTextIndex++] = ' ';
+			srcText[srcTextIndex++] = '|';
+			srcText[srcTextIndex++] = ' ';
+		}
+		U32 size = sizeof("VK_ACCESS_TRANSFER_READ_BIT");
+		SDL_strlcpy(&srcText[srcTextIndex], "VK_ACCESS_TRANSFER_READ_BIT", size);
+		srcTextIndex += --size;
+	}
+	if (image_memory_barrier.srcAccessMask & VK_ACCESS_TRANSFER_WRITE_BIT)
+	{
+		if (srcTextIndex != 0)
+		{
+			srcText[srcTextIndex++] = ' ';
+			srcText[srcTextIndex++] = '|';
+			srcText[srcTextIndex++] = ' ';
+		}
+		U32 size = sizeof("VK_ACCESS_TRANSFER_WRITE_BIT");
+		SDL_strlcpy(&srcText[srcTextIndex], "VK_ACCESS_TRANSFER_WRITE_BIT", size);
+		srcTextIndex += --size;
+	}
+	if (image_memory_barrier.srcAccessMask & VK_ACCESS_HOST_READ_BIT)
+	{
+		if (srcTextIndex != 0)
+		{
+			srcText[srcTextIndex++] = ' ';
+			srcText[srcTextIndex++] = '|';
+			srcText[srcTextIndex++] = ' ';
+		}
+		U32 size = sizeof("VK_ACCESS_HOST_READ_BIT");
+		SDL_strlcpy(&srcText[srcTextIndex], "VK_ACCESS_HOST_READ_BIT", size);
+		srcTextIndex += --size;
+	}
+	if (image_memory_barrier.srcAccessMask & VK_ACCESS_HOST_WRITE_BIT)
+	{
+		if (srcTextIndex != 0)
+		{
+			srcText[srcTextIndex++] = ' ';
+			srcText[srcTextIndex++] = '|';
+			srcText[srcTextIndex++] = ' ';
+		}
+		U32 size = sizeof("VK_ACCESS_HOST_WRITE_BIT");
+		SDL_strlcpy(&srcText[srcTextIndex], "VK_ACCESS_HOST_WRITE_BIT", size);
+		srcTextIndex += --size;
+	}
+	if (image_memory_barrier.srcAccessMask & VK_ACCESS_MEMORY_READ_BIT)
+	{
+		if (srcTextIndex != 0)
+		{
+			srcText[srcTextIndex++] = ' ';
+			srcText[srcTextIndex++] = '|';
+			srcText[srcTextIndex++] = ' ';
+		}
+		U32 size = sizeof("VK_ACCESS_MEMORY_READ_BIT");
+		SDL_strlcpy(&srcText[srcTextIndex], "VK_ACCESS_MEMORY_READ_BIT", size);
+		srcTextIndex += --size;
+	}
+	if (image_memory_barrier.srcAccessMask & VK_ACCESS_MEMORY_READ_BIT)
+	{
+		if (srcTextIndex != 0)
+		{
+			srcText[srcTextIndex++] = ' ';
+			srcText[srcTextIndex++] = '|';
+			srcText[srcTextIndex++] = ' ';
+		}
+		U32 size = sizeof("VK_ACCESS_MEMORY_READ_BIT");
+		SDL_strlcpy(&srcText[srcTextIndex], "VK_ACCESS_MEMORY_READ_BIT", size);
+		srcTextIndex += --size;
+	}
+	}
+	SDL_Log("\nCreated vkCmdPipelineBarrier:\noldLayout: %s\nnewLayout: %s\nsrcAccessMask: %s\ndstAccessMask: %s\n", oldLayout, newLayout, srcText, dstText);
+	*/
+	vkCmdPipelineBarrier(*cmdBuffer, src_stages, dest_stages, 0, 0, NULL, 0,
+		NULL, 1, &image_memory_barrier);
+}
+static void demo_prepare_buffers(SGL_VkSwapChain * swapchain) 
+{
+	VkResult U_ASSERT_ONLY err;
+	VkSwapchainKHR oldSwapchain = swapchain->swapchain;
+
+	// Check the surface capabilities and formats
+	VkSurfaceCapabilitiesKHR surfCapabilities;
+	err = swapchain->fpGetPhysicalDeviceSurfaceCapabilitiesKHR(
+		swapchain->gpu, swapchain->surf, &surfCapabilities);
+	SDL_assert(!err);
+
+	uint32_t presentModeCount;
+	err = swapchain->fpGetPhysicalDeviceSurfacePresentModesKHR(
+		swapchain->gpu, swapchain->surf, &presentModeCount, NULL);
+	SDL_assert(!err);
+	VkPresentModeKHR *presentModes =
+		(VkPresentModeKHR *)malloc(presentModeCount * sizeof(VkPresentModeKHR));
+	SDL_assert(presentModes);
+	err = swapchain->fpGetPhysicalDeviceSurfacePresentModesKHR(
+		swapchain->gpu, swapchain->surf, &presentModeCount, presentModes);
+	SDL_assert(!err);
+
+	VkExtent2D swapchainExtent;
+	// width and height are either both -1, or both not -1.
+	if (surfCapabilities.currentExtent.width == (uint32_t)-1)
+	{
+		// If the surface size is undefined, the size is set to
+		// the size of the images requested.
+		swapchainExtent.width = swapchain->windowSize.x;
+		swapchainExtent.height = swapchain->windowSize.y;
+	}
+	else 
+	{
+		// If the surface size is defined, the swap chain size must match
+		swapchainExtent = surfCapabilities.currentExtent;
+		swapchain->windowSize.x = surfCapabilities.currentExtent.width;
+		swapchain->windowSize.y = surfCapabilities.currentExtent.height;
+		swapchain->windowHalfSizef.x = (float)surfCapabilities.currentExtent.width / 2;
+		swapchain->windowHalfSizef.y = (float)surfCapabilities.currentExtent.height / 2;
+	}
+
+	// If mailbox mode is available, use it, as is the lowest-latency non-
+	// tearing mode.  If not, try IMMEDIATE which will usually be available,
+	// and is fastest (though it tears).  If not, fall back to FIFO which is
+	// always available.
+	VkPresentModeKHR swapchainPresentMode = VK_PRESENT_MODE_FIFO_KHR;
+	for (size_t i = 0; i < presentModeCount; i++) {
+		if (presentModes[i] == VK_PRESENT_MODE_MAILBOX_KHR) {
+			swapchainPresentMode = VK_PRESENT_MODE_MAILBOX_KHR;
+			break;
+		}
+		if ((swapchainPresentMode != VK_PRESENT_MODE_MAILBOX_KHR) &&
+			(presentModes[i] == VK_PRESENT_MODE_IMMEDIATE_KHR)) {
+			swapchainPresentMode = VK_PRESENT_MODE_IMMEDIATE_KHR;
+		}
+	}
+
+	// Determine the number of VkImage's to use in the swap chain (we desire to
+	// own only 1 image at a time, besides the images being displayed and
+	// queued for display):
+	uint32_t desiredNumberOfSwapchainImages =
+		surfCapabilities.minImageCount + 1;
+	if ((surfCapabilities.maxImageCount > 0) &&
+		(desiredNumberOfSwapchainImages > surfCapabilities.maxImageCount)) {
+		// Application must settle for fewer images than desired:
+		desiredNumberOfSwapchainImages = surfCapabilities.maxImageCount;
+	}
+
+	VkSurfaceTransformFlagsKHR preTransform;
+	if (surfCapabilities.supportedTransforms &
+		VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR) {
+		preTransform = VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR;
+	}
+	else {
+		preTransform = surfCapabilities.currentTransform;
+	}
+
+	const VkSwapchainCreateInfoKHR swapchainCreateInfo = 
+	{
+		.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR,
+		.pNext = NULL,
+		.surface = swapchain->surf,
+		.minImageCount = desiredNumberOfSwapchainImages,
+		.imageFormat = swapchain->colorFormat,
+		.imageColorSpace = swapchain->colorSpace,
+		.imageExtent =
+		{
+			.width = swapchainExtent.width,.height = swapchainExtent.height,
+		},
+		.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
+		.preTransform = preTransform,
+		.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR,
+		.imageArrayLayers = 1,
+		.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE,
+		.queueFamilyIndexCount = 0,
+		.pQueueFamilyIndices = NULL,
+		.presentMode = swapchainPresentMode,
+		.oldSwapchain = oldSwapchain,
+		.clipped = VK_TRUE,
+	};
+	err = swapchain->fpCreateSwapchainKHR(swapchain->device, &swapchainCreateInfo, NULL,
+		&swapchain->swapchain);
+	assert(!err);
+
+	// If we just re-created an existing swapchain, we should destroy the old
+	// swapchain at this point.
+	// Note: destroying the swapchain also cleans up all its associated
+	// presentable images once the platform is done with them.
+	if (oldSwapchain != VK_NULL_HANDLE) {
+		swapchain->fpDestroySwapchainKHR(swapchain->device, oldSwapchain, NULL);
+	}
+
+	err = swapchain->fpGetSwapchainImagesKHR(swapchain->device, swapchain->swapchain, &swapchain->swapchainImageCount, NULL);
+	assert(!err);
+
+	err = swapchain->fpGetSwapchainImagesKHR(swapchain->device, swapchain->swapchain,
+		&swapchain->swapchainImageCount,
+		swapchain->swapchainImages);
+	assert(!err);
+
+	U32 i;
+	for (i = 0; i < swapchain->swapchainImageCount; i++) 
+	{
+		VkImageViewCreateInfo color_image_view = 
+		{
+			.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
+			.pNext = NULL,
+			.format = swapchain->colorFormat,
+			.components =
+		{
+			.r = VK_COMPONENT_SWIZZLE_R,
+			.g = VK_COMPONENT_SWIZZLE_G,
+			.b = VK_COMPONENT_SWIZZLE_B,
+			.a = VK_COMPONENT_SWIZZLE_A,
+		},
+			.subresourceRange = 
+			{ 
+				.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
+				.baseMipLevel = 0,
+				.levelCount = 1,
+				.baseArrayLayer = 0,
+				.layerCount = 1 
+			},
+			.viewType = VK_IMAGE_VIEW_TYPE_2D,
+			.flags = 0,
+		};
+		// Render loop will expect image to have been used before and in
+		// VK_IMAGE_LAYOUT_PRESENT_SRC_KHR
+		// layout and will change to COLOR_ATTACHMENT_OPTIMAL, so init the image
+		// to that state
+		//InitCommandBuffer(swapchain, &swapchain->setupCmdBuffer);
+		demo_set_image_layout(swapchain, &swapchain->setupCmdBuffer, swapchain->swapchainImages[i], VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR, 0, 0);
+
+		color_image_view.image = swapchain->swapchainImages[i];
+
+		err = vkCreateImageView(swapchain->device, &color_image_view, NULL,
+			&swapchain->swapchainViews[i]);
+		assert(!err);
+	}
+
+	if (NULL != presentModes) 
+	{
+		free(presentModes);
+	}
+}
+static void demo_prepare_depth(SGL_VkSwapChain * swapchain)
+{
+	const VkImageCreateInfo image = {
 		.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
 		.pNext = NULL,
 		.imageType = VK_IMAGE_TYPE_2D,
-		.format = swapChain->depthFormat,
-		.extent = { swapChain->windowSize.x, swapChain->windowSize.y, 1 },
+		.format = swapchain->depthFormat,
+		.extent = { swapchain->windowSize.x, swapchain->windowSize.y, 1 },
 		.mipLevels = 1,
 		.arrayLayers = 1,
 		.samples = VK_SAMPLE_COUNT_1_BIT,
 		.tiling = VK_IMAGE_TILING_OPTIMAL,
-		.usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT,
-		.flags = 0
+		.usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
+		.flags = 0,
 	};
-	VkMemoryAllocateInfo mem_alloc = 
+
+	VkImageViewCreateInfo view = {
+		.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
+		.pNext = NULL,
+		.image = VK_NULL_HANDLE,
+		.format = swapchain->depthFormat,
+		.subresourceRange = { .aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT,
+		.baseMipLevel = 0,
+		.levelCount = 1,
+		.baseArrayLayer = 0,
+		.layerCount = 1 },
+		.flags = 0,
+		.viewType = VK_IMAGE_VIEW_TYPE_2D,
+	};
+
+	VkMemoryRequirements mem_reqs;
+	VkResult U_ASSERT_ONLY err;
+	SGL_bool U_ASSERT_ONLY pass;
+
+	/* create image */
+	err = vkCreateImage(swapchain->device, &image, NULL, &swapchain->depthStencil.image);
+	assert(!err);
+
+	vkGetImageMemoryRequirements(swapchain->device, swapchain->depthStencil.image, &mem_reqs);
+	assert(!err);
+	VkMemoryAllocateInfo mem_alloc =
 	{
 		.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO,
 		.pNext = NULL,
-		.allocationSize = 0,
+		.allocationSize = mem_reqs.size,
 		.memoryTypeIndex = 0,
 	};
 
-	VkImageViewCreateInfo depthStencilView = 
-	{
-		.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
-		.pNext = NULL,
-		.viewType = VK_IMAGE_VIEW_TYPE_2D,
-		.format = swapChain->depthFormat,
-		.flags = 0,
-		.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT,
-		.subresourceRange.baseMipLevel = 0,
-		.subresourceRange.levelCount = 1,
-		.subresourceRange.baseArrayLayer = 0,
-		.subresourceRange.layerCount = 1,
-	};
+	pass = memory_type_from_properties(swapchain, mem_reqs.memoryTypeBits,
+		0, /* No requirements */
+		&mem_alloc.memoryTypeIndex);
+	assert(pass);
 
-	VkMemoryRequirements memReqs;
-	VkResult err;
-
-	err = vkCreateImage(swapChain->device, &image, VK_NULL_HANDLE, &swapChain->depthStencil.image);
-	assert(!err);
-	vkGetImageMemoryRequirements(swapChain->device, swapChain->depthStencil.image, &memReqs);
-	mem_alloc.allocationSize = memReqs.size;
-	GetMemoryType(&swapChain->memoryProperties, memReqs.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, &mem_alloc.memoryTypeIndex);
-	err = vkAllocateMemory(swapChain->device, &mem_alloc, VK_NULL_HANDLE, &swapChain->depthStencil.mem);
+	/* allocate memory */
+	err = vkAllocateMemory(swapchain->device, &mem_alloc, NULL,
+		&swapchain->depthStencil.mem);
 	assert(!err);
 
-	err = vkBindImageMemory(swapChain->device, swapChain->depthStencil.image, swapChain->depthStencil.mem, 0);
+	/* bind memory */
+	err =
+		vkBindImageMemory(swapchain->device, swapchain->depthStencil.image, swapchain->depthStencil.mem, 0);
 	assert(!err);
-	SetImageLayout(swapChain->setupCmdBuffer, swapChain->depthStencil.image, depthStencilView.subresourceRange.aspectMask, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
+	demo_set_image_layout(swapchain, &swapchain->setupCmdBuffer, swapchain->depthStencil.image, VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT,
+		VK_IMAGE_LAYOUT_UNDEFINED,
+		VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
+		0, VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT);
 
-	depthStencilView.image = swapChain->depthStencil.image;
-	err = vkCreateImageView(swapChain->device, &depthStencilView, VK_NULL_HANDLE, &swapChain->depthStencil.view);
+	/* create image view */
+	view.image = swapchain->depthStencil.image;
+	err = vkCreateImageView(swapchain->device, &view, NULL, &swapchain->depthStencil.view);
 	assert(!err);
 }
-inline void SetupRenderPass(SGL_VkSwapChain* swapChain)
+static void demo_prepare_texture_image(SGL_VkSwapChain *swapchain, SGL_Texture *tex_obj, VkImageTiling tiling, VkImageUsageFlags usage, VkFlags required_props) 
 {
-	VkAttachmentDescription attachments[2];
-	attachments[0].format = swapChain->colorFormat;
-	attachments[0].samples = VK_SAMPLE_COUNT_1_BIT;
-	attachments[0].loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
-	attachments[0].storeOp = VK_ATTACHMENT_STORE_OP_STORE;
-	attachments[0].stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-	attachments[0].stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-	attachments[0].initialLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-	attachments[0].finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+	const VkFormat tex_format = tex_obj->format;
+	VkResult U_ASSERT_ONLY err;
+	SGL_bool U_ASSERT_ONLY pass;
 
-	attachments[1].format = swapChain->depthFormat;
-	attachments[1].samples = VK_SAMPLE_COUNT_1_BIT;
-	attachments[1].loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
-	attachments[1].storeOp = VK_ATTACHMENT_STORE_OP_STORE;
-	attachments[1].stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-	attachments[1].stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-	attachments[1].initialLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
-	attachments[1].finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
-
-	const VkAttachmentReference colorReference = 
-	{
-		.attachment = 0,
-		.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL
-	};
-
-	const VkAttachmentReference depthReference =
-	{
-		.attachment = 1,
-		.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL
-	};
-
-	VkSubpassDescription subpass = 
-	{
-		.flags = 0,
-		.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS,
-		.inputAttachmentCount = 0,
-		.pInputAttachments = VK_NULL_HANDLE,
-		.colorAttachmentCount = 1,
-		.pColorAttachments = &colorReference,
-		.pResolveAttachments = VK_NULL_HANDLE,
-		.pDepthStencilAttachment = &depthReference,
-		.preserveAttachmentCount = 0,
-		.pPreserveAttachments = VK_NULL_HANDLE
-	};
-
-	VkRenderPassCreateInfo renderPassInfo = 
-	{
-		.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO,
-		.pNext = VK_NULL_HANDLE,
-		.attachmentCount = 2,
-		.pAttachments = attachments,
-		.subpassCount = 1,
-		.pSubpasses = &subpass,
-		.dependencyCount = 0,
-		.pDependencies = VK_NULL_HANDLE
-	};
-
-	VkResult err;
-	err = vkCreateRenderPass(swapChain->device, &renderPassInfo, VK_NULL_HANDLE, &swapChain->renderPass);
-	SDL_assert(!err);
-}
-inline void CreatePipelineCache(SGL_VkSwapChain * swapChain)
-{
-	VkPipelineCacheCreateInfo pipelineCacheCreateInfo = 
-	{
-		.sType = VK_STRUCTURE_TYPE_PIPELINE_CACHE_CREATE_INFO,
-	};
-	VkResult err = vkCreatePipelineCache(swapChain->device, &pipelineCacheCreateInfo, VK_NULL_HANDLE, &swapChain->pipelineCache);
-	SDL_assert(!err);
-}
-inline void SetupFrameBuffer(SGL_VkSwapChain* swapChain)
-{
-	VkImageView attachments[2];
-
-	// Depth/Stencil attachment is the same for all frame buffers
-	attachments[1] = swapChain->depthStencil.view;
-
-	VkFramebufferCreateInfo frameBufferCreateInfo = 
-	{
-		.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO,
-		.pNext = NULL,
-		.renderPass = swapChain->renderPass,
-		.attachmentCount = 2,
-		.pAttachments = attachments,
-		.width = swapChain->windowSize.x,
-		.height = swapChain->windowSize.y,
-		.layers = 1
-	};
-
-	// Create frame buffers for every swap chain image
-	swapChain->frameBuffers = (VkFramebuffer*)SDL_realloc(swapChain->frameBuffers, swapChain->imageCount*sizeof(VkFramebuffer));
-	for (uint32_t i = 0; i < swapChain->imageCount; i++)
-	{
-		attachments[0] = swapChain->buffers[i].view;
-		VkResult err = vkCreateFramebuffer(swapChain->device, &frameBufferCreateInfo, VK_NULL_HANDLE, &swapChain->frameBuffers[i]);
-		assert(!err);
-	}
-}
-inline void FlushSetupCommandBuffer(SGL_VkSwapChain* swapChain)
-{
-	VkResult err;
-
-	if (swapChain->setupCmdBuffer == VK_NULL_HANDLE)
-		return;
-
-	err = vkEndCommandBuffer(swapChain->setupCmdBuffer);
-	assert(!err);
-
-	VkSubmitInfo submitInfo = 
-	{
-		.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO,
-		.commandBufferCount = 1,
-		.pCommandBuffers = &swapChain->setupCmdBuffer
-	};
-
-	err = vkQueueSubmit(swapChain->queue, 1, &submitInfo, VK_NULL_HANDLE);
-	assert(!err);
-
-	err = vkQueueWaitIdle(swapChain->queue);
-	assert(!err);
-
-	vkFreeCommandBuffers(swapChain->device, swapChain->cmdPool, 1, &swapChain->setupCmdBuffer);
-	swapChain->setupCmdBuffer = VK_NULL_HANDLE; // todo : check if still necessary
-}
-U32 SGL_PrepareVulkan(SGL_VkSwapChain * swapChain)
-{
-	CreateCommandPool(swapChain);
-	CreateSetupCommandBuffer(swapChain);
-	CreateSwapChain(swapChain);
-	CreateCommandBuffers(swapChain);
-	SetupDepthStencil(swapChain);
-	SetupRenderPass(swapChain);
-	CreatePipelineCache(swapChain);
-	SetupFrameBuffer(swapChain);
-	FlushSetupCommandBuffer(swapChain);
-	CreateSetupCommandBuffer(swapChain);
-	return SGL_TRUE;
-}
-inline VkBool32 CreateBuffer(const SGL_VkSwapChain* swapChain, VkBufferUsageFlags usage, VkDeviceSize size, void * data, VkBuffer *buffer, VkDeviceMemory *memory)
-{
-	VkMemoryRequirements memReqs;
-	VkMemoryAllocateInfo memAlloc = 
-	{
-		.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO,
-		.pNext = VK_NULL_HANDLE,
-		.allocationSize = 0,
-		.memoryTypeIndex = 0
-	};
-	VkBufferCreateInfo bufferCreateInfo =
-	{
-		.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,
-		.pNext = VK_NULL_HANDLE,
-		.usage = usage,
-		.size = size,
-		.flags = 0
-	};
-
-	VkResult err = vkCreateBuffer(swapChain->device, &bufferCreateInfo, VK_NULL_HANDLE, buffer);
-	assert(!err);
-	vkGetBufferMemoryRequirements(swapChain->device, *buffer, &memReqs);
-	memAlloc.allocationSize = memReqs.size;
-	if (!GetMemoryType(&swapChain->memoryProperties, memReqs.memoryTypeBits, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, &memAlloc.memoryTypeIndex))
-	{
-		SDL_Log("shreckd");
-	}
-	err = vkAllocateMemory(swapChain->device, &memAlloc, VK_NULL_HANDLE, memory);
-	assert(!err);
-	if (data != VK_NULL_HANDLE)
-	{
-		void *mapped;
-		err = vkMapMemory(swapChain->device, *memory, 0, size, 0, &mapped);
-		assert(!err);
-		SDL_memcpy(mapped, data, size);
-		vkUnmapMemory(swapChain->device, *memory);
-	}
-	err = vkBindBufferMemory(swapChain->device, *buffer, *memory, 0);
-	assert(!err);
-	return VK_TRUE;
-}
-U32 SGL_PrepareVertices(SGL_VkSwapChain * swapChain)
-{
-	// Setup vertices for a single uv-mapped quad
-	SGL_Vec2 vertexBuffer[] =
-	{
-		{  1.0f,  1.0f },{ 1.0f, 1.0f },
-		{ -1.0f,  1.0f },{ 0.0f, 1.0f },
-		{ -1.0f, -1.0f },{ 0.0f, 0.0f },
-		{  1.0f, -1.0f },{ 1.0f, 0.0f }
-	};
-	// Setup indices
-	U32 indexBuffer[] = { 0,1,2, 2,3,0 };
-	swapChain->indexBuffer.count = SDL_arraysize(indexBuffer);
-	CreateBuffer(swapChain, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, SDL_arraysize(vertexBuffer) * sizeof(SGL_Vec2), vertexBuffer, &swapChain->vertexBuffer.buf, &swapChain->vertexBuffer.mem);
-	CreateBuffer(swapChain, VK_BUFFER_USAGE_INDEX_BUFFER_BIT, swapChain->indexBuffer.count * sizeof(U32), indexBuffer, &swapChain->indexBuffer.buf, &swapChain->indexBuffer.mem);
-	// Binding description
-	swapChain->vertexBuffer.bindingCount = 1;
-	swapChain->vertexBuffer.bindingDescriptions = SDL_malloc(sizeof(VkVertexInputBindingDescription));
-	swapChain->vertexBuffer.bindingDescriptions[0].binding = VERTEX_BUFFER_BIND_ID,
-	swapChain->vertexBuffer.bindingDescriptions[0].stride = sizeof(SGL_Vec2) * 2,
-	swapChain->vertexBuffer.bindingDescriptions[0].inputRate = VK_VERTEX_INPUT_RATE_VERTEX,
-	// Attribute descriptions
-	// Describes memory layout and shader positions
-	swapChain->vertexBuffer.attributeCount = 2;
-	swapChain->vertexBuffer.attributeDescriptions = SDL_malloc(sizeof(VkVertexInputAttributeDescription)*2);
-	// Location 0 : Position
-	swapChain->vertexBuffer.attributeDescriptions[0].location = 0;
-	swapChain->vertexBuffer.attributeDescriptions[0].binding = VERTEX_BUFFER_BIND_ID;
-	swapChain->vertexBuffer.attributeDescriptions[0].format = VK_FORMAT_R32G32_SFLOAT;
-	swapChain->vertexBuffer.attributeDescriptions[0].offset = 0;
-	// Location 1 : Texture coordinates
-	swapChain->vertexBuffer.attributeDescriptions[1].location = 1;
-	swapChain->vertexBuffer.attributeDescriptions[1].binding = VERTEX_BUFFER_BIND_ID;
-	swapChain->vertexBuffer.attributeDescriptions[1].format = VK_FORMAT_R32G32_SFLOAT;
-	swapChain->vertexBuffer.attributeDescriptions[1].offset = sizeof(SGL_Vec2);
-
-	swapChain->vertexBuffer.inputState.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
-	swapChain->vertexBuffer.inputState.pNext = VK_NULL_HANDLE;
-
-	swapChain->vertexBuffer.inputState.vertexBindingDescriptionCount = swapChain->vertexBuffer.bindingCount;
-	swapChain->vertexBuffer.inputState.pVertexBindingDescriptions = swapChain->vertexBuffer.bindingDescriptions;
-	swapChain->vertexBuffer.inputState.vertexAttributeDescriptionCount = swapChain->vertexBuffer.attributeCount;
-	swapChain->vertexBuffer.inputState.pVertexAttributeDescriptions = swapChain->vertexBuffer.attributeDescriptions;
-	return SGL_TRUE;
-}
-
-U32 SGL_PrepareUniformBuffers(SGL_VkSwapChain * swapChain)
-{
-	swapChain->rotation.x = 45.0f;
-	swapChain->rotation.y = 0.0f;
-	swapChain->rotation.z = 0.0f;
-	swapChain->zoom = -2.5f;
-	swapChain->ubo.projection = SM_Perspective(degreesToRadians(60.0f), (float)swapChain->windowSize.x / (float)swapChain->windowSize.y, 0.1f, 256.0f);
-	{
-		SGL_Vec4 translationV = { 0.0f,0.0f,swapChain->zoom ,1.0f };
-		SGL_Mat4 identityM = SM_IdentityMat4();
-		SGL_Mat4 viewMatrix = SM_Translate(&identityM, &translationV);
-		swapChain->ubo.model = SM_M4Multiply(&viewMatrix, &identityM);
-	}
-	{
-		SGL_Vec4 right = { 1.0f,0.0f,0.0f,1.0f };
-		SGL_Vec4 up = { 0.0f,1.0f,0.0f,1.0f };
-		SGL_Vec4 forward = { 0.0f,0.0f,1.0f,1.0f };
-		swapChain->ubo.model = SM_Rotate(&swapChain->ubo.model, degreesToRadians(swapChain->rotation.x), &right);
-		swapChain->ubo.model = SM_Rotate(&swapChain->ubo.model, degreesToRadians(swapChain->rotation.y), &up);
-		swapChain->ubo.model = SM_Rotate(&swapChain->ubo.model, degreesToRadians(swapChain->rotation.z), &forward);
-	}
-
-	// Vertex shader uniform buffer block
-	CreateBuffer(swapChain, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, sizeof(SGL_UBO), &swapChain->ubo, &swapChain->uniformBuffer.buffer, &swapChain->uniformBuffer.memory);
-	swapChain->uniformBuffer.descriptor.buffer = swapChain->uniformBuffer.buffer;
-	swapChain->uniformBuffer.descriptor.offset = 0;
-	swapChain->uniformBuffer.descriptor.range = sizeof(SGL_UBO);
-	return SGL_TRUE;
-}
-VkPipelineShaderStageCreateInfo LoadShader(SGL_VkSwapChain* swapChain, const SGL_Shader* shader, VkShaderStageFlagBits stageBits)
-{
-
-	VkResult err;
-	VkShaderModule shaderModule;
-	VkShaderModuleCreateInfo moduleCreateInfo = 
-	{
-		.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO,
-		.pNext = VK_NULL_HANDLE,
-		.flags = 0,
-		.codeSize = shader->size,
-		.pCode = (U32*)shader->data
-	};
-	err = vkCreateShaderModule(swapChain->device, &moduleCreateInfo, VK_NULL_HANDLE, &shaderModule);
-	assert(!err);
-	VkPipelineShaderStageCreateInfo shaderStage = 
-	{
-		.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO,
-		.stage = stageBits,
-		.module = shaderModule,
-		.pName = "main" // TODO : make param
-	};
-	swapChain->shaderCount++;
-	swapChain->shaders = SDL_realloc(swapChain->shaders, sizeof(VkShaderModule)*swapChain->shaderCount);
-	swapChain->shaders[swapChain->shaderCount] = shaderModule;
-	return shaderStage;
-}
-U32 SGL_PreparePipelines(SGL_VkSwapChain * swapChain)
-{
-	VkPipelineInputAssemblyStateCreateInfo inputAssemblyState = 
-	{
-		.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO,
-		.flags = 0,
-		.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
-		.primitiveRestartEnable = VK_FALSE
-	};
-	VkPipelineRasterizationStateCreateInfo rasterizationState = 
-	{
-		.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO,
-		.flags = 0,
-		.depthClampEnable = VK_TRUE,
-		.polygonMode = VK_POLYGON_MODE_FILL,
-		.cullMode = VK_CULL_MODE_NONE,
-		.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE
-	};
-	VkPipelineColorBlendAttachmentState blendAttachmentState =
-	{
-		.colorWriteMask = 0xf,
-		.blendEnable = VK_FALSE
-	};
-	VkPipelineColorBlendStateCreateInfo colorBlendState =
-	{
-		.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO,
-		.pNext = NULL,
-		.attachmentCount = 1,
-		.pAttachments = &blendAttachmentState
-	};
-	//not 100% sure about this one
-	VkPipelineDepthStencilStateCreateInfo depthStencilState = 
-	{
-		.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO,
-		.depthTestEnable = VK_TRUE,
-		.depthWriteEnable = VK_TRUE,
-		.depthCompareOp = VK_COMPARE_OP_LESS_OR_EQUAL,
-		.back.compareOp = VK_COMPARE_OP_ALWAYS
-	};
-	VkPipelineViewportStateCreateInfo viewportState = 
-	{
-		.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO,
-		.flags = 0,
-		.viewportCount = 1,
-		.scissorCount = 1
-	};
-
-	VkPipelineMultisampleStateCreateInfo multisampleState = 
-	{
-	.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO,
-	.flags = 0,
-	.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT
-	};
-	VkDynamicState dynamicStateEnables[] = {
-		VK_DYNAMIC_STATE_VIEWPORT,
-		VK_DYNAMIC_STATE_SCISSOR
-	};
-
-	VkPipelineDynamicStateCreateInfo dynamicState = 
-	{
-		.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO,
-		.dynamicStateCount = SDL_arraysize(dynamicStateEnables),
-		.pDynamicStates = dynamicStateEnables,
-	};
-	// Load shaders
-	VkPipelineShaderStageCreateInfo shaderStages[2];
-	SGL_Shader vert = SGL_DataLoadShader("texShaderVert");
-	SGL_Shader frag = SGL_DataLoadShader("texShaderFrag");
-	shaderStages[0] = LoadShader(swapChain, &vert, VK_SHADER_STAGE_VERTEX_BIT);
-	shaderStages[1] = LoadShader(swapChain, &frag, VK_SHADER_STAGE_FRAGMENT_BIT);
-
-	VkGraphicsPipelineCreateInfo pipelineCreateInfo = 
-	{
-		.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO,
-		.pNext = VK_NULL_HANDLE,
-		.flags = 0,
-		.stageCount = 2,
-		.renderPass = swapChain->renderPass,
-		.pVertexInputState = &swapChain->vertexBuffer.inputState,
-		.pInputAssemblyState = &inputAssemblyState,
-		.pViewportState = &viewportState,
-		.pRasterizationState = &rasterizationState,
-		.pMultisampleState = &multisampleState,
-		.pDepthStencilState = &depthStencilState,
-		.pColorBlendState = &colorBlendState,
-		.pDynamicState = &dynamicState,
-		.layout = swapChain->pipelineLayout,
-		.pStages = shaderStages
-	};
-
-	VkResult err = vkCreateGraphicsPipelines(swapChain->device, swapChain->pipelineCache, 1, &pipelineCreateInfo, VK_NULL_HANDLE, &swapChain->mainPipeline);
-	assert(!err);
-	return SGL_TRUE;
-}
-
-U32 SGL_SetupDescriptorSetLayout(SGL_VkSwapChain * swapChain)
-{
-	VkDescriptorSetLayoutBinding setLayoutBindings[] =
-	{
-		// Binding 0 : Vertex shader uniform buffer
-		{
-			.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
-			.stageFlags = VK_SHADER_STAGE_VERTEX_BIT,
-			.binding = 0,
-			// Default value in all examples
-			.descriptorCount = 1
-		},
-		// Binding 1 : Fragment shader image sampler
-		{
-			.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-			.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT,
-			.binding = 1,
-			.descriptorCount = 1
-		}
-	};
-	VkDescriptorSetLayoutCreateInfo descriptorLayout =
-	{
-		.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO,
-		.pNext = VK_NULL_HANDLE,
-		.pBindings = setLayoutBindings,
-		.bindingCount = SDL_arraysize(setLayoutBindings)
-	};
-	VkResult err = vkCreateDescriptorSetLayout(swapChain->device, &descriptorLayout, VK_NULL_HANDLE, &swapChain->descriptorSetLayout);
-	assert(!err);
-
-	VkPipelineLayoutCreateInfo pPipelineLayoutCreateInfo =
-	{
-		.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO,
-		.pNext = VK_NULL_HANDLE,
-		.setLayoutCount = 1,
-		.pSetLayouts = &swapChain->descriptorSetLayout
-	};
-	err = vkCreatePipelineLayout(swapChain->device, &pPipelineLayoutCreateInfo, VK_NULL_HANDLE, &swapChain->pipelineLayout);
-	assert(!err);
-	return SGL_TRUE;
-}
-
-U32 SGL_SetupDescriptorPool(SGL_VkSwapChain * swapChain)
-{
-	// Example uses one ubo and one image sampler
-	VkDescriptorPoolSize poolSizes[2] =
-	{
-		{
-			.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
-			.descriptorCount = 1
-		},
-		{
-			.type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-			.descriptorCount = 1
-		}
-	};
-
-	VkDescriptorPoolCreateInfo descriptorPoolInfo = 
-	{
-		.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO,
-		.pNext = VK_NULL_HANDLE,
-		.poolSizeCount = SDL_arraysize(poolSizes),
-		.pPoolSizes = poolSizes,
-		.maxSets = 2,
-	};
-	VkResult vkRes = vkCreateDescriptorPool(swapChain->device, &descriptorPoolInfo, VK_NULL_HANDLE, &swapChain->descriptorPool);
-	assert(!vkRes);
-	return SGL_TRUE;
-}
-
-U32 SGL_SetupDescriptorSet(SGL_VkSwapChain * swapChain)
-{
-	VkDescriptorSetAllocateInfo allocInfo = 
-	{
-		.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO,
-		.pNext = VK_NULL_HANDLE,
-		.descriptorPool = swapChain->descriptorPool,
-		.pSetLayouts = &swapChain->descriptorSetLayout,
-		.descriptorSetCount = 1
-	};
-	VkResult vkRes = vkAllocateDescriptorSets(swapChain->device, &allocInfo, &swapChain->descriptorSet);
-	assert(!vkRes);
-	// Image descriptor for the color map texture
-	VkDescriptorImageInfo texDescriptor = 
-	{
-		.sampler = swapChain->tex.sampler,
-		.imageView = swapChain->tex.view,
-		.imageLayout = VK_IMAGE_LAYOUT_GENERAL
-	};
-	VkWriteDescriptorSet writeDescriptorSets[] =
-	{
-		// Binding 0 : Vertex shader uniform buffer
-		{
-			.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
-			.pNext = VK_NULL_HANDLE,
-			.dstSet = swapChain->descriptorSet,
-			.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
-			.dstBinding = 0,
-			.pBufferInfo = &swapChain->uniformBuffer.descriptor,
-			// Default value in all examples
-			.descriptorCount = 1
-		},
-		// Binding 1 : Fragment shader texture sampler
-		{
-			.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
-			.pNext = VK_NULL_HANDLE,
-			.dstSet = swapChain->descriptorSet,
-			.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-			.dstBinding = 1,
-			.pImageInfo = &texDescriptor,
-			// Default value in all examples
-			.descriptorCount = 1
-		}
-	};
-	vkUpdateDescriptorSets(swapChain->device, SDL_arraysize(writeDescriptorSets), writeDescriptorSets, 0, VK_NULL_HANDLE);
-	return SGL_TRUE;
-}
-
-U32 SGL_BuildCommandBuffers(SGL_VkSwapChain * swapChain)
-{
-	VkCommandBufferBeginInfo cmdBufInfo = 
-	{
-		.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
-		.pNext = VK_NULL_HANDLE
-	};
-
-	VkClearValue clearValues[2] = 
-	{
-		{
-			.color = { 0.025f, 0.025f, 0.025f, 1.0f }
-		},
-		{
-			.depthStencil = { 1.0f, 0.0f }
-		}
-	};
-
-	VkRenderPassBeginInfo renderPassBeginInfo = 
-	{
-		.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO,
-		.pNext = VK_NULL_HANDLE,
-		.renderPass = swapChain->renderPass,
-		.renderArea.offset.x = 0,
-		.renderArea.offset.y = 0,
-		.renderArea.extent.width = swapChain->windowSize.x,
-		.renderArea.extent.height = swapChain->windowSize.y,
-		.clearValueCount = 2,
-		.pClearValues = clearValues
-	};
-
-	VkResult err;
-
-	for (U32 i = 0; i < swapChain->imageCount; ++i)
-	{
-		// Set target frame buffer
-		renderPassBeginInfo.framebuffer = swapChain->frameBuffers[i];
-
-		err = vkBeginCommandBuffer(swapChain->drawCmdBuffers[i], &cmdBufInfo);
-		assert(!err);
-
-		vkCmdBeginRenderPass(swapChain->drawCmdBuffers[i], &renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
-		VkViewport viewport = 
-		{
-			.width = (float)swapChain->windowSize.x,
-			.height = (float)swapChain->windowSize.y,
-			.minDepth = 0.0f,
-			.maxDepth = 1.0f
-		};
-		vkCmdSetViewport(swapChain->drawCmdBuffers[i], 0, 1, &viewport);
-
-		VkRect2D scissor = 
-		{
-			swapChain->windowSize.x,
-			swapChain->windowSize.y,
-			0,
-			0
-		};
-		vkCmdSetScissor(swapChain->drawCmdBuffers[i], 0, 1, &scissor);
-
-		vkCmdBindDescriptorSets(swapChain->drawCmdBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, swapChain->pipelineLayout, 0, 1, &swapChain->descriptorSet, 0, NULL);
-		vkCmdBindPipeline(swapChain->drawCmdBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, swapChain->mainPipeline);
-
-		VkDeviceSize offsets[1] = { 0 };
-		vkCmdBindVertexBuffers(swapChain->drawCmdBuffers[i], VERTEX_BUFFER_BIND_ID, 1, &swapChain->vertexBuffer.buf, offsets);
-		vkCmdBindIndexBuffer(swapChain->drawCmdBuffers[i], swapChain->indexBuffer.buf, 0, VK_INDEX_TYPE_UINT32);
-
-		vkCmdDrawIndexed(swapChain->drawCmdBuffers[i], swapChain->indexBuffer.count, 1, 0, 0, 0);
-
-		vkCmdEndRenderPass(swapChain->drawCmdBuffers[i]);
-
-		VkImageMemoryBarrier prePresentBarrier =
-		{
-			// Some default values
-			.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER,
-			.pNext = NULL,
-			.srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
-			.dstAccessMask = 0,
-			.oldLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-			.newLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,
-			.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
-			.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
-			.subresourceRange = { VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 },
-			//And image
-			.image = swapChain->buffers[i].image
-		};
-		vkCmdPipelineBarrier(
-			swapChain->drawCmdBuffers[i],
-			VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
-			VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
-			0,
-			0, VK_NULL_HANDLE,
-			0, VK_NULL_HANDLE,
-			1, &prePresentBarrier);
-
-		err = vkEndCommandBuffer(swapChain->drawCmdBuffers[i]);
-		assert(!err);
-	}
-	swapChain->prepared = SGL_TRUE;
-	return SGL_TRUE;
-}
-U32 SGL_PrepareTexture(SGL_VkSwapChain * swapChain, SGL_Texture* tex, VkImageTiling tiling, VkImageUsageFlags usage, VkFlags requiredProps)
-{
-	VkResult err;
-	SDL_assert(tex->surf);
 	const VkImageCreateInfo image_create_info = 
 	{
 		.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
 		.pNext = NULL,
 		.imageType = VK_IMAGE_TYPE_2D,
-		.format = tex->format,
-		.extent = { tex->w, tex->h, 1 },
+		.format = tex_format,
+		.extent = { tex_obj->w, tex_obj->h, 1 },
 		.mipLevels = 1,
 		.arrayLayers = 1,
 		.samples = VK_SAMPLE_COUNT_1_BIT,
 		.tiling = tiling,
 		.usage = usage,
 		.flags = 0,
-		.initialLayout = VK_IMAGE_LAYOUT_PREINITIALIZED
+		.initialLayout = VK_IMAGE_LAYOUT_PREINITIALIZED,
 	};
 
-	VkMemoryRequirements memReqs;
+	VkMemoryRequirements mem_reqs;
 
 	err =
-		vkCreateImage(swapChain->device, &image_create_info, NULL, &tex->image);
+		vkCreateImage(swapchain->device, &image_create_info, NULL, &tex_obj->image);
 	assert(!err);
 
-	vkGetImageMemoryRequirements(swapChain->device, tex->image, &memReqs);
-	VkMemoryAllocateInfo memAllocInfo =
-	{
-		.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO,
-		.pNext = VK_NULL_HANDLE,
-		.allocationSize = memReqs.size,
-		.memoryTypeIndex = 0
-	};
-	SDL_assert(GetMemoryType(&swapChain->memoryProperties, memReqs.memoryTypeBits, requiredProps, &memAllocInfo.memoryTypeIndex));
+	vkGetImageMemoryRequirements(swapchain->device, tex_obj->image, &mem_reqs);
+
+	tex_obj->mem_alloc.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+	tex_obj->mem_alloc.pNext = NULL;
+	tex_obj->mem_alloc.allocationSize = mem_reqs.size;
+	tex_obj->mem_alloc.memoryTypeIndex = 0;
+
+	pass = memory_type_from_properties(swapchain, mem_reqs.memoryTypeBits,
+		required_props,
+		&tex_obj->mem_alloc.memoryTypeIndex);
+	assert(pass);
 
 	/* allocate memory */
-	err = vkAllocateMemory(swapChain->device, &memAllocInfo, NULL,
-		&tex->deviceMem);
-	SDL_assert(!err);
+	err = vkAllocateMemory(swapchain->device, &tex_obj->mem_alloc, NULL,
+		&(tex_obj->mem));
+	assert(!err);
 
 	/* bind memory */
-	err = vkBindImageMemory(swapChain->device, tex->image, tex->deviceMem, 0);
-	SDL_assert(!err);
+	err = vkBindImageMemory(swapchain->device, tex_obj->image, tex_obj->mem, 0);
+	assert(!err);
 
-	if (requiredProps & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT)
+	if (required_props & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT) 
 	{
 		const VkImageSubresource subres = 
 		{
@@ -1762,323 +1481,931 @@ U32 SGL_PrepareTexture(SGL_VkSwapChain * swapChain, SGL_Texture* tex, VkImageTil
 		VkSubresourceLayout layout;
 		void *data;
 
-		vkGetImageSubresourceLayout(swapChain->device, tex->image, &subres,
+		vkGetImageSubresourceLayout(swapchain->device, tex_obj->image, &subres,
 			&layout);
 
-		err = vkMapMemory(swapChain->device, tex->deviceMem, 0,
-			memAllocInfo.allocationSize, 0, &data);
-		SDL_assert(!err);
+		err = vkMapMemory(swapchain->device, tex_obj->mem, 0,
+			tex_obj->mem_alloc.allocationSize, 0, &data);
+		assert(!err);
+		SDL_memcpy(data, tex_obj->surf->pixels, tex_obj->mem_alloc.allocationSize);
 
-		SDL_memcpy(data, tex->surf->pixels, tex->w*tex->h*tex->surf->format->BytesPerPixel);
-		//if (!loadTexture(filename, data, &layout, &tex_width, &tex_height)) {
-		//	fprintf(stderr, "Error loading texture: %s\n", filename);
-		//}
-
-		vkUnmapMemory(swapChain->device, tex->deviceMem);
+		vkUnmapMemory(swapchain->device, tex_obj->mem);
 	}
 
-	tex->imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-	SetImageLayout(swapChain->setupCmdBuffer, tex->image, VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_UNDEFINED, tex->imageLayout);
-
-	return SGL_TRUE;
+	tex_obj->imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+	demo_set_image_layout(swapchain, &swapchain->setupCmdBuffer, tex_obj->image, VK_IMAGE_ASPECT_COLOR_BIT,
+		VK_IMAGE_LAYOUT_PREINITIALIZED, tex_obj->imageLayout,
+		VK_ACCESS_HOST_WRITE_BIT, VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_INPUT_ATTACHMENT_READ_BIT);
+	int g = 0;
+	/* setting the image layout does not reference the actual memory so no need
+	* to add a mem ref */
 }
-U32 SGL_PrepareTextureToOptimalTiling(SGL_VkSwapChain * swapChain, SGL_Texture* tex)
+static void demo_prepare_textures(SGL_VkSwapChain *swapchain) 
 {
-	SGL_Texture stagingTexture =
 	{
-		.format = tex->format,
-		.w = tex->w,
-		.h = tex->h,
-		.mipLevels = 1,
-		.surf = tex->surf
-	};
+		SDL_Surface* surf = SGL_DataLoadImage("chimppiVulkant0");
+		swapchain->tex.surf = surf;
+		swapchain->tex.w = surf->w;
+		swapchain->tex.h = surf->h;
+		swapchain->tex.mipLevels = 1;
+		swapchain->tex.format = SGL_PixelFormatToVkFormat(surf->format->format);
+	}
+	const VkFormat tex_format = swapchain->tex.format;
+	VkFormatProperties props;
+	uint32_t i;
 
-	SGL_PrepareTexture(swapChain, &stagingTexture, VK_IMAGE_TILING_LINEAR, VK_IMAGE_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
-	SGL_PrepareTexture(swapChain, tex, VK_IMAGE_TILING_OPTIMAL, (VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT), VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
-	SetImageLayout(swapChain->setupCmdBuffer, stagingTexture.image, VK_IMAGE_ASPECT_COLOR_BIT, stagingTexture.imageLayout, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL);
-	SetImageLayout(swapChain->setupCmdBuffer, tex->image, VK_IMAGE_ASPECT_COLOR_BIT, tex->imageLayout, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+	vkGetPhysicalDeviceFormatProperties(swapchain->gpu, tex_format, &props);
 
-	VkImageCopy copyRegion = 
+	for (i = 0; i < 1; i++) 
 	{
-		.srcSubresource = { VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1 },
-		.srcOffset = { 0, 0, 0 },
-		.dstSubresource = { VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1 },
-		.dstOffset = { 0, 0, 0 },
-		.extent = { stagingTexture.w, stagingTexture.h, 1 },
-	};
-
-	vkCmdCopyImage(swapChain->setupCmdBuffer, stagingTexture.image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, tex->image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &copyRegion);
-	SetImageLayout(swapChain->setupCmdBuffer, tex->image, VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, tex->imageLayout);
-	FlushSetupCommandBuffer(swapChain);
-	CreateSetupCommandBuffer(swapChain);
-	const VkSamplerCreateInfo sampler = 
-	{
-		.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO,
-		.pNext = NULL,
-		.magFilter = VK_FILTER_NEAREST,
-		.minFilter = VK_FILTER_NEAREST,
-		.mipmapMode = VK_SAMPLER_MIPMAP_MODE_NEAREST,
-		.addressModeU = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE,
-		.addressModeV = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE,
-		.addressModeW = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE,
-		.mipLodBias = 0.0f,
-		.anisotropyEnable = VK_FALSE,
-		.maxAnisotropy = 1,
-		.compareOp = VK_COMPARE_OP_NEVER,
-		.minLod = 0.0f,
-		.maxLod = 0.0f,
-		.borderColor = VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE,
-		.unnormalizedCoordinates = VK_FALSE,
-	};
-
-	VkImageViewCreateInfo view = 
-	{
-		.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
-		.pNext = NULL,
-		.image = VK_NULL_HANDLE,
-		.viewType = VK_IMAGE_VIEW_TYPE_2D,
-		.format = tex->format,
-		.components = { VK_COMPONENT_SWIZZLE_R, VK_COMPONENT_SWIZZLE_G, VK_COMPONENT_SWIZZLE_B, VK_COMPONENT_SWIZZLE_A },
-		.subresourceRange = { VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 },
-		.flags = 0,
-	};
-	VkResult err;
-	/* create sampler */
-	err = vkCreateSampler(swapChain->device, &sampler, NULL, &tex->sampler);
-	assert(!err);
-
-	/* create image view */
-	view.image = tex->image;
-	err = vkCreateImageView(swapChain->device, &view, NULL, &tex->view);
-	assert(!err);
-	return SGL_TRUE;
-}
-
-U32 SGL_PrepareTextureTest(SGL_VkSwapChain * swapChain, SGL_Texture * tex)
-{
-	VkFormatProperties formatProperties;
-	VkResult err;
-
-	assert(tex);
-	// Get device properites for the requested texture format
-	vkGetPhysicalDeviceFormatProperties(swapChain->gpu, tex->format, &formatProperties);
-
-	// Only use linear tiling if forced
-	//*
-
-	VkImageCreateInfo imageCreateInfo = 
-	{
-		.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
-		.pNext = VK_NULL_HANDLE,
-		.imageType = VK_IMAGE_TYPE_2D,
-		.format = tex->format,
-		.mipLevels = 1,
-		.arrayLayers = 1,
-		.samples = VK_SAMPLE_COUNT_1_BIT,
-		.tiling = VK_IMAGE_TILING_LINEAR,
-		.usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT,
-		.sharingMode = VK_SHARING_MODE_EXCLUSIVE,
-		.flags = 0,
-		.initialLayout = VK_IMAGE_LAYOUT_PREINITIALIZED,
-		.extent = { tex->w, tex->h, 1 }
-	};
-	VkMemoryAllocateInfo memAllocInfo = 
-	{
-		.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO,
-		.pNext = VK_NULL_HANDLE,
-		.allocationSize = 0,
-		.memoryTypeIndex = 0
-	};
-	VkMemoryRequirements memReqs;
-	{
-		// Load all available mip levels into linear textures
-		// and copy to optimal tiling target
-		typedef struct _MipLevel 
+		VkResult U_ASSERT_ONLY err;
+		if (props.optimalTilingFeatures & VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT) 
 		{
-			VkImage image;
-			VkDeviceMemory memory;
-		} MipLevel;
-		MipLevel* mipLevels = SDL_malloc(tex->mipLevels*sizeof(MipLevel));
-		// Copy mip levels
-		for (uint32_t level = 0; level < tex->mipLevels; ++level)
-		{
-			imageCreateInfo.extent.width = tex[level].w;
-			imageCreateInfo.extent.height = tex[level].h;
-			imageCreateInfo.extent.depth = 1;
+			/* Must use staging buffer to copy linear texture to optimized */
+			SGL_Texture staging_texture = swapchain->tex;
+			
 
-			err = vkCreateImage(swapChain->device, &imageCreateInfo, VK_NULL_HANDLE, &mipLevels[level].image);
-			assert(!err);
 
-			vkGetImageMemoryRequirements(swapChain->device, mipLevels[level].image, &memReqs);
-			memAllocInfo.allocationSize = memReqs.size;
-			GetMemoryType(&swapChain->memoryProperties, memReqs.memoryTypeBits, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, &memAllocInfo.memoryTypeIndex);
-			err = vkAllocateMemory(swapChain->device, &memAllocInfo, VK_NULL_HANDLE, &mipLevels[level].memory);
-			assert(!err);
-			err = vkBindImageMemory(swapChain->device, mipLevels[level].image, mipLevels[level].memory, 0);
-			assert(!err);
+			//memset(&staging_texture, 0, sizeof(staging_texture));
+			demo_prepare_texture_image(swapchain, &staging_texture,
+				VK_IMAGE_TILING_LINEAR,
+				VK_IMAGE_USAGE_TRANSFER_SRC_BIT,
+				VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
 
-			VkImageSubresource subRes = 
-			{
-				.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT
-			};
+			demo_prepare_texture_image(
+				swapchain, &swapchain->tex, VK_IMAGE_TILING_OPTIMAL,
+				(VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT),
+				VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
-			VkSubresourceLayout subResLayout;
-			void *data;
-
-			vkGetImageSubresourceLayout(swapChain->device, mipLevels[level].image, &subRes, &subResLayout);
-			assert(!err);
-			err = vkMapMemory(swapChain->device, mipLevels[level].memory, 0, memReqs.size, 0, &data);
-			assert(!err);
-			memcpy(data, tex[level].surf->pixels, tex[level].surf->format->BytesPerPixel * tex->w * tex->h);
-			vkUnmapMemory(swapChain->device, mipLevels[level].memory);
-
-			// Image barrier for linear image (base)
-			// Linear image will be used as a source for the copy
-			SetImageLayout(
-				swapChain->setupCmdBuffer,
-				mipLevels[level].image,
+			demo_set_image_layout(swapchain, &swapchain->setupCmdBuffer, staging_texture.image,
 				VK_IMAGE_ASPECT_COLOR_BIT,
-				VK_IMAGE_LAYOUT_PREINITIALIZED,
-				VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL);
-		}
+				staging_texture.imageLayout,
+				VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+				VK_ACCESS_INPUT_ATTACHMENT_READ_BIT | VK_ACCESS_SHADER_READ_BIT, VK_ACCESS_TRANSFER_READ_BIT);
 
-		// Setup texture as blit target with optimal tiling
-		imageCreateInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
-		imageCreateInfo.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
-		imageCreateInfo.mipLevels = tex->mipLevels;
-		imageCreateInfo.extent.width = tex->w;
-		imageCreateInfo.extent.height = tex->h;
-		imageCreateInfo.extent.depth = 1;
+			demo_set_image_layout(swapchain, &swapchain->setupCmdBuffer, swapchain->tex.image,
+				VK_IMAGE_ASPECT_COLOR_BIT,
+				swapchain->tex.imageLayout,
+				VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+				VK_ACCESS_INPUT_ATTACHMENT_READ_BIT | VK_ACCESS_SHADER_READ_BIT, VK_ACCESS_TRANSFER_WRITE_BIT);
 
-		err = vkCreateImage(swapChain->device, &imageCreateInfo, VK_NULL_HANDLE, &tex->image);
-		assert(!err);
-
-		vkGetImageMemoryRequirements(swapChain->device, tex->image, &memReqs);
-
-		memAllocInfo.allocationSize = memReqs.size;
-
-		GetMemoryType(&swapChain->memoryProperties, memReqs.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, &memAllocInfo.memoryTypeIndex);
-		err = vkAllocateMemory(swapChain->device, &memAllocInfo, VK_NULL_HANDLE, &tex->deviceMem);
-		assert(!err);
-		err = vkBindImageMemory(swapChain->device, tex->image, tex->deviceMem, 0);
-		assert(!err);
-
-		// Image barrier for optimal image (target)
-		// Optimal image will be used as destination for the copy
-		SetImageLayout(
-			swapChain->setupCmdBuffer,
-			tex->image,
-			VK_IMAGE_ASPECT_COLOR_BIT,
-			VK_IMAGE_LAYOUT_UNDEFINED,
-			VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
-
-		// Copy mip levels one by one
-		for (uint32_t level = 0; level < tex->mipLevels; ++level)
-		{
-			// Copy region for image blit
-			VkImageCopy copyRegion = 
+			VkImageCopy copy_region = 
 			{
-				.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
-				.srcSubresource.baseArrayLayer = 0,
-				.srcSubresource.mipLevel = 0,
-				.srcSubresource.layerCount = 1,
+				.srcSubresource = { VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1 },
 				.srcOffset = { 0, 0, 0 },
+				.dstSubresource = { VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1 },
+				.dstOffset = { 0, 0, 0 },
+				.extent = { staging_texture.w,
+				staging_texture.h, 1 },
 			};
-
-			copyRegion.dstSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-			copyRegion.dstSubresource.baseArrayLayer = 0;
-			// Set mip level to copy the linear image to
-			copyRegion.dstSubresource.mipLevel = level;
-			copyRegion.dstSubresource.layerCount = 1;
-			copyRegion.dstOffset.x = 0;
-			copyRegion.dstOffset.y = 0;
-			copyRegion.dstOffset.z = 0;
-
-			copyRegion.extent.width = tex[level].w;
-			copyRegion.extent.height = tex[level].h;
-			copyRegion.extent.depth = 1;
-
-			// Put image copy into command buffer
 			vkCmdCopyImage(
-				swapChain->setupCmdBuffer,
-				mipLevels[level].image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
-				tex->image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-				1, &copyRegion);
+				swapchain->setupCmdBuffer, staging_texture.image,
+				VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, swapchain->tex.image,
+				VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &copy_region);
 
-			// Change texture image layout to shader read after the copy
-			tex->imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-			SetImageLayout(
-				swapChain->setupCmdBuffer,
-				tex->image,
+			demo_set_image_layout(swapchain, &swapchain->setupCmdBuffer, swapchain->tex.image,
 				VK_IMAGE_ASPECT_COLOR_BIT,
 				VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-				tex->imageLayout);
+				swapchain->tex.imageLayout,
+				VK_ACCESS_TRANSFER_WRITE_BIT, VK_ACCESS_SHADER_READ_BIT);
+
+			demo_flush_init_cmd(swapchain);
+
+			//destroy useless texture
+			vkFreeMemory(swapchain->device, staging_texture.mem, NULL);
+			vkDestroyImage(swapchain->device, staging_texture.image, NULL);
+		}
+		else {
+			/* Can't support VK_FORMAT_R8G8B8A8_UNORM !? */
+			assert(!"No support for current texture format as texture image format");
 		}
 
-		FlushSetupCommandBuffer(swapChain);
-		CreateSetupCommandBuffer(swapChain);
+		const VkSamplerCreateInfo sampler = {
+			.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO,
+			.pNext = NULL,
+			.magFilter = VK_FILTER_NEAREST,
+			.minFilter = VK_FILTER_NEAREST,
+			.mipmapMode = VK_SAMPLER_MIPMAP_MODE_NEAREST,
+			.addressModeU = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE,
+			.addressModeV = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE,
+			.addressModeW = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE,
+			.mipLodBias = 0.0f,
+			.anisotropyEnable = VK_FALSE,
+			.maxAnisotropy = 1,
+			.compareOp = VK_COMPARE_OP_NEVER,
+			.minLod = 0.0f,
+			.maxLod = 0.0f,
+			.borderColor = VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE,
+			.unnormalizedCoordinates = VK_FALSE,
+		};
 
-		// Clean up linear images 
-		// No longer required after mip levels
-		// have been transformed over to optimal tiling
-		for (size_t i = 0; i < tex->mipLevels; i++)
+		VkImageViewCreateInfo view = {
+			.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
+			.pNext = NULL,
+			.image = VK_NULL_HANDLE,
+			.viewType = VK_IMAGE_VIEW_TYPE_2D,
+			.format = tex_format,
+			.components =
 		{
-			vkDestroyImage(swapChain->device, mipLevels[i].image, VK_NULL_HANDLE);
-			vkFreeMemory(swapChain->device, mipLevels[i].memory, VK_NULL_HANDLE);
-		}
+			VK_COMPONENT_SWIZZLE_R, VK_COMPONENT_SWIZZLE_G,
+			VK_COMPONENT_SWIZZLE_B, VK_COMPONENT_SWIZZLE_A,
+		},
+			.subresourceRange = { VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 },
+			.flags = 0,
+		};
+
+		/* create sampler */
+		err = vkCreateSampler(swapchain->device, &sampler, NULL,
+			&swapchain->tex.sampler);
+		assert(!err);
+
+		/* create image view */
+		view.image = swapchain->tex.image;
+		err = vkCreateImageView(swapchain->device, &view, NULL,
+			&swapchain->tex.view);
+		assert(!err);
 	}
-	// Create sampler
-	// In Vulkan textures are accessed by samplers
-	// This separates all the sampling information from the 
-	// texture data
-	// This means you could have multiple sampler objects
-	// for the same texture with different settings
-	// Similar to the samplers available with OpenGL 3.3
-	VkSamplerCreateInfo sampler = 
+}
+static void demo_prepare_cube_data_buffer(SGL_VkSwapChain *swapchain)
+{
+
 	{
-		.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO,
-		.pNext = VK_NULL_HANDLE,
-		.magFilter = VK_FILTER_LINEAR,
-		.minFilter = VK_FILTER_LINEAR,
-		.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR,
-		.addressModeU = VK_SAMPLER_ADDRESS_MODE_REPEAT,
-		.addressModeV = VK_SAMPLER_ADDRESS_MODE_REPEAT,
-		.addressModeW = VK_SAMPLER_ADDRESS_MODE_REPEAT,
-		.mipLodBias = 0.0f,
-		.compareOp = VK_COMPARE_OP_NEVER,
-		.minLod = 0.0f,
-		// Max level-of-detail should match mip level count
-		.maxLod = tex->mipLevels,
-		// Enable anisotropic filtering
-		.maxAnisotropy = 8,
-		.anisotropyEnable = VK_TRUE,
-		.borderColor = VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE,
+		SGL_Vec4 eye = { 0.0f, 3.0f, 5.0f ,0.0f };
+		SGL_Vec4 origin = { 0.0f, 0.0f, 0.0f, 0.0f };
+		SGL_Vec4 up = { 0.0f, 1.0f, 0.0f, 0.0f };
+		swapchain->spin_angle = 0.01f;
+		swapchain->spin_increment = 0.01f;
+		float fow = (float)degreesToRadians(45.0f);
+		swapchain->projection_matrix = SM_Perspective((float)degreesToRadians(45.0f), swapchain->windowHalfSizef.x/swapchain->windowHalfSizef.y, 0.1f, 100.0f);
+		swapchain->view_matrix = SM_LookAt(&eye, &origin, &up);
+		swapchain->model_matrix = SM_IdentityMat4();
+	}
+	VkBufferCreateInfo buf_info;
+	VkMemoryRequirements mem_reqs;
+	U8 *pData;
+	int i;
+	SGL_Mat4 MVP, VP;
+	VkResult U_ASSERT_ONLY err;
+	SGL_bool U_ASSERT_ONLY pass;
+	struct vktexcube_vs_uniform data;
+	VP = SM_M4Multiply(&swapchain->view_matrix, &swapchain->projection_matrix);
+	MVP = SM_M4Multiply(&swapchain->model_matrix, &VP);
+	memcpy(data.mvp, &MVP, sizeof(MVP));
+	static const float g_vertex_buffer_data[] =
+	{
+		-1.0f,-1.0f,-1.0f,  // -X side
+		-1.0f,-1.0f, 1.0f,
+		-1.0f, 1.0f, 1.0f,
+		-1.0f, 1.0f, 1.0f,
+		-1.0f, 1.0f,-1.0f,
+		-1.0f,-1.0f,-1.0f,
+
+		-1.0f,-1.0f,-1.0f,  // -Z side
+		1.0f, 1.0f,-1.0f,
+		1.0f,-1.0f,-1.0f,
+		-1.0f,-1.0f,-1.0f,
+		-1.0f, 1.0f,-1.0f,
+		1.0f, 1.0f,-1.0f,
+
+		-1.0f,-1.0f,-1.0f,  // -Y side
+		1.0f,-1.0f,-1.0f,
+		1.0f,-1.0f, 1.0f,
+		-1.0f,-1.0f,-1.0f,
+		1.0f,-1.0f, 1.0f,
+		-1.0f,-1.0f, 1.0f,
+
+		-1.0f, 1.0f,-1.0f,  // +Y side
+		-1.0f, 1.0f, 1.0f,
+		1.0f, 1.0f, 1.0f,
+		-1.0f, 1.0f,-1.0f,
+		1.0f, 1.0f, 1.0f,
+		1.0f, 1.0f,-1.0f,
+
+		1.0f, 1.0f,-1.0f,  // +X side
+		1.0f, 1.0f, 1.0f,
+		1.0f,-1.0f, 1.0f,
+		1.0f,-1.0f, 1.0f,
+		1.0f,-1.0f,-1.0f,
+		1.0f, 1.0f,-1.0f,
+
+		-1.0f, 1.0f, 1.0f,  // +Z side
+		-1.0f,-1.0f, 1.0f,
+		1.0f, 1.0f, 1.0f,
+		-1.0f,-1.0f, 1.0f,
+		1.0f,-1.0f, 1.0f,
+		1.0f, 1.0f, 1.0f,
 	};
-	err = vkCreateSampler(swapChain->device, &sampler, VK_NULL_HANDLE, &tex->sampler);
+
+	static const float g_uv_buffer_data[] = {
+		0.0f, 0.0f,  // -X side
+		1.0f, 0.0f,
+		1.0f, 1.0f,
+		1.0f, 1.0f,
+		0.0f, 1.0f,
+		0.0f, 0.0f,
+
+		1.0f, 0.0f,  // -Z side
+		0.0f, 1.0f,
+		0.0f, 0.0f,
+		1.0f, 0.0f,
+		1.0f, 1.0f,
+		0.0f, 1.0f,
+
+		1.0f, 1.0f,  // -Y side
+		1.0f, 0.0f,
+		0.0f, 0.0f,
+		1.0f, 1.0f,
+		0.0f, 0.0f,
+		0.0f, 1.0f,
+
+		1.0f, 1.0f,  // +Y side
+		0.0f, 1.0f,
+		0.0f, 0.0f,
+		1.0f, 1.0f,
+		0.0f, 0.0f,
+		1.0f, 0.0f,
+
+		1.0f, 1.0f,  // +X side
+		0.0f, 1.0f,
+		0.0f, 0.0f,
+		0.0f, 0.0f,
+		1.0f, 0.0f,
+		1.0f, 1.0f,
+
+		0.0f, 1.0f,  // +Z side
+		0.0f, 0.0f,
+		1.0f, 1.0f,
+		0.0f, 0.0f,
+		1.0f, 0.0f,
+		1.0f, 1.0f,
+	};
+	for (i = 0; i < 12 * 3; i++) {
+		data.position[i][0] = g_vertex_buffer_data[i * 3];
+		data.position[i][1] = g_vertex_buffer_data[i * 3 + 1];
+		data.position[i][2] = g_vertex_buffer_data[i * 3 + 2];
+		data.position[i][3] = 1.0f;
+		data.attr[i][0] = g_uv_buffer_data[2 * i];
+		data.attr[i][1] = g_uv_buffer_data[2 * i + 1];
+		data.attr[i][2] = 0;
+		data.attr[i][3] = 0;
+	}
+
+	memset(&buf_info, 0, sizeof(buf_info));
+	buf_info.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+	buf_info.usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
+	buf_info.size = sizeof(data);
+
+	err = vkCreateBuffer(swapchain->device, &buf_info, NULL, &swapchain->uniformBuffer.buffer);
 	assert(!err);
 
-	// Create image view
-	// Textures are not directly accessed by the shaders and
-	// are abstracted by image views containing additional
-	// information and sub resource ranges
-	VkImageViewCreateInfo view = 
+	vkGetBufferMemoryRequirements(swapchain->device, swapchain->uniformBuffer.buffer,
+		&mem_reqs);
+	VkMemoryAllocateInfo mem_alloc = 
 	{
-		.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
+		.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO,
 		.pNext = NULL,
-		.image = tex->image,
-		.viewType = VK_IMAGE_VIEW_TYPE_2D,
-		.format = tex->format,
-		.components = { VK_COMPONENT_SWIZZLE_R, VK_COMPONENT_SWIZZLE_G, VK_COMPONENT_SWIZZLE_B, VK_COMPONENT_SWIZZLE_A },
-		.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
-		.subresourceRange.baseMipLevel = 0,
-		.subresourceRange.baseArrayLayer = 0,
-		.subresourceRange.layerCount = 1,
-		// Linear tiling usually won't support mip maps
-		// Only set mip map count if optimal tiling is used
-		.subresourceRange.levelCount = tex->mipLevels,
+		.allocationSize = mem_reqs.size,
+		.memoryTypeIndex = 0,
 	};
-	err = vkCreateImageView(swapChain->device, &view, VK_NULL_HANDLE, &tex->view);
+	swapchain->uniformBuffer.allocSize = mem_alloc.allocationSize;
+
+	pass = memory_type_from_properties(swapchain, mem_reqs.memoryTypeBits, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, &mem_alloc.memoryTypeIndex);
+	assert(pass);
+
+	err = vkAllocateMemory(swapchain->device, &mem_alloc, NULL,
+		&(swapchain->uniformBuffer.memory));
 	assert(!err);
-	//*/
+
+	err = vkMapMemory(swapchain->device, swapchain->uniformBuffer.memory, 0, swapchain->uniformBuffer.allocSize, 0, (void **)&pData);
+	assert(!err);
+
+	memcpy(pData, &data, sizeof data);
+
+	vkUnmapMemory(swapchain->device, swapchain->uniformBuffer.memory);
+
+	err = vkBindBufferMemory(swapchain->device, swapchain->uniformBuffer.buffer,
+		swapchain->uniformBuffer.memory, 0);
+	assert(!err);
+
+	swapchain->uniformBuffer.descriptor.buffer = swapchain->uniformBuffer.buffer;
+	swapchain->uniformBuffer.descriptor.offset = 0;
+	swapchain->uniformBuffer.descriptor.range = sizeof(data);
+}
+static void demo_prepare_descriptor_layout(SGL_VkSwapChain *swapchain)
+{
+	const VkDescriptorSetLayoutBinding layout_bindings[2] = {
+		[0] =
+	{
+		.binding = 0,
+		.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+		.descriptorCount = 1,
+		.stageFlags = VK_SHADER_STAGE_VERTEX_BIT,
+		.pImmutableSamplers = NULL,
+	},
+		[1] =
+	{
+		.binding = 1,
+		.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+		.descriptorCount = DEMO_TEXTURE_COUNT,
+		.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT,
+		.pImmutableSamplers = NULL,
+	},
+	};
+	const VkDescriptorSetLayoutCreateInfo descriptor_layout = {
+		.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO,
+		.pNext = NULL,
+		.bindingCount = 2,
+		.pBindings = layout_bindings,
+	};
+	VkResult U_ASSERT_ONLY err;
+
+	err = vkCreateDescriptorSetLayout(swapchain->device, &descriptor_layout, NULL,
+		&swapchain->descriptorSetLayout);
+	assert(!err);
+
+	const VkPipelineLayoutCreateInfo pPipelineLayoutCreateInfo = {
+		.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO,
+		.pNext = NULL,
+		.setLayoutCount = 1,
+		.pSetLayouts = &swapchain->descriptorSetLayout,
+	};
+
+	err = vkCreatePipelineLayout(swapchain->device, &pPipelineLayoutCreateInfo, NULL,
+		&swapchain->pipelineLayout);
+	assert(!err);
+}
+static void demo_prepare_render_pass(SGL_VkSwapChain * swapchain)
+{
+	const VkAttachmentDescription attachments[2] = 
+	{
+		[0] =
+	{
+		.format = swapchain->colorFormat,
+		.samples = VK_SAMPLE_COUNT_1_BIT,
+		.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
+		.storeOp = VK_ATTACHMENT_STORE_OP_STORE,
+		.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE,
+		.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE,
+		.initialLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+		.finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+	},
+		[1] =
+	{
+		.format = swapchain->depthFormat,
+		.samples = VK_SAMPLE_COUNT_1_BIT,
+		.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
+		.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE,
+		.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE,
+		.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE,
+		.initialLayout =
+		VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
+		.finalLayout =
+		VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
+	},
+	};
+	const VkAttachmentReference color_reference = {
+		.attachment = 0,.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+	};
+	const VkAttachmentReference depth_reference = {
+		.attachment = 1,
+		.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
+	};
+	const VkSubpassDescription subpass = {
+		.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS,
+		.flags = 0,
+		.inputAttachmentCount = 0,
+		.pInputAttachments = NULL,
+		.colorAttachmentCount = 1,
+		.pColorAttachments = &color_reference,
+		.pResolveAttachments = NULL,
+		.pDepthStencilAttachment = &depth_reference,
+		.preserveAttachmentCount = 0,
+		.pPreserveAttachments = NULL,
+	};
+	const VkRenderPassCreateInfo rp_info = {
+		.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO,
+		.pNext = NULL,
+		.attachmentCount = 2,
+		.pAttachments = attachments,
+		.subpassCount = 1,
+		.pSubpasses = &subpass,
+		.dependencyCount = 0,
+		.pDependencies = NULL,
+	};
+	VkResult U_ASSERT_ONLY err;
+
+	err = vkCreateRenderPass(swapchain->device, &rp_info, NULL, &swapchain->renderPass);
+	assert(!err);
+}
+VkPipelineShaderStageCreateInfo LoadShader(SGL_VkSwapChain* swapChain, const SGL_Shader* shader, VkShaderStageFlagBits stageBits, const char* pName)
+{
+
+	VkResult err;
+	VkShaderModule shaderModule;
+	VkShaderModuleCreateInfo moduleCreateInfo =
+	{
+		.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO,
+		.pNext = VK_NULL_HANDLE,
+		.flags = 0,
+		.codeSize = shader->size,
+		.pCode = (U32*)shader->data
+	};
+	err = vkCreateShaderModule(swapChain->device, &moduleCreateInfo, VK_NULL_HANDLE, &shaderModule);
+	assert(!err);
+	VkPipelineShaderStageCreateInfo shaderStage =
+	{
+		.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO,
+		.stage = stageBits,
+		.module = shaderModule,
+		.pName = pName
+	};
+	swapChain->shaderCount++;
+	swapChain->shaders = SDL_realloc(swapChain->shaders, sizeof(VkShaderModule)*swapChain->shaderCount);
+	swapChain->shaders[swapChain->shaderCount] = shaderModule;
+	return shaderStage;
+}
+static void demo_prepare_pipeline(SGL_VkSwapChain * swapchain) 
+{
+	VkGraphicsPipelineCreateInfo pipeline;
+	VkPipelineCacheCreateInfo pipelineCache;
+	VkPipelineVertexInputStateCreateInfo vi;
+	VkPipelineInputAssemblyStateCreateInfo ia;
+	VkPipelineRasterizationStateCreateInfo rs;
+	VkPipelineColorBlendStateCreateInfo cb;
+	VkPipelineDepthStencilStateCreateInfo ds;
+	VkPipelineViewportStateCreateInfo vp;
+	VkPipelineMultisampleStateCreateInfo ms;
+	VkDynamicState dynamicStateEnables[VK_DYNAMIC_STATE_RANGE_SIZE];
+	VkPipelineDynamicStateCreateInfo dynamicState;
+	VkResult U_ASSERT_ONLY err;
+
+	memset(dynamicStateEnables, 0, sizeof dynamicStateEnables);
+	memset(&dynamicState, 0, sizeof dynamicState);
+	dynamicState.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
+	dynamicState.pDynamicStates = dynamicStateEnables;
+
+	memset(&pipeline, 0, sizeof(pipeline));
+	pipeline.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
+	pipeline.layout = swapchain->pipelineLayout;
+
+	memset(&vi, 0, sizeof(vi));
+	vi.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
+
+	memset(&ia, 0, sizeof(ia));
+	ia.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
+	ia.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+
+	memset(&rs, 0, sizeof(rs));
+	rs.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
+	rs.polygonMode = VK_POLYGON_MODE_FILL;
+	rs.cullMode = VK_CULL_MODE_BACK_BIT;
+	rs.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
+	rs.depthClampEnable = VK_FALSE;
+	rs.rasterizerDiscardEnable = VK_FALSE;
+	rs.depthBiasEnable = VK_FALSE;
+
+	memset(&cb, 0, sizeof(cb));
+	cb.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
+	VkPipelineColorBlendAttachmentState att_state[1];
+	memset(att_state, 0, sizeof(att_state));
+	att_state[0].colorWriteMask = 0xf;
+	att_state[0].blendEnable = VK_FALSE;
+	cb.attachmentCount = 1;
+	cb.pAttachments = att_state;
+
+	memset(&vp, 0, sizeof(vp));
+	vp.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
+	vp.viewportCount = 1;
+	dynamicStateEnables[dynamicState.dynamicStateCount++] =
+		VK_DYNAMIC_STATE_VIEWPORT;
+	vp.scissorCount = 1;
+	dynamicStateEnables[dynamicState.dynamicStateCount++] =
+		VK_DYNAMIC_STATE_SCISSOR;
+
+	memset(&ds, 0, sizeof(ds));
+	ds.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
+	ds.depthTestEnable = VK_TRUE;
+	ds.depthWriteEnable = VK_TRUE;
+	ds.depthCompareOp = VK_COMPARE_OP_LESS_OR_EQUAL;
+	ds.depthBoundsTestEnable = VK_FALSE;
+	ds.back.failOp = VK_STENCIL_OP_KEEP;
+	ds.back.passOp = VK_STENCIL_OP_KEEP;
+	ds.back.compareOp = VK_COMPARE_OP_ALWAYS;
+	ds.stencilTestEnable = VK_FALSE;
+	ds.front = ds.back;
+
+	memset(&ms, 0, sizeof(ms));
+	ms.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
+	ms.pSampleMask = NULL;
+	ms.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
+
+	// Two stages: vs and fs
+	VkPipelineShaderStageCreateInfo shaderStages[2];
+	{
+		SGL_Shader vert = SGL_DataLoadShader("cubeVert");
+		SGL_Shader frag = SGL_DataLoadShader("cubeFrag");
+		shaderStages[0] = LoadShader(swapchain, &vert, VK_SHADER_STAGE_VERTEX_BIT, "main");
+		shaderStages[1] = LoadShader(swapchain, &frag, VK_SHADER_STAGE_FRAGMENT_BIT, "main");
+		SDL_free(vert.data);
+		SDL_free(frag.data);
+	}
+	memset(&pipelineCache, 0, sizeof(pipelineCache));
+	pipelineCache.sType = VK_STRUCTURE_TYPE_PIPELINE_CACHE_CREATE_INFO;
+
+	err = vkCreatePipelineCache(swapchain->device, &pipelineCache, NULL,
+		&swapchain->pipelineCache);
+	assert(!err);
+
+	pipeline.pVertexInputState = &vi;
+	pipeline.pInputAssemblyState = &ia;
+	pipeline.pRasterizationState = &rs;
+	pipeline.pColorBlendState = &cb;
+	pipeline.pMultisampleState = &ms;
+	pipeline.pViewportState = &vp;
+	pipeline.pDepthStencilState = &ds;
+	pipeline.stageCount = 2;
+	pipeline.pStages = shaderStages;
+	pipeline.renderPass = swapchain->renderPass;
+	pipeline.pDynamicState = &dynamicState;
+
+	pipeline.renderPass = swapchain->renderPass;
+
+	err = vkCreateGraphicsPipelines(swapchain->device, swapchain->pipelineCache, 1,
+		&pipeline, NULL, &swapchain->mainPipeline);
+	assert(!err);
+/*
+	vkDestroyShaderModule(swapchain->device, swapchain->frag_shader_module, NULL);
+	vkDestroyShaderModule(swapchain->device, swapchain->vert_shader_module, NULL);
+*/
+}
+
+static void demo_prepare_descriptor_pool(SGL_VkSwapChain * swapchain)
+{
+	const VkDescriptorPoolSize type_counts[2] = {
+		[0] =
+	{
+		.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+		.descriptorCount = 1,
+	},
+		[1] =
+	{
+		.type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+		.descriptorCount = DEMO_TEXTURE_COUNT,
+	},
+	};
+	const VkDescriptorPoolCreateInfo descriptor_pool = {
+		.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO,
+		.pNext = NULL,
+		.maxSets = 1,
+		.poolSizeCount = 2,
+		.pPoolSizes = type_counts,
+	};
+	VkResult U_ASSERT_ONLY err;
+
+	err = vkCreateDescriptorPool(swapchain->device, &descriptor_pool, NULL,
+		&swapchain->descriptorPool);
+	assert(!err);
+}
+static void demo_prepare_descriptor_set(SGL_VkSwapChain * swapchain) 
+{
+	VkDescriptorImageInfo tex_descs[DEMO_TEXTURE_COUNT];
+	VkWriteDescriptorSet writes[2];
+	VkResult U_ASSERT_ONLY err;
+	uint32_t i;
+
+	VkDescriptorSetAllocateInfo alloc_info = {
+		.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO,
+		.pNext = NULL,
+		.descriptorPool = swapchain->descriptorPool,
+		.descriptorSetCount = 1,
+		.pSetLayouts = &swapchain->descriptorSetLayout };
+	err = vkAllocateDescriptorSets(swapchain->device, &alloc_info, &swapchain->descriptorSet);
+	assert(!err);
+
+	memset(&tex_descs, 0, sizeof(tex_descs));
+	for (i = 0; i < 1; i++) {
+		tex_descs[i].sampler = swapchain->tex.sampler;
+		tex_descs[i].imageView = swapchain->tex.view;
+		tex_descs[i].imageLayout = VK_IMAGE_LAYOUT_GENERAL;
+	}
+
+	memset(&writes, 0, sizeof(writes));
+
+	writes[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+	writes[0].dstSet = swapchain->descriptorSet;
+	writes[0].descriptorCount = 1;
+	writes[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+	writes[0].pBufferInfo = &swapchain->uniformBuffer.descriptor;
+
+	writes[1].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+	writes[1].dstSet = swapchain->descriptorSet;
+	writes[1].dstBinding = 1;
+	writes[1].descriptorCount = DEMO_TEXTURE_COUNT;
+	writes[1].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+	writes[1].pImageInfo = tex_descs;
+
+	vkUpdateDescriptorSets(swapchain->device, 2, writes, 0, NULL);
+}
+
+static void demo_prepare_framebuffers(SGL_VkSwapChain * swapchain)
+{
+	VkImageView attachments[2];
+	attachments[1] = swapchain->depthStencil.view;
+
+	const VkFramebufferCreateInfo fb_info = 
+	{
+		.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO,
+		.pNext = NULL,
+		.renderPass = swapchain->renderPass,
+		.attachmentCount = 2,
+		.pAttachments = attachments,
+		.width = swapchain->windowSize.x,
+		.height = swapchain->windowSize.y,
+		.layers = 1,
+	};
+	VkResult U_ASSERT_ONLY err;
+	uint32_t i;
+
+	swapchain->framebuffers = (VkFramebuffer *)malloc(swapchain->swapchainImageCount *
+		sizeof(VkFramebuffer));
+	assert(swapchain->framebuffers);
+
+	for (i = 0; i < swapchain->swapchainImageCount; i++) 
+	{
+		attachments[0] = swapchain->swapchainViews[i];
+		err = vkCreateFramebuffer(swapchain->device, &fb_info, NULL,
+			&swapchain->framebuffers[i]);
+		assert(!err);
+	}
+}
+static void demo_draw_build_cmd(SGL_VkSwapChain * swapchain, VkCommandBuffer cmd_buf) {
+	VkCommandBufferInheritanceInfo cmd_buf_hinfo = {
+		.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_INFO,
+		.pNext = NULL,
+		.renderPass = VK_NULL_HANDLE,
+		.subpass = 0,
+		.framebuffer = VK_NULL_HANDLE,
+		.occlusionQueryEnable = VK_FALSE,
+		.queryFlags = 0,
+		.pipelineStatistics = 0,
+	};
+	const VkCommandBufferBeginInfo cmd_buf_info = {
+		.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
+		.pNext = NULL,
+		.flags = 0,
+		.pInheritanceInfo = &cmd_buf_hinfo,
+	};
+	const VkClearValue clear_values[2] = {
+		[0] = { .color.float32 = { 0.2f, 0.2f, 0.2f, 0.2f } },
+		[1] = { .depthStencil = { 1.0f, 0 } },
+	};
+	const VkRenderPassBeginInfo rp_begin = {
+		.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO,
+		.pNext = NULL,
+		.renderPass = swapchain->renderPass,
+		.framebuffer = swapchain->framebuffers[swapchain->currentBuffer],
+		.renderArea.offset.x = 0,
+		.renderArea.offset.y = 0,
+		.renderArea.extent.width = swapchain->windowSize.x,
+		.renderArea.extent.height = swapchain->windowSize.y,
+		.clearValueCount = 2,
+		.pClearValues = clear_values,
+	};
+	VkResult U_ASSERT_ONLY err;
+
+	err = vkBeginCommandBuffer(cmd_buf, &cmd_buf_info);
+	assert(!err);
+
+	vkCmdBeginRenderPass(cmd_buf, &rp_begin, VK_SUBPASS_CONTENTS_INLINE);
+
+	vkCmdBindPipeline(cmd_buf, VK_PIPELINE_BIND_POINT_GRAPHICS, swapchain->mainPipeline);
+	vkCmdBindDescriptorSets(cmd_buf, VK_PIPELINE_BIND_POINT_GRAPHICS,
+		swapchain->pipelineLayout, 0, 1, &swapchain->descriptorSet, 0,
+		NULL);
+
+	VkViewport viewport;
+	memset(&viewport, 0, sizeof(viewport));
+	viewport.width = (float)swapchain->windowSize.x;
+	viewport.height = (float)swapchain->windowSize.y;
+	viewport.minDepth = (float)0.0f;
+	viewport.maxDepth = (float)1.0f;
+	vkCmdSetViewport(cmd_buf, 0, 1, &viewport);
+
+	VkRect2D scissor;
+	memset(&scissor, 0, sizeof(scissor));
+	scissor.extent.width = swapchain->windowSize.x;
+	scissor.extent.height = swapchain->windowSize.y;
+	scissor.offset.x = 0;
+	scissor.offset.y = 0;
+	vkCmdSetScissor(cmd_buf, 0, 1, &scissor);
+
+	vkCmdDraw(cmd_buf, 12 * 3, 1, 0, 0);
+	vkCmdEndRenderPass(cmd_buf);
+	// VK_IMAGE_LAYOUT_PRESENT_SRC_KHR
+	VkImageMemoryBarrier prePresentBarrier = {
+		.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER,
+		.pNext = NULL,
+		.srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
+		.dstAccessMask = VK_ACCESS_MEMORY_READ_BIT,
+		.oldLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+		.newLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,
+		.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+		.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+		.image = swapchain->swapchainImages[swapchain->currentBuffer],
+		.subresourceRange = { VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 } 
+	};
+	vkCmdPipelineBarrier(cmd_buf, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
+		VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, 0, 0, NULL, 0,
+		NULL, 1, &prePresentBarrier);
+
+	err = vkEndCommandBuffer(cmd_buf);
+	assert(!err);
+}
+U32 SGL_PrepareVulkan(SGL_VkSwapChain * swapchain)
+{
+	VkResult U_ASSERT_ONLY err;
+
+	const VkCommandPoolCreateInfo cmd_pool_info = 
+	{
+		.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO,
+		.pNext = NULL,
+		.queueFamilyIndex = swapchain->queueNodeIndex,
+		.flags = 0,
+	};
+	err = vkCreateCommandPool(swapchain->device, &cmd_pool_info, NULL,
+		&swapchain->cmdPool);
+	assert(!err);
+
+	const VkCommandBufferAllocateInfo cmd = 
+	{
+		.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO,
+		.pNext = NULL,
+		.commandPool = swapchain->cmdPool,
+		.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY,
+		.commandBufferCount = 1,
+	};
+
+	demo_prepare_buffers(swapchain);
+	demo_prepare_depth(swapchain);
+	demo_prepare_textures(swapchain);
+	InitCommandBuffer(swapchain, &swapchain->setupCmdBuffer);
+	demo_prepare_cube_data_buffer(swapchain);
+
+	demo_prepare_descriptor_layout(swapchain);
+	demo_prepare_render_pass(swapchain);
+	demo_prepare_pipeline(swapchain);
+
+	for (uint32_t i = 0; i < swapchain->swapchainImageCount; i++) {
+		err =
+			vkAllocateCommandBuffers(swapchain->device, &cmd, &swapchain->swapchainCmdBuffers[i]);
+		assert(!err);
+	}
+
+	demo_prepare_descriptor_pool(swapchain);
+	demo_prepare_descriptor_set(swapchain);
+
+	demo_prepare_framebuffers(swapchain);
+
+	for (uint32_t i = 0; i < swapchain->swapchainImageCount; i++) {
+		swapchain->currentBuffer = i;
+		demo_draw_build_cmd(swapchain, swapchain->swapchainCmdBuffers[i]);
+	}
+
+	//Prepare functions above may generate pipeline commands
+	//that need to be flushed before beginning the render loop.
+	demo_flush_init_cmd(swapchain);
+
+	swapchain->currentBuffer = 0;
+	swapchain->prepared = SGL_TRUE;
+	return SGL_TRUE;
+}
+U32 SGL_UpdateUniforms(SGL_VkSwapChain* swapchain)
+{
+	SGL_Mat4 MVP, Model, VP;
+	int matrixSize = sizeof(SGL_Mat4);
+	U8* pData;
+	VkResult U_ASSERT_ONLY err;
+
+	VP = SM_M4Multiply(&swapchain->view_matrix, &swapchain->projection_matrix);
+	//mat4x4_mul(VP, vkContext->projection_matrix, vkContext->view_matrix);
+
+	// Rotate 22.5 degrees around the Y axis
+	Model = swapchain->model_matrix;
+	//mat4x4_dup(Model, vkContext->model_matrix);
+	SGL_Vec4 up = { 0.0f,1.0f,0.0f,0.0f };
+	swapchain->model_matrix = SM_Rotate(&Model, (float)degreesToRadians(swapchain->spin_angle), &up);
+	//mat4x4_mul(MVP, VP, vkContext->model_matrix);
+	MVP = SM_M4Multiply(&swapchain->model_matrix, &VP);
+
+	err = vkMapMemory(swapchain->device, swapchain->uniformBuffer.memory, 0,
+		swapchain->uniformBuffer.allocSize, 0,
+		(void **)&pData);
+	SDL_assert(!err);
+
+	memcpy(pData, (const void *)&MVP, matrixSize);
+
+	vkUnmapMemory(swapchain->device, swapchain->uniformBuffer.memory);
+	return SGL_TRUE;
+}
+U32 SGL_Draw(SGL_VkSwapChain * swapchain)
+{
+	VkResult U_ASSERT_ONLY err;
+	VkSemaphore presentCompleteSemaphore;
+	VkSemaphoreCreateInfo presentCompleteSemaphoreCreateInfo = {
+		.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO,
+		.pNext = NULL,
+		.flags = 0,
+	};
+	VkFence nullFence = VK_NULL_HANDLE;
+
+	err = vkCreateSemaphore(swapchain->device, &presentCompleteSemaphoreCreateInfo,
+		NULL, &presentCompleteSemaphore);
+	assert(!err);
+
+	// Get the index of the next available swapchain image:
+	err = swapchain->fpAcquireNextImageKHR(swapchain->device, swapchain->swapchain, UINT64_MAX,
+		presentCompleteSemaphore,
+		(VkFence)0, // TODO: Show use of fence
+		&swapchain->currentBuffer);
+	if (err == VK_ERROR_OUT_OF_DATE_KHR)
+	{
+		// demo->swapchain is out of date (e.g. the window was resized) and
+		// must be recreated:
+		//	demo_resize(demo);
+		//	demo_draw(demo);
+		vkDestroySemaphore(swapchain->device, presentCompleteSemaphore, NULL);
+		return;
+	}
+	else if (err == VK_SUBOPTIMAL_KHR) {
+		// demo->swapchain is not as optimal as it could be, but the platform's
+		// presentation engine will still present the image correctly.
+		int g = 0;
+	}
+	else {
+		assert(!err);
+	}
+
+	// Assume the command buffer has been run on current_buffer before so
+	// we need to set the image layout back to COLOR_ATTACHMENT_OPTIMAL
+	//NOT SURE ABOUT swapChain->setupCmdBuffer
+	//InitCommandBuffer(swapchain, &swapchain->setupCmdBuffer);
+	demo_set_image_layout(swapchain, &swapchain->setupCmdBuffer, swapchain->swapchainImages[swapchain->currentBuffer],
+		VK_IMAGE_ASPECT_COLOR_BIT,
+		VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,
+		VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+		0, VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT);
+	demo_flush_init_cmd(swapchain);
+
+	// Wait for the present complete semaphore to be signaled to ensure
+	// that the image won't be rendered to until the presentation
+	// engine has fully released ownership to the application, and it is
+	// okay to render to the image.
+
+	// FIXME/TODO: DEAL WITH VK_IMAGE_LAYOUT_PRESENT_SRC_KHR
+	VkPipelineStageFlags pipe_stage_flags =
+		VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
+	VkSubmitInfo submit_info = { .sType = VK_STRUCTURE_TYPE_SUBMIT_INFO,
+		.pNext = NULL,
+		.waitSemaphoreCount = 1,
+		.pWaitSemaphores = &presentCompleteSemaphore,
+		.pWaitDstStageMask = &pipe_stage_flags,
+		.commandBufferCount = 1,
+		.pCommandBuffers =
+		&swapchain->swapchainCmdBuffers[swapchain->currentBuffer],
+		.signalSemaphoreCount = 0,
+		.pSignalSemaphores = NULL };
+
+	err = vkQueueSubmit(swapchain->queue, 1, &submit_info, nullFence);
+	assert(!err);
+
+	VkPresentInfoKHR present = {
+		.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR,
+		.pNext = NULL,
+		.swapchainCount = 1,
+		.pSwapchains = &swapchain->swapchain,
+		.pImageIndices = &swapchain->currentBuffer,
+	};
+
+	// TBD/TODO: SHOULD THE "present" PARAMETER BE "const" IN THE HEADER?
+	err = swapchain->fpQueuePresentKHR(swapchain->queue, &present);
+	if (err == VK_ERROR_OUT_OF_DATE_KHR) {
+		// demo->swapchain is out of date (e.g. the window was resized) and
+		// must be recreated:
+		//demo_resize(swapchain);
+		int gasd = 0;
+	}
+	else if (err == VK_SUBOPTIMAL_KHR) {
+		// demo->swapchain is not as optimal as it could be, but the platform's
+		// presentation engine will still present the image correctly.
+		int gasd = 0;
+	}
+	else {
+		assert(!err);
+	}
+
+	err = vkQueueWaitIdle(swapchain->queue);
+	assert(err == VK_SUCCESS);
+
+	vkDestroySemaphore(swapchain->device, presentCompleteSemaphore, NULL);
 	return SGL_TRUE;
 }

@@ -429,7 +429,7 @@ SDL_Surface * SGL_DataLoadImage(const char * imageName)
 		return NULL;
 	}
 	const size_t size = surfData.h * surfData.w * (surfData.depth/8);
-	void* pixels = malloc(size);
+	void* pixels = SDL_malloc(size);
 	if (SDL_RWread(rw, pixels, size, 1) != 1)
 	{
 		SDL_RWclose(rw);

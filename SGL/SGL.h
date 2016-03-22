@@ -21,9 +21,6 @@ extern void SGL_Quit(void);
 extern void SGL_DestroyWindow(const SGL_Window* window);
 extern void SGL_SetWindowIcon(const SGL_Window* window, void * pixels);
 extern void SGL_ConvertPNGToIconArray(const char* imagePath, const char* fileName);
-extern void SGL_InitVulkanDemo(SGL_VkContext* vkContext);
-extern void SGL_UpdateVulkanDemo(SGL_VkContext* vkContext);
-extern void SGL_Vk_CreateContext(SGL_Window* window);
 extern SGL_Window SGL_CreateWindow(const char* title, int x, int y, int w, int h, Uint32 SDLflags);
 
 //extern void SGL_RunGLTest(const SGL_Window* window);
