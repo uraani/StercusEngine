@@ -1,5 +1,5 @@
 #include "SGL_data.h"
-#include "SGL_vk.h"
+#include "SDL.h"
 #include "murmur3.h"
 typedef struct _SGL_DataBlock
 {
@@ -275,7 +275,7 @@ U32 SGL_DataSaveImage(const char* name, SDL_Surface * surf)
 		SDL_Log("SGL_DataSaveImage couldn't save because surf pointer is NULL");
 		return SGL_FALSE;
 	}
-	if (SGL_PixelFormatToVkFormat(surf->format->format) != VK_FORMAT_UNDEFINED)
+	if (surf->format->format != SDL_PIXELFORMAT_ARGB8888)
 	{
 		convSurf = surf;
 	}
