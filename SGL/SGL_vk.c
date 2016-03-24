@@ -47,625 +47,15 @@ VKAPI_ATTR VkBool32 VKAPI_CALL dbgFuncNew(VkFlags msgFlags, VkDebugReportObjectT
 	*/
 	return SGL_FALSE;
 }
-static VkBool32 demo_check_layers(uint32_t check_count, char **check_names,
-	uint32_t layer_count,
-	VkLayerProperties *layers) {
-	for (uint32_t i = 0; i < check_count; i++) {
-		VkBool32 found = 0;
-		for (uint32_t j = 0; j < layer_count; j++) {
-			if (!strcmp(check_names[i], layers[j].layerName)) {
-				found = 1;
-				break;
-			}
-		}
-		if (!found) {
-			SDL_Log("Cannot find layer: %s\n", check_names[i]);
-			return 0;
-		}
-	}
-	return 1;
-}
-static VkBool32 demo_init_vk(SGL_VkSwapChain *demo) 
-{
-	VkResult err;
-	char *extension_names[64];
-	uint32_t instance_extension_count = 0;
-	uint32_t instance_layer_count = 0;
-	uint32_t device_validation_layer_count = 0;
-	uint32_t enabled_extension_count = 0;
-	uint32_t enabled_layer_count = 0;
-
-	char *instance_validation_layers[] = {
-		"VK_LAYER_GOOGLE_threading",     "VK_LAYER_LUNARG_param_checker",
-		"VK_LAYER_LUNARG_device_limits", "VK_LAYER_LUNARG_object_tracker",
-		"VK_LAYER_LUNARG_image",         "VK_LAYER_LUNARG_mem_tracker",
-		"VK_LAYER_LUNARG_draw_state",    "VK_LAYER_LUNARG_swapchain",
-		"VK_LAYER_GOOGLE_unique_objects"
-	};
-
-	demo->device_validation_layers[0] = "VK_LAYER_GOOGLE_threading";
-	demo->device_validation_layers[1] = "VK_LAYER_LUNARG_param_checker";
-	demo->device_validation_layers[2] = "VK_LAYER_LUNARG_device_limits";
-	demo->device_validation_layers[3] = "VK_LAYER_LUNARG_object_tracker";
-	demo->device_validation_layers[4] = "VK_LAYER_LUNARG_image";
-	demo->device_validation_layers[5] = "VK_LAYER_LUNARG_mem_tracker";
-	demo->device_validation_layers[6] = "VK_LAYER_LUNARG_draw_state";
-	demo->device_validation_layers[7] = "VK_LAYER_LUNARG_swapchain";
-	demo->device_validation_layers[8] = "VK_LAYER_GOOGLE_unique_objects";
-	device_validation_layer_count = 9;
-
-	/* Look for validation layers */
-	VkBool32 validation_found = 0;
-	err = vkEnumerateInstanceLayerProperties(&instance_layer_count, NULL);
-	SDL_assert(!err);
-
-	if (instance_layer_count > 0) {
-		VkLayerProperties *instance_layers =
-			malloc(sizeof(VkLayerProperties) * instance_layer_count);
-		err = vkEnumerateInstanceLayerProperties(&instance_layer_count,
-			instance_layers);
-		SDL_assert(!err);
-
-		if (demo->validate) {
-			validation_found = demo_check_layers(
-				SDL_arraysize(instance_validation_layers),
-				instance_validation_layers, instance_layer_count,
-				instance_layers);
-
-			enabled_layer_count = SDL_arraysize(instance_validation_layers);
-		}
-
-		free(instance_layers);
-	}
-
-	if (demo->validate && !validation_found) {
-		SDL_Log("vkEnumerateInstanceLayerProperties failed to find"
-			"required validation layer.\n\n"
-			"Please look at the Getting Started guide for additional "
-			"information.\n",
-			"vkCreateInstance Failure");
-	}
-
-	/* Look for instance extensions */
-	VkBool32 surfaceExtFound = 0;
-	VkBool32 platformSurfaceExtFound = 0;
-	memset(extension_names, 0, sizeof(extension_names));
-
-	err = vkEnumerateInstanceExtensionProperties(
-		NULL, &instance_extension_count, NULL);
-	SDL_assert(!err);
-
-	if (instance_extension_count > 0) {
-		VkExtensionProperties *instance_extensions =
-			malloc(sizeof(VkExtensionProperties) * instance_extension_count);
-		err = vkEnumerateInstanceExtensionProperties(
-			NULL, &instance_extension_count, instance_extensions);
-		SDL_assert(!err);
-		for (uint32_t i = 0; i < instance_extension_count; i++) {
-			if (!strcmp(VK_KHR_SURFACE_EXTENSION_NAME,
-				instance_extensions[i].extensionName)) {
-				surfaceExtFound = 1;
-				extension_names[enabled_extension_count++] =
-					VK_KHR_SURFACE_EXTENSION_NAME;
-			}
-#ifdef _WIN32
-			if (!strcmp(VK_KHR_WIN32_SURFACE_EXTENSION_NAME,
-				instance_extensions[i].extensionName)) {
-				platformSurfaceExtFound = 1;
-				extension_names[enabled_extension_count++] =
-					VK_KHR_WIN32_SURFACE_EXTENSION_NAME;
-			}
-#else  // _WIN32
-			if (!strcmp(VK_KHR_XCB_SURFACE_EXTENSION_NAME,
-				instance_extensions[i].extensionName)) {
-				platformSurfaceExtFound = 1;
-				extension_names[enabled_extension_count++] =
-					VK_KHR_XCB_SURFACE_EXTENSION_NAME;
-			}
-#endif // _WIN32
-			if (!strcmp(VK_EXT_DEBUG_REPORT_EXTENSION_NAME,
-				instance_extensions[i].extensionName)) {
-				if (demo->validate) {
-					extension_names[enabled_extension_count++] =
-						VK_EXT_DEBUG_REPORT_EXTENSION_NAME;
-				}
-			}
-			SDL_assert(enabled_extension_count < 64);
-		}
-
-		free(instance_extensions);
-	}
-
-	if (!surfaceExtFound) {
-		SDL_Log("vkEnumerateInstanceExtensionProperties failed to find "
-			"the " VK_KHR_SURFACE_EXTENSION_NAME
-			" extension.\n\nDo you have a compatible "
-			"Vulkan installable client driver (ICD) installed?\nPlease "
-			"look at the Getting Started guide for additional "
-			"information.\n",
-			"vkCreateInstance Failure");
-	}
-	if (!platformSurfaceExtFound) {
-#ifdef _WIN32
-		SDL_Log("vkEnumerateInstanceExtensionProperties failed to find "
-			"the " VK_KHR_WIN32_SURFACE_EXTENSION_NAME
-			" extension.\n\nDo you have a compatible "
-			"Vulkan installable client driver (ICD) installed?\nPlease "
-			"look at the Getting Started guide for additional "
-			"information.\n",
-			"vkCreateInstance Failure");
-#else  // _WIN32
-		ERR_EXIT("vkEnumerateInstanceExtensionProperties failed to find "
-			"the " VK_KHR_XCB_SURFACE_EXTENSION_NAME
-			" extension.\n\nDo you have a compatible "
-			"Vulkan installable client driver (ICD) installed?\nPlease "
-			"look at the Getting Started guide for additional "
-			"information.\n",
-			"vkCreateInstance Failure");
-#endif // _WIN32
-	}
-	const VkApplicationInfo app = {
-		.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO,
-		.pNext = NULL,
-		.pApplicationName = "SGL",
-		.applicationVersion = 0,
-		.pEngineName = "SGL_ENGINE",
-		.engineVersion = 0,
-		.apiVersion = VK_MAKE_VERSION(1, 0, 0),
-	};
-	VkInstanceCreateInfo inst_info = {
-		.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO,
-		.pNext = NULL,
-		.pApplicationInfo = &app,
-		.enabledLayerCount = enabled_layer_count,
-		.ppEnabledLayerNames =
-		(const char *const *)((demo->validate) ? instance_validation_layers
-			: NULL),
-		.enabledExtensionCount = enabled_extension_count,
-		.ppEnabledExtensionNames = (const char *const *)extension_names,
-	};
-
-	uint32_t gpu_count;
-
-	err = vkCreateInstance(&inst_info, NULL, &demo->inst);
-	if (err == VK_ERROR_INCOMPATIBLE_DRIVER) {
-		SDL_Log("Cannot find a compatible Vulkan installable client driver "
-			"(ICD).\n\nPlease look at the Getting Started guide for "
-			"additional information.\n",
-			"vkCreateInstance Failure");
-	}
-	else if (err == VK_ERROR_EXTENSION_NOT_PRESENT) {
-		SDL_Log("Cannot find a specified extension library"
-			".\nMake sure your layers path is set appropriately.\n",
-			"vkCreateInstance Failure");
-	}
-	else if (err) {
-		SDL_Log("vkCreateInstance failed.\n\nDo you have a compatible Vulkan "
-			"installable client driver (ICD) installed?\nPlease look at "
-			"the Getting Started guide for additional information.\n",
-			"vkCreateInstance Failure");
-	}
-
-	/* Make initial call to query gpu_count, then second call for gpu info*/
-	err = vkEnumeratePhysicalDevices(demo->inst, &gpu_count, NULL);
-	SDL_assert(!err && gpu_count > 0);
-
-	if (gpu_count > 0) {
-		VkPhysicalDevice *physical_devices = malloc(sizeof(VkPhysicalDevice) * gpu_count);
-		err = vkEnumeratePhysicalDevices(demo->inst, &gpu_count, physical_devices);
-		SDL_assert(!err);
-		/* For cube demo we just grab the first physical device */
-		demo->gpu = physical_devices[0];
-		free(physical_devices);
-	}
-	else {
-		SDL_Log("vkEnumeratePhysicalDevices reported zero accessible devices.\n\n"
-			"Do you have a compatible Vulkan installable client driver (ICD) "
-			"installed?\nPlease look at the Getting Started guide for "
-			"additional information.\n",
-			"vkEnumeratePhysicalDevices Failure");
-	}
-
-	/* Look for validation layers */
-	validation_found = 0;
-	demo->enabled_layer_count = 0;
-	uint32_t device_layer_count = 0;
-	err =
-		vkEnumerateDeviceLayerProperties(demo->gpu, &device_layer_count, NULL);
-	SDL_assert(!err);
-
-	if (device_layer_count > 0) {
-		VkLayerProperties *device_layers =
-			malloc(sizeof(VkLayerProperties) * device_layer_count);
-		err = vkEnumerateDeviceLayerProperties(demo->gpu, &device_layer_count,
-			device_layers);
-		SDL_assert(!err);
-
-		if (demo->validate) {
-			validation_found = demo_check_layers(device_validation_layer_count,
-				demo->device_validation_layers,
-				device_layer_count,
-				device_layers);
-			demo->enabled_layer_count = device_validation_layer_count;
-		}
-
-		free(device_layers);
-	}
-
-	if (demo->validate && !validation_found) {
-		SDL_Log("vkEnumerateDeviceLayerProperties failed to find"
-			"a required validation layer.\n\n"
-			"Please look at the Getting Started guide for additional "
-			"information.\n",
-			"vkCreateDevice Failure");
-	}
-
-	/* Look for device extensions */
-	uint32_t device_extension_count = 0;
-	VkBool32 swapchainExtFound = 0;
-	demo->enabled_extension_count = 0;
-	memset(extension_names, 0, sizeof(extension_names));
-
-	err = vkEnumerateDeviceExtensionProperties(demo->gpu, NULL,
-		&device_extension_count, NULL);
-	SDL_assert(!err);
-
-	if (device_extension_count > 0) {
-		VkExtensionProperties *device_extensions =
-			malloc(sizeof(VkExtensionProperties) * device_extension_count);
-		err = vkEnumerateDeviceExtensionProperties(
-			demo->gpu, NULL, &device_extension_count, device_extensions);
-		SDL_assert(!err);
-
-		for (uint32_t i = 0; i < device_extension_count; i++) {
-			if (!strcmp(VK_KHR_SWAPCHAIN_EXTENSION_NAME,
-				device_extensions[i].extensionName)) {
-				swapchainExtFound = 1;
-				demo->extension_names[demo->enabled_extension_count++] =
-					VK_KHR_SWAPCHAIN_EXTENSION_NAME;
-			}
-			SDL_assert(demo->enabled_extension_count < 64);
-		}
-
-		free(device_extensions);
-	}
-
-	if (!swapchainExtFound) {
-		SDL_Log("vkEnumerateDeviceExtensionProperties failed to find "
-			"the " VK_KHR_SWAPCHAIN_EXTENSION_NAME
-			" extension.\n\nDo you have a compatible "
-			"Vulkan installable client driver (ICD) installed?\nPlease "
-			"look at the Getting Started guide for additional "
-			"information.\n",
-			"vkCreateInstance Failure");
-	}
-
-	if (demo->validate) {
-		demo->CreateDebugReportCallback =
-			(PFN_vkCreateDebugReportCallbackEXT)vkGetInstanceProcAddr(
-				demo->inst, "vkCreateDebugReportCallbackEXT");
-		demo->DestroyDebugReportCallback =
-			(PFN_vkDestroyDebugReportCallbackEXT)vkGetInstanceProcAddr(
-				demo->inst, "vkDestroyDebugReportCallbackEXT");
-		if (!demo->CreateDebugReportCallback) {
-			SDL_Log(
-				"GetProcAddr: Unable to find vkCreateDebugReportCallbackEXT\n",
-				"vkGetProcAddr Failure");
-		}
-		if (!demo->DestroyDebugReportCallback) {
-			SDL_Log(
-				"GetProcAddr: Unable to find vkDestroyDebugReportCallbackEXT\n",
-				"vkGetProcAddr Failure");
-		}
-		demo->DebugReportMessage =
-			(PFN_vkDebugReportMessageEXT)vkGetInstanceProcAddr(
-				demo->inst, "vkDebugReportMessageEXT");
-		if (!demo->DebugReportMessage) {
-			SDL_Log("GetProcAddr: Unable to find vkDebugReportMessageEXT\n",
-				"vkGetProcAddr Failure");
-		}
-
-		PFN_vkDebugReportCallbackEXT callback;
-		callback = dbgFuncNew;
-		VkDebugReportCallbackCreateInfoEXT dbgCreateInfo;
-		dbgCreateInfo.sType = VK_STRUCTURE_TYPE_DEBUG_REPORT_CREATE_INFO_EXT;
-		dbgCreateInfo.pNext = NULL;
-		dbgCreateInfo.pfnCallback = callback;
-		dbgCreateInfo.pUserData = NULL;
-		dbgCreateInfo.flags =
-			VK_DEBUG_REPORT_ERROR_BIT_EXT | VK_DEBUG_REPORT_WARNING_BIT_EXT;
-		err = demo->CreateDebugReportCallback(demo->inst, &dbgCreateInfo, NULL,
-			&demo->msg_callback);
-		switch (err) {
-		case VK_SUCCESS:
-			break;
-		case VK_ERROR_OUT_OF_HOST_MEMORY:
-			SDL_Log("CreateDebugReportCallback: out of host memory\n",
-				"CreateDebugReportCallback Failure");
-			break;
-		default:
-			SDL_Log("CreateDebugReportCallback: unknown failure\n",
-				"CreateDebugReportCallback Failure");
-			break;
-		}
-	}
-	vkGetPhysicalDeviceProperties(demo->gpu, &demo->gpuProps);
-
-	/* Call with NULL data to get count */
-	vkGetPhysicalDeviceQueueFamilyProperties(demo->gpu, &demo->queue_count,
-		NULL);
-	SDL_assert(demo->queue_count >= 1);
-
-	demo->queue_props = (VkQueueFamilyProperties *)malloc(
-		demo->queue_count * sizeof(VkQueueFamilyProperties));
-	vkGetPhysicalDeviceQueueFamilyProperties(demo->gpu, &demo->queue_count,
-		demo->queue_props);
-	// Find a queue that supports gfx
-	uint32_t gfx_queue_idx = 0;
-	for (gfx_queue_idx = 0; gfx_queue_idx < demo->queue_count;
-	gfx_queue_idx++) {
-		if (demo->queue_props[gfx_queue_idx].queueFlags & VK_QUEUE_GRAPHICS_BIT)
-			break;
-	}
-	SDL_assert(gfx_queue_idx < demo->queue_count);
-	// Query fine-grained feature support for this device.
-	//  If app has specific feature requirements it should check supported
-	//  features based on this query
-	VkPhysicalDeviceFeatures physDevFeatures;
-	vkGetPhysicalDeviceFeatures(demo->gpu, &physDevFeatures);
-
-	demo->fpGetPhysicalDeviceSurfaceSupportKHR = (PFN_vkGetPhysicalDeviceSurfaceSupportKHR)vkGetInstanceProcAddr(demo->inst, "vkGetPhysicalDeviceSurfaceSupportKHR");
-	if (demo->fpGetPhysicalDeviceSurfaceSupportKHR == NULL)
-	{
-		SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "vkGetDeviceProcAddr Failure", "vkGetDeviceProcAddr failed to find vk", NULL);
-		return VK_FALSE;
-	}
-	demo->fpGetPhysicalDeviceSurfaceCapabilitiesKHR = (PFN_vkGetPhysicalDeviceSurfaceCapabilitiesKHR)vkGetInstanceProcAddr(demo->inst, "vkGetPhysicalDeviceSurfaceCapabilitiesKHR");
-	if (demo->fpGetPhysicalDeviceSurfaceCapabilitiesKHR == NULL)
-	{
-		SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "vkGetDeviceProcAddr Failure", "vkGetDeviceProcAddr failed to find vk", NULL);
-		return VK_FALSE;
-	}
-	demo->fpGetPhysicalDeviceSurfaceFormatsKHR = (PFN_vkGetPhysicalDeviceSurfaceFormatsKHR)vkGetInstanceProcAddr(demo->inst, "vkGetPhysicalDeviceSurfaceFormatsKHR");
-	if (demo->fpGetPhysicalDeviceSurfaceFormatsKHR == NULL)
-	{
-		SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "vkGetDeviceProcAddr Failure", "vkGetDeviceProcAddr failed to find vk", NULL);
-		return VK_FALSE;
-	}
-	demo->fpGetPhysicalDeviceSurfacePresentModesKHR = (PFN_vkGetPhysicalDeviceSurfacePresentModesKHR)vkGetInstanceProcAddr(demo->inst, "vkGetPhysicalDeviceSurfacePresentModesKHR");
-	if (demo->fpGetPhysicalDeviceSurfacePresentModesKHR == NULL)
-	{
-		SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "vkGetDeviceProcAddr Failure", "vkGetDeviceProcAddr failed to find vk", NULL);
-		return VK_FALSE;
-	}
-	demo->fpGetSwapchainImagesKHR = (PFN_vkGetSwapchainImagesKHR)vkGetInstanceProcAddr(demo->inst, "vkGetSwapchainImagesKHR");
-	if (demo->fpGetSwapchainImagesKHR == NULL)
-	{
-		SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "vkGetDeviceProcAddr Failure", "vkGetDeviceProcAddr failed to find vk", NULL);
-		return VK_FALSE;
-	}
-	return VK_TRUE;
-}
-static void demo_create_device(SGL_VkSwapChain *demo) 
-{
-	VkResult err;
-	float queue_priorities[1] = { 0.0 };
-	const VkDeviceQueueCreateInfo queue = 
-	{
-		.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO,
-		.pNext = NULL,
-		.queueFamilyIndex = demo->queueNodeIndex,
-		.queueCount = 1,
-		.pQueuePriorities = queue_priorities };
-
-	VkDeviceCreateInfo device = {
-		.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO,
-		.pNext = NULL,
-		.queueCreateInfoCount = 1,
-		.pQueueCreateInfos = &queue,
-		.enabledLayerCount = demo->enabled_layer_count,
-		.ppEnabledLayerNames =
-		(const char *const *)((demo->validate)
-			? demo->device_validation_layers
-			: NULL),
-		.enabledExtensionCount = demo->enabled_extension_count,
-		.ppEnabledExtensionNames = (const char *const *)demo->extension_names,
-		.pEnabledFeatures =
-		NULL, // If specific features are required, pass them in here
-	};
-
-	err = vkCreateDevice(demo->gpu, &device, NULL, &demo->device);
-	SDL_assert(!err);
-}
-static VkBool32 demo_init_vk_swapchain(SGL_VkSwapChain *demo) 
-{
-	VkResult err;
-	uint32_t i;
-
-	// Create a WSI surface for the window:
-#ifdef _WIN32
-	SDL_SysWMinfo info;
-	SDL_VERSION(&info.version);
-	SDL_GetWindowWMInfo(demo->window, &info);
-	VkWin32SurfaceCreateInfoKHR createInfo;
-	createInfo.sType = VK_STRUCTURE_TYPE_WIN32_SURFACE_CREATE_INFO_KHR;
-	createInfo.pNext = NULL;
-	createInfo.flags = 0;
-	createInfo.hinstance = GetModuleHandle(NULL);
-	createInfo.hwnd = info.info.win.window;
-
-	err =
-		vkCreateWin32SurfaceKHR(demo->inst, &createInfo, NULL, &demo->surf);
-
-#else  // _WIN32
-	VkXcbSurfaceCreateInfoKHR createInfo;
-	createInfo.sType = VK_STRUCTURE_TYPE_XCB_SURFACE_CREATE_INFO_KHR;
-	createInfo.pNext = NULL;
-	createInfo.flags = 0;
-	createInfo.connection = demo->connection;
-	createInfo.window = demo->window;
-
-	err = vkCreateXcbSurfaceKHR(demo->inst, &createInfo, NULL, &demo->surface);
-#endif // _WIN32
-
-	// Iterate over each queue to learn whether it supports presenting:
-	VkBool32 *supportsPresent =
-		(VkBool32 *)malloc(demo->queue_count * sizeof(VkBool32));
-	for (i = 0; i < demo->queue_count; i++) {
-		demo->fpGetPhysicalDeviceSurfaceSupportKHR(demo->gpu, i, demo->surf,
-			&supportsPresent[i]);
-	}
-
-	// Search for a graphics and a present queue in the array of queue
-	// families, try to find one that supports both
-	uint32_t graphicsQueueNodeIndex = UINT32_MAX;
-	uint32_t presentQueueNodeIndex = UINT32_MAX;
-	for (i = 0; i < demo->queue_count; i++) {
-		if ((demo->queue_props[i].queueFlags & VK_QUEUE_GRAPHICS_BIT) != 0) {
-			if (graphicsQueueNodeIndex == UINT32_MAX) {
-				graphicsQueueNodeIndex = i;
-			}
-
-			if (supportsPresent[i] == VK_TRUE) {
-				graphicsQueueNodeIndex = i;
-				presentQueueNodeIndex = i;
-				break;
-			}
-		}
-	}
-	if (presentQueueNodeIndex == UINT32_MAX) {
-		// If didn't find a queue that supports both graphics and present, then
-		// find a separate present queue.
-		for (uint32_t i = 0; i < demo->queue_count; ++i) {
-			if (supportsPresent[i] == VK_TRUE) {
-				presentQueueNodeIndex = i;
-				break;
-			}
-		}
-	}
-	free(supportsPresent);
-
-	// Generate error if could not find both a graphics and a present queue
-	if (graphicsQueueNodeIndex == UINT32_MAX ||
-		presentQueueNodeIndex == UINT32_MAX) {
-		SDL_Log("Could not find a graphics and a present queue\n",
-			"Swapchain Initialization Failure");
-	}
-
-	// TODO: Add support for separate queues, including presentation,
-	//       synchronization, and appropriate tracking for QueueSubmit.
-	// NOTE: While it is possible for an application to use a separate graphics
-	//       and a present queues, this demo program assumes it is only using
-	//       one:
-	if (graphicsQueueNodeIndex != presentQueueNodeIndex) {
-		SDL_Log("Could not find a common graphics and a present queue\n",
-			"Swapchain Initialization Failure");
-	}
-
-	demo->queueNodeIndex = graphicsQueueNodeIndex;
-
-	demo_create_device(demo);
-
-	{
-		PFN_vkGetDeviceProcAddr gdpa = (PFN_vkGetDeviceProcAddr)vkGetInstanceProcAddr(demo->inst, "vkGetDeviceProcAddr");
-
-		demo->fpCreateSwapchainKHR = (PFN_vkCreateSwapchainKHR)gdpa(demo->device, "vkCreateSwapchainKHR");
-		if (demo->fpCreateSwapchainKHR == NULL)
-		{
-			SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "vkGetDeviceProcAddr Failure", "vkGetDeviceProcAddr failed to find vk", NULL);
-			return VK_FALSE;
-		}
-		demo->fpDestroySwapchainKHR = (PFN_vkDestroySwapchainKHR)gdpa(demo->device, "vkDestroySwapchainKHR");
-		if (demo->fpDestroySwapchainKHR == NULL)
-		{
-			SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "vkGetDeviceProcAddr Failure", "vkGetDeviceProcAddr failed to find vk", NULL);
-			return VK_FALSE;
-		}
-		demo->fpGetSwapchainImagesKHR = (PFN_vkGetSwapchainImagesKHR)gdpa(demo->device, "vkGetSwapchainImagesKHR");
-		if (demo->fpGetSwapchainImagesKHR == NULL)
-		{
-			SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "vkGetDeviceProcAddr Failure", "vkGetDeviceProcAddr failed to find vk", NULL);
-			return VK_FALSE;
-		}
-		demo->fpAcquireNextImageKHR = (PFN_vkAcquireNextImageKHR)gdpa(demo->device, "vkAcquireNextImageKHR");
-		if (demo->fpAcquireNextImageKHR == NULL)
-		{
-			SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "vkGetDeviceProcAddr Failure", "vkGetDeviceProcAddr failed to find vk", NULL);
-			return VK_FALSE;
-		}
-		demo->fpQueuePresentKHR = (PFN_vkQueuePresentKHR)gdpa(demo->device, "vkQueuePresentKHR");
-		if (demo->fpQueuePresentKHR == NULL)
-		{
-			SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "vkGetDeviceProcAddr Failure", "vkGetDeviceProcAddr failed to find vk", NULL);
-			return VK_FALSE;
-		}
-	}
-	vkGetDeviceQueue(demo->device, demo->queueNodeIndex, 0,
-		&demo->queue);
-
-	// Get the list of VkFormat's that are supported:
-	uint32_t formatCount;
-	err = demo->fpGetPhysicalDeviceSurfaceFormatsKHR(demo->gpu, demo->surf,
-		&formatCount, NULL);
-	SDL_assert(!err);
-	VkSurfaceFormatKHR *surfFormats =
-		(VkSurfaceFormatKHR *)malloc(formatCount * sizeof(VkSurfaceFormatKHR));
-	err = demo->fpGetPhysicalDeviceSurfaceFormatsKHR(demo->gpu, demo->surf,
-		&formatCount, surfFormats);
-	SDL_assert(!err);
-	// If the format list includes just one entry of VK_FORMAT_UNDEFINED,
-	// the surface has no preferred format.  Otherwise, at least one
-	// supported format will be returned.
-	if (formatCount == 1 && surfFormats[0].format == VK_FORMAT_UNDEFINED) 
-	{
-		demo->colorFormat = VK_FORMAT_B8G8R8A8_UNORM;
-	}
-	else {
-		SDL_assert(formatCount >= 1);
-		demo->colorFormat = surfFormats[0].format;
-	}
-	demo->colorSpace = surfFormats[0].colorSpace;
-	{
-		VkFormat depthFormats[] =
-		{
-			VK_FORMAT_D32_SFLOAT_S8_UINT,
-			VK_FORMAT_D32_SFLOAT,
-			VK_FORMAT_D24_UNORM_S8_UINT,
-			VK_FORMAT_D16_UNORM_S8_UINT,
-			VK_FORMAT_D16_UNORM
-		};
-		const size_t depthCount = SDL_arraysize(depthFormats);
-		for (size_t i = 0; i < depthCount; i++)
-		{
-			VkFormatProperties formatProps;
-			vkGetPhysicalDeviceFormatProperties(demo->gpu, depthFormats[i], &formatProps);
-			// Format must support depth stencil attachment for optimal tiling
-			if (formatProps.optimalTilingFeatures & VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT)
-			{
-				demo->depthFormat = depthFormats[i];
-				break;
-			}
-		}
-		SDL_assert(demo->depthFormat != VK_FORMAT_UNDEFINED);
-	}
-	// Get Memory information and properties
-	vkGetPhysicalDeviceMemoryProperties(demo->gpu, &demo->memoryProperties);
-	return VK_TRUE;
-}
 U32 SGL_InitVulkan(SGL_Window * window)
 {
-	memset(&window->vkSwapChain, 0, sizeof(SGL_VkSwapChain));
-	window->vkSwapChain.validate = SGL_TRUE;
-	window->vkSwapChain.window = window->handle;
-	demo_init_vk(&window->vkSwapChain);
-	demo_init_vk_swapchain(&window->vkSwapChain);
-	/*
 	VkResult err;
 	// Init vkSwapChain struct
 	for (U32 i = 0; i < SGL_CAMERA_COUNT; i++)
 	{
 		window->vkSwapChain.cameras[i].camType = 0;
 	}
+	memset(&window->vkSwapChain, 0, sizeof(SGL_VkSwapChain));
 	//Creates instance, physicaldevice, device, surface and check for available validation layers and extensions
 	{
 		char* extensionNames[64];
@@ -889,7 +279,7 @@ U32 SGL_InitVulkan(SGL_Window * window)
 			{
 				VkPhysicalDevice *physicalDevices = SDL_malloc(sizeof(VkPhysicalDevice) * gpuCount);
 				err = vkEnumeratePhysicalDevices(window->vkSwapChain.inst, &gpuCount, physicalDevices);
-				SDL_assert(!err);
+				assert(!err);
 				VkPhysicalDeviceProperties* devProp = SDL_calloc(1,sizeof(VkPhysicalDeviceProperties));
 				SDL_Log("Listing devices that support vulkan:\n\n");
 				//these match with VkPhysicalDeviceType enum names
@@ -939,7 +329,7 @@ U32 SGL_InitVulkan(SGL_Window * window)
 		uint32_t deviceLayerCount = 0;
 		err =
 			vkEnumerateDeviceLayerProperties(window->vkSwapChain.gpu, &deviceLayerCount, NULL);
-		SDL_assert(!err);
+		assert(!err);
 
 		if (deviceLayerCount > 0)
 		{
@@ -989,13 +379,13 @@ U32 SGL_InitVulkan(SGL_Window * window)
 			enabledExtensionCount = 0;
 
 			err = vkEnumerateDeviceExtensionProperties(window->vkSwapChain.gpu, NULL, &deviceExtensionCount, NULL);
-			SDL_assert(!err);
+			assert(!err);
 
 			if (deviceExtensionCount > 0)
 			{
 				VkExtensionProperties *deviceExtensions = SDL_malloc(sizeof(VkExtensionProperties) * deviceExtensionCount);
 				err = vkEnumerateDeviceExtensionProperties(window->vkSwapChain.gpu, NULL, &deviceExtensionCount, deviceExtensions);
-				SDL_assert(!err);
+				assert(!err);
 				for (uint32_t i = 0; i < deviceExtensionCount; i++)
 				{
 					if (!SDL_strcmp(VK_KHR_SWAPCHAIN_EXTENSION_NAME, deviceExtensions[i].extensionName))
@@ -1003,7 +393,7 @@ U32 SGL_InitVulkan(SGL_Window * window)
 						swapchainExtFound = 1;
 						extensionNames[enabledExtensionCount++] = VK_KHR_SWAPCHAIN_EXTENSION_NAME;
 					}
-					SDL_assert(enabledExtensionCount < 64);
+					assert(enabledExtensionCount < 64);
 				}
 
 				SDL_free(deviceExtensions);
@@ -1237,7 +627,7 @@ U32 SGL_InitVulkan(SGL_Window * window)
 			};
 
 			err = vkCreateDevice(window->vkSwapChain.gpu, &device, NULL, &window->vkSwapChain.device);
-			SDL_assert(!err);
+			assert(!err);
 		}
 		// Setup device function pointers
 		{
@@ -1328,81 +718,26 @@ U32 SGL_InitVulkan(SGL_Window * window)
 	}
 	// Get Memory information and properties
 	vkGetPhysicalDeviceMemoryProperties(window->vkSwapChain.gpu, &window->vkSwapChain.memoryProperties);
-	SDL_Log("Vulkan initialized successfully\n\n");
-	//*/
+	SDL_Log("Vulkan initialized successfully\n\n");//*/
 	return SGL_TRUE;
 }
-static inline VkBool32 memory_type_from_properties(SGL_VkSwapChain * swapchain, U32 typeBits, VkFlags requirements_mask, U32 *typeIndex) 
-{
+static inline SGL_bool memory_type_from_properties(SGL_VkSwapChain * swapchain, uint32_t typeBits,
+	VkFlags requirements_mask,
+	uint32_t *typeIndex) {
 	// Search memtypes to find first index with those properties
-	for (uint32_t i = 0; i < 32; i++) 
-	{
-		if ((typeBits & 1) == 1) 
-		{
+	for (uint32_t i = 0; i < 32; i++) {
+		if ((typeBits & 1) == 1) {
 			// Type is available, does it match user properties?
-			if ((swapchain->memoryProperties.memoryTypes[i].propertyFlags & requirements_mask) == requirements_mask) 
-			{
+			if ((swapchain->memoryProperties.memoryTypes[i].propertyFlags &
+				requirements_mask) == requirements_mask) {
 				*typeIndex = i;
-				return VK_TRUE;
+				return SGL_TRUE;
 			}
 		}
 		typeBits >>= 1;
 	}
 	// No memory types matched, return failure
-	return VK_FALSE;
-}
-static inline VkBool32 CreateBuffer(SGL_VkSwapChain * swapchain, VkBufferUsageFlags usage, VkDeviceSize size, void * data, VkBuffer *buffer, VkDeviceMemory *memory)
-{
-	VkMemoryRequirements memReqs;
-	VkMemoryAllocateInfo memAlloc = 
-	{
-		.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO,
-		.pNext = VK_NULL_HANDLE,
-		.allocationSize = 0,
-		.memoryTypeIndex = 0
-	};
-	VkBufferCreateInfo bufferCreateInfo =
-	{
-		.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,
-		.pNext = NULL,
-		.usage = usage,
-		.size = size,
-		.flags = 0
-	};
-
-	VkResult err = vkCreateBuffer(swapchain->device, &bufferCreateInfo, VK_NULL_HANDLE, buffer);
-	assert(!err);
-	vkGetBufferMemoryRequirements(swapchain->device, *buffer, &memReqs);
-	memAlloc.allocationSize = memReqs.size;
-	memory_type_from_properties(swapchain, memReqs.memoryTypeBits, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, &memAlloc.memoryTypeIndex);
-	err = vkAllocateMemory(swapchain->device, &memAlloc, VK_NULL_HANDLE, memory);
-	assert(!err);
-	if (data != VK_NULL_HANDLE)
-	{
-		void *mapped;
-		err = vkMapMemory(swapchain->device, *memory, 0, size, 0, &mapped);
-		assert(!err);
-		memcpy(mapped, data, size);
-		vkUnmapMemory(swapchain->device, *memory);
-	}
-	err = vkBindBufferMemory(swapchain->device, *buffer, *memory, 0);
-	assert(!err);
-	return VK_TRUE;
-}
-static inline VkBool32 CreateBufferWD(SGL_VkSwapChain * swapchain, VkBufferUsageFlags usage, VkDeviceSize size, void * data, VkBuffer * buffer, VkDeviceMemory * memory, VkDescriptorBufferInfo * descriptor)
-{
-	VkBool32 res = CreateBuffer(swapchain, usage, size, data, buffer, memory);
-	if (res)
-	{
-		descriptor->offset = 0;
-		descriptor->buffer = *buffer;
-		descriptor->range = size;
-		return VK_TRUE;
-	}
-	else
-	{
-		return VK_FALSE;
-	}
+	return SGL_FALSE;
 }
 static inline void InitCommandBuffer(SGL_VkSwapChain* swapchain, VkCommandBuffer* cmdBuffer)
 {
@@ -1439,7 +774,7 @@ static inline void InitCommandBuffer(SGL_VkSwapChain* swapchain, VkCommandBuffer
 }
 static inline void demo_flush_init_cmd(SGL_VkSwapChain * swapchain) 
 {
-	VkResult err;
+	VkResult U_ASSERT_ONLY err;
 
 	if (swapchain->setupCmdBuffer == VK_NULL_HANDLE)
 	{
@@ -1448,7 +783,7 @@ static inline void demo_flush_init_cmd(SGL_VkSwapChain * swapchain)
 	}
 
 	err = vkEndCommandBuffer(swapchain->setupCmdBuffer);
-	SDL_assert(!err);
+	assert(!err);
 
 	const VkCommandBuffer cmd_bufs[] = { swapchain->setupCmdBuffer };
 	VkFence nullFence = VK_NULL_HANDLE;
@@ -1463,10 +798,10 @@ static inline void demo_flush_init_cmd(SGL_VkSwapChain * swapchain)
 		.pSignalSemaphores = NULL };
 
 	err = vkQueueSubmit(swapchain->queue, 1, &submit_info, nullFence);
-	SDL_assert(!err);
+	assert(!err);
 
 	err = vkQueueWaitIdle(swapchain->queue);
-	SDL_assert(!err);
+	assert(!err);
 
 	vkFreeCommandBuffers(swapchain->device, swapchain->cmdPool, 1, cmd_bufs);
 	swapchain->setupCmdBuffer = VK_NULL_HANDLE;
@@ -1474,7 +809,7 @@ static inline void demo_flush_init_cmd(SGL_VkSwapChain * swapchain)
 //why cant i use the same commandbuffer for everything??
 static void demo_set_image_layout(SGL_VkSwapChain* swapchain, VkCommandBuffer* cmdBuffer, VkImage image, VkImageAspectFlags aspectMask, VkImageLayout old_image_layout, VkImageLayout new_image_layout, VkAccessFlagBits srcAccessMask, VkAccessFlagBits dstAccessMask)
 {
-	VkResult err;
+	VkResult U_ASSERT_ONLY err;
 
 	if (*cmdBuffer == VK_NULL_HANDLE) 
 	{
@@ -1488,7 +823,7 @@ static void demo_set_image_layout(SGL_VkSwapChain* swapchain, VkCommandBuffer* c
 		};
 
 		err = vkAllocateCommandBuffers(swapchain->device, &cmd, cmdBuffer);
-		SDL_assert(!err);
+		assert(!err);
 
 		VkCommandBufferInheritanceInfo cmd_buf_hinfo = {
 			.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_INFO,
@@ -1507,7 +842,7 @@ static void demo_set_image_layout(SGL_VkSwapChain* swapchain, VkCommandBuffer* c
 			.pInheritanceInfo = &cmd_buf_hinfo,
 		};
 		err = vkBeginCommandBuffer(*cmdBuffer, &cmd_buf_info);
-		SDL_assert(!err);
+		assert(!err);
 	}
 
 	VkImageMemoryBarrier image_memory_barrier =
@@ -1845,15 +1180,13 @@ static void demo_set_image_layout(SGL_VkSwapChain* swapchain, VkCommandBuffer* c
 	}
 	}
 	SDL_Log("\nCreated vkCmdPipelineBarrier:\noldLayout: %s\nnewLayout: %s\nsrcAccessMask: %s\ndstAccessMask: %s\n", oldLayout, newLayout, srcText, dstText);
-	//*/
-
-	VkImageMemoryBarrier *pmemory_barrier = &image_memory_barrier;
+	*/
 	vkCmdPipelineBarrier(*cmdBuffer, src_stages, dest_stages, 0, 0, NULL, 0,
-		NULL, 1, pmemory_barrier);
+		NULL, 1, &image_memory_barrier);
 }
 static void demo_prepare_buffers(SGL_VkSwapChain * swapchain) 
 {
-	VkResult err;
+	VkResult U_ASSERT_ONLY err;
 	VkSwapchainKHR oldSwapchain = swapchain->swapchain;
 
 	// Check the surface capabilities and formats
@@ -1914,8 +1247,7 @@ static void demo_prepare_buffers(SGL_VkSwapChain * swapchain)
 	uint32_t desiredNumberOfSwapchainImages =
 		surfCapabilities.minImageCount + 1;
 	if ((surfCapabilities.maxImageCount > 0) &&
-		(desiredNumberOfSwapchainImages > surfCapabilities.maxImageCount)) 
-	{
+		(desiredNumberOfSwapchainImages > surfCapabilities.maxImageCount)) {
 		// Application must settle for fewer images than desired:
 		desiredNumberOfSwapchainImages = surfCapabilities.maxImageCount;
 	}
@@ -1954,7 +1286,7 @@ static void demo_prepare_buffers(SGL_VkSwapChain * swapchain)
 	};
 	err = swapchain->fpCreateSwapchainKHR(swapchain->device, &swapchainCreateInfo, NULL,
 		&swapchain->swapchain);
-	SDL_assert(!err);
+	assert(!err);
 
 	// If we just re-created an existing swapchain, we should destroy the old
 	// swapchain at this point.
@@ -1965,12 +1297,12 @@ static void demo_prepare_buffers(SGL_VkSwapChain * swapchain)
 	}
 
 	err = swapchain->fpGetSwapchainImagesKHR(swapchain->device, swapchain->swapchain, &swapchain->swapchainImageCount, NULL);
-	SDL_assert(!err);
+	assert(!err);
 
 	err = swapchain->fpGetSwapchainImagesKHR(swapchain->device, swapchain->swapchain,
 		&swapchain->swapchainImageCount,
 		swapchain->swapchainImages);
-	SDL_assert(!err);
+	assert(!err);
 
 	U32 i;
 	for (i = 0; i < swapchain->swapchainImageCount; i++) 
@@ -2002,15 +1334,16 @@ static void demo_prepare_buffers(SGL_VkSwapChain * swapchain)
 		// VK_IMAGE_LAYOUT_PRESENT_SRC_KHR
 		// layout and will change to COLOR_ATTACHMENT_OPTIMAL, so init the image
 		// to that state
+		//InitCommandBuffer(swapchain, &swapchain->setupCmdBuffer);
 		demo_set_image_layout(swapchain, &swapchain->setupCmdBuffer, swapchain->swapchainImages[i], VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR, 0, 0);
 
 		color_image_view.image = swapchain->swapchainImages[i];
 
 		err = vkCreateImageView(swapchain->device, &color_image_view, NULL,
 			&swapchain->swapchainViews[i]);
-		SDL_assert(!err);
+		assert(!err);
 	}
-	//demo_flush_init_cmd(swapchain);
+
 	if (NULL != presentModes) 
 	{
 		free(presentModes);
@@ -2028,7 +1361,7 @@ static void demo_prepare_depth(SGL_VkSwapChain * swapchain)
 		.arrayLayers = 1,
 		.samples = VK_SAMPLE_COUNT_1_BIT,
 		.tiling = VK_IMAGE_TILING_OPTIMAL,
-		.usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT,
+		.usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
 		.flags = 0,
 	};
 
@@ -2037,27 +1370,25 @@ static void demo_prepare_depth(SGL_VkSwapChain * swapchain)
 		.pNext = NULL,
 		.image = VK_NULL_HANDLE,
 		.format = swapchain->depthFormat,
-		.subresourceRange = 
-		{ 
-			.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT,
-			.baseMipLevel = 0,
-			.levelCount = 1,
-			.baseArrayLayer = 0,
-			.layerCount = 1 
-		},
+		.subresourceRange = { .aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT,
+		.baseMipLevel = 0,
+		.levelCount = 1,
+		.baseArrayLayer = 0,
+		.layerCount = 1 },
 		.flags = 0,
 		.viewType = VK_IMAGE_VIEW_TYPE_2D,
 	};
+
 	VkMemoryRequirements mem_reqs;
-	VkResult err;
-	SGL_bool pass;
+	VkResult U_ASSERT_ONLY err;
+	SGL_bool U_ASSERT_ONLY pass;
 
 	/* create image */
 	err = vkCreateImage(swapchain->device, &image, NULL, &swapchain->depthStencil.image);
-	SDL_assert(!err);
+	assert(!err);
 
 	vkGetImageMemoryRequirements(swapchain->device, swapchain->depthStencil.image, &mem_reqs);
-	SDL_assert(!err);
+	assert(!err);
 	VkMemoryAllocateInfo mem_alloc =
 	{
 		.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO,
@@ -2067,19 +1398,19 @@ static void demo_prepare_depth(SGL_VkSwapChain * swapchain)
 	};
 
 	pass = memory_type_from_properties(swapchain, mem_reqs.memoryTypeBits,
-		VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, /* No requirements */
+		0, /* No requirements */
 		&mem_alloc.memoryTypeIndex);
-	SDL_assert(pass);
+	assert(pass);
 
 	/* allocate memory */
 	err = vkAllocateMemory(swapchain->device, &mem_alloc, NULL,
 		&swapchain->depthStencil.mem);
-	SDL_assert(!err);
+	assert(!err);
 
 	/* bind memory */
 	err =
 		vkBindImageMemory(swapchain->device, swapchain->depthStencil.image, swapchain->depthStencil.mem, 0);
-	SDL_assert(!err);
+	assert(!err);
 	demo_set_image_layout(swapchain, &swapchain->setupCmdBuffer, swapchain->depthStencil.image, VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT,
 		VK_IMAGE_LAYOUT_UNDEFINED,
 		VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
@@ -2088,13 +1419,13 @@ static void demo_prepare_depth(SGL_VkSwapChain * swapchain)
 	/* create image view */
 	view.image = swapchain->depthStencil.image;
 	err = vkCreateImageView(swapchain->device, &view, NULL, &swapchain->depthStencil.view);
-	SDL_assert(!err);
+	assert(!err);
 }
 static void demo_prepare_texture_image(SGL_VkSwapChain *swapchain, SGL_Texture *tex_obj, VkImageTiling tiling, VkImageUsageFlags usage, VkFlags required_props) 
 {
 	const VkFormat tex_format = tex_obj->format;
-	VkResult err;
-	SGL_bool pass;
+	VkResult U_ASSERT_ONLY err;
+	SGL_bool U_ASSERT_ONLY pass;
 
 	const VkImageCreateInfo image_create_info = 
 	{
@@ -2116,7 +1447,7 @@ static void demo_prepare_texture_image(SGL_VkSwapChain *swapchain, SGL_Texture *
 
 	err =
 		vkCreateImage(swapchain->device, &image_create_info, NULL, &tex_obj->image);
-	SDL_assert(!err);
+	assert(!err);
 
 	vkGetImageMemoryRequirements(swapchain->device, tex_obj->image, &mem_reqs);
 
@@ -2128,16 +1459,16 @@ static void demo_prepare_texture_image(SGL_VkSwapChain *swapchain, SGL_Texture *
 	pass = memory_type_from_properties(swapchain, mem_reqs.memoryTypeBits,
 		required_props,
 		&tex_obj->mem_alloc.memoryTypeIndex);
-	SDL_assert(pass);
+	assert(pass);
 
 	/* allocate memory */
 	err = vkAllocateMemory(swapchain->device, &tex_obj->mem_alloc, NULL,
 		&(tex_obj->mem));
-	SDL_assert(!err);
+	assert(!err);
 
 	/* bind memory */
 	err = vkBindImageMemory(swapchain->device, tex_obj->image, tex_obj->mem, 0);
-	SDL_assert(!err);
+	assert(!err);
 
 	if (required_props & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT) 
 	{
@@ -2155,7 +1486,7 @@ static void demo_prepare_texture_image(SGL_VkSwapChain *swapchain, SGL_Texture *
 
 		err = vkMapMemory(swapchain->device, tex_obj->mem, 0,
 			tex_obj->mem_alloc.allocationSize, 0, &data);
-		SDL_assert(!err);
+		assert(!err);
 		SDL_memcpy(data, tex_obj->surf->pixels, tex_obj->mem_alloc.allocationSize);
 
 		vkUnmapMemory(swapchain->device, tex_obj->mem);
@@ -2187,7 +1518,7 @@ static void demo_prepare_textures(SGL_VkSwapChain *swapchain)
 
 	for (i = 0; i < 1; i++) 
 	{
-		VkResult err;
+		VkResult U_ASSERT_ONLY err;
 		if (props.optimalTilingFeatures & VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT) 
 		{
 			/* Must use staging buffer to copy linear texture to optimized */
@@ -2246,7 +1577,7 @@ static void demo_prepare_textures(SGL_VkSwapChain *swapchain)
 		}
 		else {
 			/* Can't support VK_FORMAT_R8G8B8A8_UNORM !? */
-			SDL_assert(!"No support for current texture format as texture image format");
+			assert(!"No support for current texture format as texture image format");
 		}
 
 		const VkSamplerCreateInfo sampler = {
@@ -2286,13 +1617,13 @@ static void demo_prepare_textures(SGL_VkSwapChain *swapchain)
 		/* create sampler */
 		err = vkCreateSampler(swapchain->device, &sampler, NULL,
 			&swapchain->tex.sampler);
-		SDL_assert(!err);
+		assert(!err);
 
 		/* create image view */
 		view.image = swapchain->tex.image;
 		err = vkCreateImageView(swapchain->device, &view, NULL,
 			&swapchain->tex.view);
-		SDL_assert(!err);
+		assert(!err);
 	}
 }
 static void demo_prepare_cube_data_buffer(SGL_VkSwapChain *swapchain)
@@ -2314,8 +1645,8 @@ static void demo_prepare_cube_data_buffer(SGL_VkSwapChain *swapchain)
 	U8 *pData;
 	int i;
 	SGL_Mat4 MVP, VP;
-	VkResult err;
-	SGL_bool pass;
+	VkResult U_ASSERT_ONLY err;
+	SGL_bool U_ASSERT_ONLY pass;
 	struct vktexcube_vs_uniform data;
 	VP = SM_M4Multiply(&swapchain->view_matrix, &swapchain->projection_matrix);
 	MVP = SM_M4Multiply(&swapchain->model_matrix, &VP);
@@ -2425,7 +1756,7 @@ static void demo_prepare_cube_data_buffer(SGL_VkSwapChain *swapchain)
 	buf_info.size = sizeof(data);
 
 	err = vkCreateBuffer(swapchain->device, &buf_info, NULL, &swapchain->uniformBuffer.buffer);
-	SDL_assert(!err);
+	assert(!err);
 
 	vkGetBufferMemoryRequirements(swapchain->device, swapchain->uniformBuffer.buffer,
 		&mem_reqs);
@@ -2439,14 +1770,14 @@ static void demo_prepare_cube_data_buffer(SGL_VkSwapChain *swapchain)
 	swapchain->uniformBuffer.allocSize = mem_alloc.allocationSize;
 
 	pass = memory_type_from_properties(swapchain, mem_reqs.memoryTypeBits, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, &mem_alloc.memoryTypeIndex);
-	SDL_assert(pass);
+	assert(pass);
 
 	err = vkAllocateMemory(swapchain->device, &mem_alloc, NULL,
 		&(swapchain->uniformBuffer.memory));
-	SDL_assert(!err);
+	assert(!err);
 
 	err = vkMapMemory(swapchain->device, swapchain->uniformBuffer.memory, 0, swapchain->uniformBuffer.allocSize, 0, (void **)&pData);
-	SDL_assert(!err);
+	assert(!err);
 
 	memcpy(pData, &data, sizeof data);
 
@@ -2454,138 +1785,12 @@ static void demo_prepare_cube_data_buffer(SGL_VkSwapChain *swapchain)
 
 	err = vkBindBufferMemory(swapchain->device, swapchain->uniformBuffer.buffer,
 		swapchain->uniformBuffer.memory, 0);
-	SDL_assert(!err);
+	assert(!err);
 
 	swapchain->uniformBuffer.descriptor.buffer = swapchain->uniformBuffer.buffer;
 	swapchain->uniformBuffer.descriptor.offset = 0;
 	swapchain->uniformBuffer.descriptor.range = sizeof(data);
 }
-static void generateQuad(SGL_VkSwapChain *swapchain)
-{
-	// Setup vertices for a single uv-mapped quad
-	static const float vertexData[] =
-	{
-		 1.0f, 1.0f, 0.0f,	1.0f, 1.0f,
-		-1.0f, 1.0f, 0.0f,	0.0f, 1.0f,
-		-1.0f,-1.0f, 0.0f,	0.0f, 0.0f,
-		 1.0f,-1.0f, 0.0f,	1.0f, 0.0f,
-	};
-	U32 indexData[] = { 0,1,2, 2,3,0 };
-	CreateBuffer(swapchain, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, SDL_arraysize(vertexData) * sizeof(float), vertexData, &swapchain->vertexBuffer.buf, &swapchain->vertexBuffer.mem);
-	// Setup indices
-	swapchain->indexBuffer.count = SDL_arraysize(indexData);
-	CreateBuffer(swapchain, VK_BUFFER_USAGE_INDEX_BUFFER_BIT, SDL_arraysize(indexData) * sizeof(U32),indexData, &swapchain->indexBuffer.buf, &swapchain->indexBuffer.mem);
-	// Binding description
-	swapchain->vertexBuffer.bindingDescriptions = SDL_malloc(sizeof(VkVertexInputBindingDescription));
-	swapchain->vertexBuffer.attributeDescriptions = SDL_malloc(sizeof(VkVertexInputAttributeDescription)*2);
-
-	swapchain->vertexBuffer.bindingDescriptions[0].binding = VERTEX_BUFFER_BIND_ID;
-	swapchain->vertexBuffer.bindingDescriptions[0].stride = sizeof(float)*5;
-	swapchain->vertexBuffer.bindingDescriptions[0].inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
-
-	// Location 0 : Position
-	swapchain->vertexBuffer.attributeDescriptions[0].location = 0;
-	swapchain->vertexBuffer.attributeDescriptions[0].binding = VERTEX_BUFFER_BIND_ID;
-	swapchain->vertexBuffer.attributeDescriptions[0].format = VK_FORMAT_R32G32B32_SFLOAT;
-	swapchain->vertexBuffer.attributeDescriptions[0].offset = 0;
-
-	// Location 1 : Texture coordinates
-	swapchain->vertexBuffer.attributeDescriptions[1].location = 1;
-	swapchain->vertexBuffer.attributeDescriptions[1].binding = VERTEX_BUFFER_BIND_ID;
-	swapchain->vertexBuffer.attributeDescriptions[1].format = VK_FORMAT_R32G32_SFLOAT;
-	swapchain->vertexBuffer.attributeDescriptions[1].offset = sizeof(float)*3;
-
-	swapchain->vertexBuffer.inputState.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
-	swapchain->vertexBuffer.inputState.pNext = VK_NULL_HANDLE;
-	swapchain->vertexBuffer.inputState.vertexBindingDescriptionCount = 1;
-	swapchain->vertexBuffer.inputState.pVertexBindingDescriptions = swapchain->vertexBuffer.bindingDescriptions;
-	swapchain->vertexBuffer.inputState.vertexAttributeDescriptionCount = 2;
-	swapchain->vertexBuffer.inputState.pVertexAttributeDescriptions = swapchain->vertexBuffer.attributeDescriptions;
-}
-static void UpdateUniformBuffers(SGL_VkSwapChain *swapchain)
-{
-	{
-		SGL_Vec4 eye = { 0.0f, 3.0f, 5.0f ,0.0f };
-		SGL_Vec4 origin = { 0.0f, 0.0f, 0.0f, 0.0f };
-		SGL_Vec4 up = { 0.0f, 1.0f, 0.0f, 0.0f };
-		SGL_Mat4 identityM = SM_IdentityMat4();
-		swapchain->spin_angle = 0.01f;
-		swapchain->spin_increment = 0.01f;
-		float fow = (float)degreesToRadians(45.0f);
-		swapchain->projection_matrix = SM_Perspective((float)degreesToRadians(45.0f), swapchain->windowHalfSizef.x / swapchain->windowHalfSizef.y, 0.1f, 100.0f);
-		swapchain->view_matrix = SM_LookAt(&eye, &origin, &up);
-		swapchain->ubo.model = SM_M4Multiply(&swapchain->view_matrix, &identityM);
-
-		swapchain->ubo.projection = swapchain->projection_matrix;
-	}
-	// Vertex shader
-	//glm::mat4 viewMatrix = glm::mat4();
-	//uboVS.projection = glm::perspective(glm::radians(60.0f), (float)width / (float)height, 0.001f, 256.0f);
-	//viewMatrix = glm::translate(viewMatrix, glm::vec3(0.0f, 0.0f, zoom));
-	//
-	//uboVS.model = glm::mat4();
-	//uboVS.model = viewMatrix * glm::translate(uboVS.model, glm::vec3(0, 0, 0));
-	//uboVS.model = glm::rotate(uboVS.model, glm::radians(rotation.x), glm::vec3(1.0f, 0.0f, 0.0f));
-	//uboVS.model = glm::rotate(uboVS.model, glm::radians(rotation.y), glm::vec3(0.0f, 1.0f, 0.0f));
-	//uboVS.model = glm::rotate(uboVS.model, glm::radians(rotation.z), glm::vec3(0.0f, 0.0f, 1.0f));
-
-	uint8_t *pData;
-	swapchain->uniformBuffer.allocSize = sizeof(SGL_UBO);
-	VkResult err = vkMapMemory(swapchain->device, swapchain->uniformBuffer.memory, 0, sizeof(SGL_UBO), 0, (void **)&pData);
-	assert(!err);
-	memcpy(pData, &swapchain->ubo, sizeof(SGL_UBO));
-	vkUnmapMemory(swapchain->device, swapchain->uniformBuffer.memory);
-}
-static void prepareUniformBuffers(SGL_VkSwapChain *swapchain)
-{
-	// Vertex shader uniform buffer block
-	CreateBufferWD(swapchain, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, sizeof(SGL_UBO), &swapchain->ubo, &swapchain->uniformBuffer.buffer, &swapchain->uniformBuffer.memory, &swapchain->uniformBuffer.descriptor);
-
-	UpdateUniformBuffers(swapchain);
-}
-static void setupDescriptorSetLayout(SGL_VkSwapChain *swapchain)
-{
-	VkDescriptorSetLayoutBinding setLayoutBindings[] =
-	{
-		// Binding 0 : Vertex shader uniform buffer
-		{
-			.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
-			.stageFlags = VK_SHADER_STAGE_VERTEX_BIT,
-			.binding = 0,
-			.descriptorCount = 1
-		},
-		// Binding 1 : Fragment shader image sampler
-		{
-			.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-			.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT,
-			.binding = 1,
-			.descriptorCount = 1
-		}
-	};
-
-	VkDescriptorSetLayoutCreateInfo descriptorLayout = 
-	{
-		.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO,
-		.pNext = NULL,
-		.pBindings = setLayoutBindings,
-		.bindingCount = SDL_arraysize(setLayoutBindings),
-	};
-
-	VkResult err = vkCreateDescriptorSetLayout(swapchain->device, &descriptorLayout, VK_NULL_HANDLE, &swapchain->descriptorSetLayout);
-	assert(!err);
-
-	VkPipelineLayoutCreateInfo pPipelineLayoutCreateInfo = 
-	{
-		.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO,
-		.pNext = NULL,
-		.setLayoutCount = 1,
-		.pSetLayouts = &descriptorLayout
-	};
-
-	err = vkCreatePipelineLayout(swapchain->device, &pPipelineLayoutCreateInfo, VK_NULL_HANDLE, &swapchain->pipelineLayout);
-	assert(!err);
-}
-
 static void demo_prepare_descriptor_layout(SGL_VkSwapChain *swapchain)
 {
 	const VkDescriptorSetLayoutBinding layout_bindings[2] = {
@@ -2612,11 +1817,11 @@ static void demo_prepare_descriptor_layout(SGL_VkSwapChain *swapchain)
 		.bindingCount = 2,
 		.pBindings = layout_bindings,
 	};
-	VkResult err;
+	VkResult U_ASSERT_ONLY err;
 
 	err = vkCreateDescriptorSetLayout(swapchain->device, &descriptor_layout, NULL,
 		&swapchain->descriptorSetLayout);
-	SDL_assert(!err);
+	assert(!err);
 
 	const VkPipelineLayoutCreateInfo pPipelineLayoutCreateInfo = {
 		.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO,
@@ -2627,7 +1832,7 @@ static void demo_prepare_descriptor_layout(SGL_VkSwapChain *swapchain)
 
 	err = vkCreatePipelineLayout(swapchain->device, &pPipelineLayoutCreateInfo, NULL,
 		&swapchain->pipelineLayout);
-	SDL_assert(!err);
+	assert(!err);
 }
 static void demo_prepare_render_pass(SGL_VkSwapChain * swapchain)
 {
@@ -2652,8 +1857,10 @@ static void demo_prepare_render_pass(SGL_VkSwapChain * swapchain)
 		.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE,
 		.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE,
 		.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE,
-		.initialLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
-		.finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
+		.initialLayout =
+		VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
+		.finalLayout =
+		VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
 	},
 	};
 	const VkAttachmentReference color_reference = {
@@ -2685,10 +1892,10 @@ static void demo_prepare_render_pass(SGL_VkSwapChain * swapchain)
 		.dependencyCount = 0,
 		.pDependencies = NULL,
 	};
-	VkResult err;
+	VkResult U_ASSERT_ONLY err;
 
 	err = vkCreateRenderPass(swapchain->device, &rp_info, NULL, &swapchain->renderPass);
-	SDL_assert(!err);
+	assert(!err);
 }
 VkPipelineShaderStageCreateInfo LoadShader(SGL_VkSwapChain* swapChain, const SGL_Shader* shader, VkShaderStageFlagBits stageBits, const char* pName)
 {
@@ -2704,7 +1911,7 @@ VkPipelineShaderStageCreateInfo LoadShader(SGL_VkSwapChain* swapChain, const SGL
 		.pCode = (U32*)shader->data
 	};
 	err = vkCreateShaderModule(swapChain->device, &moduleCreateInfo, VK_NULL_HANDLE, &shaderModule);
-	SDL_assert(!err);
+	assert(!err);
 	VkPipelineShaderStageCreateInfo shaderStage =
 	{
 		.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO,
@@ -2730,7 +1937,7 @@ static void demo_prepare_pipeline(SGL_VkSwapChain * swapchain)
 	VkPipelineMultisampleStateCreateInfo ms;
 	VkDynamicState dynamicStateEnables[VK_DYNAMIC_STATE_RANGE_SIZE];
 	VkPipelineDynamicStateCreateInfo dynamicState;
-	VkResult err;
+	VkResult U_ASSERT_ONLY err;
 
 	memset(dynamicStateEnables, 0, sizeof dynamicStateEnables);
 	memset(&dynamicState, 0, sizeof dynamicState);
@@ -2795,8 +2002,6 @@ static void demo_prepare_pipeline(SGL_VkSwapChain * swapchain)
 	// Two stages: vs and fs
 	VkPipelineShaderStageCreateInfo shaderStages[2];
 	{
-		//SGL_Shader vert = SGL_DataLoadShader("texVert");
-		//SGL_Shader frag = SGL_DataLoadShader("texFrag");
 		SGL_Shader vert = SGL_DataLoadShader("cubeVert");
 		SGL_Shader frag = SGL_DataLoadShader("cubeFrag");
 		shaderStages[0] = LoadShader(swapchain, &vert, VK_SHADER_STAGE_VERTEX_BIT, "main");
@@ -2809,9 +2014,8 @@ static void demo_prepare_pipeline(SGL_VkSwapChain * swapchain)
 
 	err = vkCreatePipelineCache(swapchain->device, &pipelineCache, NULL,
 		&swapchain->pipelineCache);
-	SDL_assert(!err);
+	assert(!err);
 
-	//pipeline.pVertexInputState = &swapchain->vertexBuffer.inputState;
 	pipeline.pVertexInputState = &vi;
 	pipeline.pInputAssemblyState = &ia;
 	pipeline.pRasterizationState = &rs;
@@ -2824,9 +2028,11 @@ static void demo_prepare_pipeline(SGL_VkSwapChain * swapchain)
 	pipeline.renderPass = swapchain->renderPass;
 	pipeline.pDynamicState = &dynamicState;
 
+	pipeline.renderPass = swapchain->renderPass;
+
 	err = vkCreateGraphicsPipelines(swapchain->device, swapchain->pipelineCache, 1,
 		&pipeline, NULL, &swapchain->mainPipeline);
-	SDL_assert(!err);
+	assert(!err);
 /*
 	vkDestroyShaderModule(swapchain->device, swapchain->frag_shader_module, NULL);
 	vkDestroyShaderModule(swapchain->device, swapchain->vert_shader_module, NULL);
@@ -2854,17 +2060,17 @@ static void demo_prepare_descriptor_pool(SGL_VkSwapChain * swapchain)
 		.poolSizeCount = 2,
 		.pPoolSizes = type_counts,
 	};
-	VkResult err;
+	VkResult U_ASSERT_ONLY err;
 
 	err = vkCreateDescriptorPool(swapchain->device, &descriptor_pool, NULL,
 		&swapchain->descriptorPool);
-	SDL_assert(!err);
+	assert(!err);
 }
 static void demo_prepare_descriptor_set(SGL_VkSwapChain * swapchain) 
 {
 	VkDescriptorImageInfo tex_descs[DEMO_TEXTURE_COUNT];
 	VkWriteDescriptorSet writes[2];
-	VkResult err;
+	VkResult U_ASSERT_ONLY err;
 	uint32_t i;
 
 	VkDescriptorSetAllocateInfo alloc_info = {
@@ -2874,7 +2080,7 @@ static void demo_prepare_descriptor_set(SGL_VkSwapChain * swapchain)
 		.descriptorSetCount = 1,
 		.pSetLayouts = &swapchain->descriptorSetLayout };
 	err = vkAllocateDescriptorSets(swapchain->device, &alloc_info, &swapchain->descriptorSet);
-	SDL_assert(!err);
+	assert(!err);
 
 	memset(&tex_descs, 0, sizeof(tex_descs));
 	for (i = 0; i < 1; i++) {
@@ -2917,19 +2123,19 @@ static void demo_prepare_framebuffers(SGL_VkSwapChain * swapchain)
 		.height = swapchain->windowSize.y,
 		.layers = 1,
 	};
-	VkResult err;
+	VkResult U_ASSERT_ONLY err;
 	uint32_t i;
 
 	swapchain->framebuffers = (VkFramebuffer *)malloc(swapchain->swapchainImageCount *
 		sizeof(VkFramebuffer));
-	SDL_assert(swapchain->framebuffers);
+	assert(swapchain->framebuffers);
 
 	for (i = 0; i < swapchain->swapchainImageCount; i++) 
 	{
 		attachments[0] = swapchain->swapchainViews[i];
 		err = vkCreateFramebuffer(swapchain->device, &fb_info, NULL,
 			&swapchain->framebuffers[i]);
-		SDL_assert(!err);
+		assert(!err);
 	}
 }
 static void demo_draw_build_cmd(SGL_VkSwapChain * swapchain, VkCommandBuffer cmd_buf) {
@@ -2950,12 +2156,8 @@ static void demo_draw_build_cmd(SGL_VkSwapChain * swapchain, VkCommandBuffer cmd
 		.pInheritanceInfo = &cmd_buf_hinfo,
 	};
 	const VkClearValue clear_values[2] = {
-		{
-			.color.float32 = { 0.2f, 0.2f, 0.2f, 0.2f },
-		},
-		{
-			.depthStencil = { 1.0f, 0 }
-		}
+		[0] = { .color.float32 = { 0.2f, 0.2f, 0.2f, 0.2f } },
+		[1] = { .depthStencil = { 1.0f, 0 } },
 	};
 	const VkRenderPassBeginInfo rp_begin = {
 		.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO,
@@ -2969,10 +2171,10 @@ static void demo_draw_build_cmd(SGL_VkSwapChain * swapchain, VkCommandBuffer cmd
 		.clearValueCount = 2,
 		.pClearValues = clear_values,
 	};
-	VkResult err;
+	VkResult U_ASSERT_ONLY err;
 
 	err = vkBeginCommandBuffer(cmd_buf, &cmd_buf_info);
-	SDL_assert(!err);
+	assert(!err);
 
 	vkCmdBeginRenderPass(cmd_buf, &rp_begin, VK_SUBPASS_CONTENTS_INLINE);
 
@@ -3017,99 +2219,11 @@ static void demo_draw_build_cmd(SGL_VkSwapChain * swapchain, VkCommandBuffer cmd
 		NULL, 1, &prePresentBarrier);
 
 	err = vkEndCommandBuffer(cmd_buf);
-	SDL_assert(!err);
-}
-static void demo_draw_build_cmd_test(SGL_VkSwapChain * swapchain, VkCommandBuffer cmd_buf) 
-{
-	VkCommandBufferInheritanceInfo cmd_buf_hinfo = {
-		.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_INFO,
-		.pNext = NULL,
-		.renderPass = VK_NULL_HANDLE,
-		.subpass = 0,
-		.framebuffer = VK_NULL_HANDLE,
-		.occlusionQueryEnable = VK_FALSE,
-		.queryFlags = 0,
-		.pipelineStatistics = 0,
-	};
-	const VkCommandBufferBeginInfo cmd_buf_info = {
-		.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
-		.pNext = NULL,
-		.flags = 0,
-		.pInheritanceInfo = &cmd_buf_hinfo,
-	};
-	const VkClearValue clear_values[2] = {
-		{
-			.color.float32 = { 0.2f, 0.2f, 0.2f, 0.2f },
-		},
-		{
-			.depthStencil = { 1.0f, 0 }
-		}
-	};
-	const VkRenderPassBeginInfo rp_begin = {
-		.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO,
-		.pNext = NULL,
-		.renderPass = swapchain->renderPass,
-		.framebuffer = swapchain->framebuffers[swapchain->currentBuffer],
-		.renderArea.offset.x = 0,
-		.renderArea.offset.y = 0,
-		.renderArea.extent.width = swapchain->windowSize.x,
-		.renderArea.extent.height = swapchain->windowSize.y,
-		.clearValueCount = 2,
-		.pClearValues = clear_values,
-	};
-	VkResult err;
-
-	err = vkBeginCommandBuffer(cmd_buf, &cmd_buf_info);
-	SDL_assert(!err);
-
-	vkCmdBeginRenderPass(cmd_buf, &rp_begin, VK_SUBPASS_CONTENTS_INLINE);
-
-	vkCmdBindPipeline(cmd_buf, VK_PIPELINE_BIND_POINT_GRAPHICS, swapchain->mainPipeline);
-	vkCmdBindDescriptorSets(cmd_buf, VK_PIPELINE_BIND_POINT_GRAPHICS, swapchain->pipelineLayout, 0, 1, &swapchain->descriptorSet, 0, VK_NULL_HANDLE);
-	VkDeviceSize offsets[1] = { 0 };
-	vkCmdBindVertexBuffers(cmd_buf, VERTEX_BUFFER_BIND_ID, 1, &swapchain->vertexBuffer.buf, offsets);
-	vkCmdBindIndexBuffer(cmd_buf, swapchain->indexBuffer.buf, 0, VK_INDEX_TYPE_UINT32);
-
-	VkViewport viewport;
-	memset(&viewport, 0, sizeof(viewport));
-	viewport.width = (float)swapchain->windowSize.x;
-	viewport.height = (float)swapchain->windowSize.y;
-	viewport.minDepth = (float)0.0f;
-	viewport.maxDepth = (float)1.0f;
-	vkCmdSetViewport(cmd_buf, 0, 1, &viewport);
-
-	VkRect2D scissor;
-	memset(&scissor, 0, sizeof(scissor));
-	scissor.extent.width = swapchain->windowSize.x;
-	scissor.extent.height = swapchain->windowSize.y;
-	scissor.offset.x = 0;
-	scissor.offset.y = 0;
-	vkCmdSetScissor(cmd_buf, 0, 1, &scissor);
-	vkCmdDrawIndexed(cmd_buf, swapchain->indexBuffer.count, 1, 0, 0, 0);
-	vkCmdEndRenderPass(cmd_buf);
-	// VK_IMAGE_LAYOUT_PRESENT_SRC_KHR
-	VkImageMemoryBarrier prePresentBarrier = {
-		.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER,
-		.pNext = NULL,
-		.srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
-		.dstAccessMask = VK_ACCESS_MEMORY_READ_BIT,
-		.oldLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-		.newLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,
-		.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
-		.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
-		.image = swapchain->swapchainImages[swapchain->currentBuffer],
-		.subresourceRange = { VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 }
-	};
-	vkCmdPipelineBarrier(cmd_buf, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
-		VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, 0, 0, NULL, 0,
-		NULL, 1, &prePresentBarrier);
-
-	err = vkEndCommandBuffer(cmd_buf);
-	SDL_assert(!err);
+	assert(!err);
 }
 U32 SGL_PrepareVulkan(SGL_VkSwapChain * swapchain)
 {
-	VkResult err;
+	VkResult U_ASSERT_ONLY err;
 
 	const VkCommandPoolCreateInfo cmd_pool_info = 
 	{
@@ -3120,7 +2234,7 @@ U32 SGL_PrepareVulkan(SGL_VkSwapChain * swapchain)
 	};
 	err = vkCreateCommandPool(swapchain->device, &cmd_pool_info, NULL,
 		&swapchain->cmdPool);
-	SDL_assert(!err);
+	assert(!err);
 
 	const VkCommandBufferAllocateInfo cmd = 
 	{
@@ -3134,18 +2248,17 @@ U32 SGL_PrepareVulkan(SGL_VkSwapChain * swapchain)
 	demo_prepare_buffers(swapchain);
 	demo_prepare_depth(swapchain);
 	demo_prepare_textures(swapchain);
+	InitCommandBuffer(swapchain, &swapchain->setupCmdBuffer);
 	demo_prepare_cube_data_buffer(swapchain);
-	//generateQuad(swapchain);
-	//prepareUniformBuffers(swapchain);
 
 	demo_prepare_descriptor_layout(swapchain);
 	demo_prepare_render_pass(swapchain);
 	demo_prepare_pipeline(swapchain);
 
-	for (U32 i = 0; i < swapchain->swapchainImageCount; i++) 
-	{
-		err = vkAllocateCommandBuffers(swapchain->device, &cmd, &swapchain->swapchainCmdBuffers[i]);
-		SDL_assert(!err);
+	for (uint32_t i = 0; i < swapchain->swapchainImageCount; i++) {
+		err =
+			vkAllocateCommandBuffers(swapchain->device, &cmd, &swapchain->swapchainCmdBuffers[i]);
+		assert(!err);
 	}
 
 	demo_prepare_descriptor_pool(swapchain);
@@ -3153,10 +2266,8 @@ U32 SGL_PrepareVulkan(SGL_VkSwapChain * swapchain)
 
 	demo_prepare_framebuffers(swapchain);
 
-	for (U32 i = 0; i < swapchain->swapchainImageCount; i++) 
-	{
+	for (uint32_t i = 0; i < swapchain->swapchainImageCount; i++) {
 		swapchain->currentBuffer = i;
-		//demo_draw_build_cmd_test(swapchain, swapchain->swapchainCmdBuffers[i]);
 		demo_draw_build_cmd(swapchain, swapchain->swapchainCmdBuffers[i]);
 	}
 
@@ -3173,7 +2284,7 @@ U32 SGL_UpdateUniforms(SGL_VkSwapChain* swapchain)
 	SGL_Mat4 MVP, Model, VP;
 	int matrixSize = sizeof(SGL_Mat4);
 	U8* pData;
-	VkResult err;
+	VkResult U_ASSERT_ONLY err;
 
 	VP = SM_M4Multiply(&swapchain->view_matrix, &swapchain->projection_matrix);
 	//mat4x4_mul(VP, vkContext->projection_matrix, vkContext->view_matrix);
@@ -3196,33 +2307,9 @@ U32 SGL_UpdateUniforms(SGL_VkSwapChain* swapchain)
 	vkUnmapMemory(swapchain->device, swapchain->uniformBuffer.memory);
 	return SGL_TRUE;
 }
-U32 SGL_UpdateUniformsTest(SGL_VkSwapChain* swapchain)
-{
-	SGL_Mat4 Model;
-	U8* pData;
-	VkResult err;
-
-	//mat4x4_mul(VP, vkContext->projection_matrix, vkContext->view_matrix);
-
-	// Rotate 22.5 degrees around the Y axis
-	Model = swapchain->ubo.model;
-	//mat4x4_dup(Model, vkContext->model_matrix);
-	SGL_Vec4 up = { 0.0f,1.0f,0.0f,0.0f };
-	Model = SM_Rotate(&Model, (float)degreesToRadians(swapchain->spin_angle), &up);
-	//mat4x4_mul(MVP, VP, vkContext->model_matrix);
-	//MVP = SM_M4Multiply(&swapchain->model_matrix, &VP);
-
-	err = vkMapMemory(swapchain->device, swapchain->uniformBuffer.memory, sizeof(SGL_Mat4), sizeof(SGL_Mat4), 0, (void **)&pData);
-	SDL_assert(!err);
-
-	SDL_memcpy(pData, (const void *)&Model, sizeof(SGL_Mat4));
-
-	vkUnmapMemory(swapchain->device, swapchain->uniformBuffer.memory);
-	return SGL_TRUE;
-}
 U32 SGL_Draw(SGL_VkSwapChain * swapchain)
 {
-	VkResult err = 0;
+	VkResult U_ASSERT_ONLY err;
 	VkSemaphore presentCompleteSemaphore;
 	VkSemaphoreCreateInfo presentCompleteSemaphoreCreateInfo = {
 		.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO,
@@ -3233,7 +2320,7 @@ U32 SGL_Draw(SGL_VkSwapChain * swapchain)
 
 	err = vkCreateSemaphore(swapchain->device, &presentCompleteSemaphoreCreateInfo,
 		NULL, &presentCompleteSemaphore);
-	SDL_assert(!err);
+	assert(!err);
 
 	// Get the index of the next available swapchain image:
 	err = swapchain->fpAcquireNextImageKHR(swapchain->device, swapchain->swapchain, UINT64_MAX,
@@ -3247,7 +2334,7 @@ U32 SGL_Draw(SGL_VkSwapChain * swapchain)
 		//	demo_resize(demo);
 		//	demo_draw(demo);
 		vkDestroySemaphore(swapchain->device, presentCompleteSemaphore, NULL);
-		return SGL_FALSE;
+		return;
 	}
 	else if (err == VK_SUBOPTIMAL_KHR) {
 		// demo->swapchain is not as optimal as it could be, but the platform's
@@ -3255,7 +2342,7 @@ U32 SGL_Draw(SGL_VkSwapChain * swapchain)
 		int g = 0;
 	}
 	else {
-		SDL_assert(!err);
+		assert(!err);
 	}
 
 	// Assume the command buffer has been run on current_buffer before so
@@ -3268,6 +2355,7 @@ U32 SGL_Draw(SGL_VkSwapChain * swapchain)
 		VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
 		0, VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT);
 	demo_flush_init_cmd(swapchain);
+
 	// Wait for the present complete semaphore to be signaled to ensure
 	// that the image won't be rendered to until the presentation
 	// engine has fully released ownership to the application, and it is
@@ -3288,10 +2376,9 @@ U32 SGL_Draw(SGL_VkSwapChain * swapchain)
 		.pSignalSemaphores = NULL };
 
 	err = vkQueueSubmit(swapchain->queue, 1, &submit_info, nullFence);
-	SDL_assert(!err);
+	assert(!err);
 
-	VkPresentInfoKHR present = 
-	{
+	VkPresentInfoKHR present = {
 		.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR,
 		.pNext = NULL,
 		.swapchainCount = 1,
@@ -3300,9 +2387,7 @@ U32 SGL_Draw(SGL_VkSwapChain * swapchain)
 	};
 
 	// TBD/TODO: SHOULD THE "present" PARAMETER BE "const" IN THE HEADER?
-	//this causes a winError
 	err = swapchain->fpQueuePresentKHR(swapchain->queue, &present);
-	//DWORD winError = GetLastError();
 	if (err == VK_ERROR_OUT_OF_DATE_KHR) {
 		// demo->swapchain is out of date (e.g. the window was resized) and
 		// must be recreated:
@@ -3315,11 +2400,11 @@ U32 SGL_Draw(SGL_VkSwapChain * swapchain)
 		int gasd = 0;
 	}
 	else {
-		SDL_assert(!err);
+		assert(!err);
 	}
 
 	err = vkQueueWaitIdle(swapchain->queue);
-	SDL_assert(err == VK_SUCCESS);
+	assert(err == VK_SUCCESS);
 
 	vkDestroySemaphore(swapchain->device, presentCompleteSemaphore, NULL);
 	return SGL_TRUE;

@@ -41,7 +41,7 @@ extern "C" {
     (((major) << 22) | ((minor) << 12) | (patch))
 
 // Vulkan API version supported by this file
-#define VK_API_VERSION VK_MAKE_VERSION(1, 0, 5)
+#define VK_API_VERSION VK_MAKE_VERSION(1, 0, 3)
 
 #define VK_VERSION_MAJOR(version) ((uint32_t)(version) >> 22)
 #define VK_VERSION_MINOR(version) (((uint32_t)(version) >> 12) & 0x3ff)
