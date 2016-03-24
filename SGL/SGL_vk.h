@@ -147,7 +147,7 @@ typedef struct _SGL_UniformBuffer
 	VkBuffer buffer;
 	VkDeviceMemory memory;
 	VkDescriptorBufferInfo descriptor;
-	U32 allocSize;
+	VkDeviceSize allocSize;
 } SGL_UniformBuffer;
 //#undef NDEBUG
 typedef struct _SGL_VkSwapChain
@@ -171,12 +171,22 @@ typedef struct _SGL_VkSwapChain
 	VkDescriptorSetLayout descriptorSetLayout;
 	VkPipelineLayout pipelineLayout;
 	VkShaderModule* shaders;
-	VkImage* images;
-	VkImage swapchainImages[2];
-	VkCommandBuffer swapchainCmdBuffers[2];
-	VkImageView swapchainViews[2];
+//	VkImage* images;
+	VkImage swapchainImages[16];
+	VkCommandBuffer swapchainCmdBuffers[16];
+	VkImageView swapchainViews[16];
 	VkFramebuffer* framebuffers;
-
+	//maybe useless
+	SDL_Window* window;
+	VkQueueFamilyProperties *queue_props;
+	uint32_t queue_count;
+	PFN_vkDebugReportMessageEXT DebugReportMessage;
+	VkDebugReportCallbackEXT msg_callback;
+	SGL_bool validate;
+	U32 enabled_extension_count;
+	U32 enabled_layer_count;
+	char *extension_names[64];
+	char *device_validation_layers[64];
 	//function pointer types
 	PFN_vkGetPhysicalDeviceSurfaceSupportKHR fpGetPhysicalDeviceSurfaceSupportKHR;
 	PFN_vkGetPhysicalDeviceSurfaceCapabilitiesKHR fpGetPhysicalDeviceSurfaceCapabilitiesKHR;
@@ -187,11 +197,11 @@ typedef struct _SGL_VkSwapChain
 	PFN_vkGetSwapchainImagesKHR fpGetSwapchainImagesKHR;
 	PFN_vkAcquireNextImageKHR fpAcquireNextImageKHR;
 	PFN_vkQueuePresentKHR fpQueuePresentKHR;
-#ifndef NDEBUG
+//#ifndef NDEBUG
 	PFN_vkCreateDebugReportCallbackEXT CreateDebugReportCallback;
 	PFN_vkDestroyDebugReportCallbackEXT DestroyDebugReportCallback;
 	VkDebugReportCallbackEXT msgCallback;
-#endif
+//#endif
 	//large structs
 	VkPhysicalDeviceProperties gpuProps;
 	VkPhysicalDeviceMemoryProperties memoryProperties;
@@ -394,6 +404,7 @@ inline VkFormat SGL_PixelFormatToVkFormat(const U32 pixelFormat)
 U32 SGL_InitVulkan(SGL_Window* window);
 U32 SGL_PrepareVulkan(SGL_VkSwapChain* swapChain);
 U32 SGL_UpdateUniforms(SGL_VkSwapChain* swapchain);
+U32 SGL_UpdateUniformsTest(SGL_VkSwapChain* swapchain);
 U32 SGL_Draw(SGL_VkSwapChain* swapchain);
 inline void SGL_Render(SGL_VkSwapChain* swapChain)
 {
@@ -402,9 +413,10 @@ inline void SGL_Render(SGL_VkSwapChain* swapChain)
 	// Wait for work to finish before updating MVP.
 	vkDeviceWaitIdle(swapChain->device);
 	SGL_UpdateUniforms(swapChain);
+	//SGL_UpdateUniformsTest(swapChain);
 
 	SGL_Draw(swapChain);
-
 	// Wait for work to finish before updating MVP.
 	vkDeviceWaitIdle(swapChain->device);
+
 }
