@@ -644,6 +644,10 @@
     <ClCompile Include="SGL.c" />
     <ClCompile Include="SGL_camera.c" />
     <ClCompile Include="SGL_data.c" />
+    <ClCompile Include="SGL_dynamic_renderer.c" />
+    <ClCompile Include="SGL_shader.c" />
+    <ClCompile Include="SGL_sprite.c" />
+    <ClCompile Include="SGL_texture.c" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="linmath.h" />
@@ -651,9 +655,13 @@
     <ClInclude Include="SGL.h" />
     <ClInclude Include="SGL_camera.h" />
     <ClInclude Include="SGL_data.h" />
+    <ClInclude Include="SGL_dynamic_renderer.h" />
     <ClInclude Include="SGL_math.h" />
-    <ClInclude Include="SGL_Texture.h" />
+    <ClInclude Include="SGL_shader.h" />
+    <ClInclude Include="SGL_sprite.h" />
+    <ClInclude Include="SGL_texture.h" />
     <ClInclude Include="SGL_types.h" />
+    <ClInclude Include="SGL_ubo.h" />
     <ClInclude Include="SGL_window.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

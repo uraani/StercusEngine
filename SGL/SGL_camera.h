@@ -23,11 +23,11 @@ typedef struct _SGL_Camera
 	SGL_Mat4 vPMatrix;
 	SGL_Vec4 rotation;
 	SGL_Vec3 position;
-	float nearPlane;
-	float farPlane;
-	float FOWY;
-	float scale;
+	F32 nearPlane;
+	F32 farPlane;
+	F32 FOWY;
+	F32 scale;
 	U32 camType;
 } SGL_Camera;
-typedef struct _SGL_GLContext SGL_GLContext;
-extern SGL_Camera* SGL_CreateCamera(SGL_GLContext* rContext, const unsigned int type, const unsigned int id, const float nearPlane, const float farPlane, const float FOWY, const float scale);
+typedef struct _SGL_RenderContext SGL_RenderContext;
+extern SGL_Camera* SGL_CreateCamera(SGL_RenderContext* rContext, const unsigned int type, const unsigned int id, const float nearPlane, const float farPlane, const float FOWY, const float scale);

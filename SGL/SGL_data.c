@@ -1,5 +1,5 @@
-#include "SGL_data.h"
-#include "SDL.h"
+//#include "SGL_data.h"
+#include "SGL.h"
 #include "murmur3.h"
 typedef struct _SGL_DataBlock
 {
@@ -346,7 +346,7 @@ U32 SGL_DataSaveImage(const char* name, SDL_Surface * surf)
 	MurmurHash3_x86_32(name, (I32)SDL_strlen(name), targetData.block.seed, &hash);
 	return AddNode(hash, loc);
 }
-U32 SGL_DataSaveShader(const char * filePath, const char* name)
+/*U32 SGL_DataSaveShader(const char * filePath, const char* name)
 {
 	U32 loc;
 	U32 hash;
@@ -404,7 +404,7 @@ U32 SGL_DataSaveShader(const char * filePath, const char* name)
 	MurmurHash3_x86_32(name, (I32)SDL_strlen(name), targetData.block.seed, &hash);
 	return AddNode(hash, loc);
 	return SGL_TRUE;
-}
+}*/
 SDL_Surface * SGL_DataLoadImage(const char * imageName)
 {
 	U32 hash;
@@ -438,8 +438,7 @@ SDL_Surface * SGL_DataLoadImage(const char * imageName)
 	}
 	return SDL_CreateRGBSurfaceFrom(pixels, surfData.w, surfData.h, surfData.depth, surfData.w*(surfData.depth / 8), surfData.Rmask, surfData.Gmask, surfData.Bmask, surfData.Amask);
 }
-
-SGL_Shader SGL_DataLoadShader(const char * shaderName)
+/*SGL_Shader SGL_DataLoadShader(const char * shaderName)
 {
 	SGL_Shader shader =
 	{
@@ -481,4 +480,4 @@ SGL_Shader SGL_DataLoadShader(const char * shaderName)
 	}
 	SDL_RWclose(rw);
 	return shader;
-}
+}*/

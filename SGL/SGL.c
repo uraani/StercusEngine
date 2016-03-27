@@ -39,28 +39,27 @@ SGL_Window SGL_CreateWindow(const char* title, int GLMajorVersion, int GLMinorVe
 			w, h,
 			SDLflags
 		);
-	window.glContext.handle = SDL_GL_CreateContext(window.handle);
-	const char errrorer = SDL_GetError();
+	window.rContext.glHandle = SDL_GL_CreateContext(window.handle);
 	glewExperimental = GL_TRUE;
 	glewInit();
 #elif defined(ANDROID)
 	SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_ES);
 	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, GLMajorVersion > 3 ? GLMajorVersion : 3);
 	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 0);
-	SGL_Window* window = SDL_malloc(sizeof(SGL_Window));
+	SGL_Window window;
 	SDL_DisplayMode displayMode;
 	if (SDL_GetCurrentDisplayMode(0, &displayMode))
 	{
 		return NULL;
 	}
-	window->window = SDL_CreateWindow
+	window.window = SDL_CreateWindow
 		(
 			title,
 			SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED,
 			displayMode.w, displayMode.h,
 			SDLflags
 			);
-	window->context = SDL_GL_CreateContext(window->window);
+	window.context = SDL_GL_CreateContext(window->window);
 #endif
 	SDL_Log("----------------------------------------------------------------\n");
 	SDL_Log("Graphics Successfully Initialized For Window: %s\n", title);
@@ -71,13 +70,14 @@ SGL_Window SGL_CreateWindow(const char* title, int GLMajorVersion, int GLMinorVe
 	SDL_Log("  Shading: %s\n", glGetString(GL_SHADING_LANGUAGE_VERSION));
 	SDL_Log("----------------------------------------------------------------\n");
 	SGL_SetWindowIcon(&window, NULL);
-	SDL_GetWindowSize(window.handle, &window.glContext.windowSize.x, &window.glContext.windowSize.y);
-	window.glContext.windowHalfSizef.x = (float)window.glContext.windowSize.x*0.5f;
-	window.glContext.windowHalfSizef.y = (float)window.glContext.windowSize.y*0.5f;
+	SDL_GetWindowSize(window.handle, &window.rContext.windowSize.x, &window.rContext.windowSize.y);
+	window.rContext.windowHalfSizef.x = (F32)window.rContext.windowSize.x*0.5f;
+	window.rContext.windowHalfSizef.y = (F32)window.rContext.windowSize.y*0.5f;
 	for (size_t i = 0; i < SGL_CAMERA_COUNT; i++)
 	{
-		window.glContext.cameras[i].camType = 0;
+		window.rContext.cameras[i].camType = 0;
 	}
+	SGL_LoadShaders(&window.rContext);
 	return window;
 }
 
@@ -190,6 +190,70 @@ void SGL_RunGLTest(const SGL_Window* window)
 	glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 	glClear(GL_COLOR_BUFFER_BIT);
 	SDL_GL_SwapWindow(window->handle);
+}
+inline SGL_UpdateCameras(SGL_RenderContext* rContext)
+{
+	for (U32 i = 0; i < SGL_CAMERA_COUNT; i++)
+	{
+		switch (rContext->cameras[i].camType)
+		{
+		case SGL_CAMERA_TYPE_ORTHO:
+		{
+			const float left = rContext->windowHalfSizef.x * -rContext->cameras[i].scale;
+			const float right = rContext->windowHalfSizef.x * rContext->cameras[i].scale;
+			const float bottom = rContext->windowHalfSizef.y * -rContext->cameras[i].scale;
+			const float top = rContext->windowHalfSizef.y * rContext->cameras[i].scale;
+			rContext->cameras[i].vPMatrix.m00 = 2.0f / (right - left);
+			rContext->cameras[i].vPMatrix.m11 = 2.0f / (top - bottom);
+			rContext->cameras[i].vPMatrix.m22 = -2.0f / (rContext->cameras[i].farPlane - rContext->cameras[i].nearPlane);
+			rContext->cameras[i].vPMatrix.m30 = -(right + left) / (right - left);
+			rContext->cameras[i].vPMatrix.m31 = -(top + bottom) / (top - bottom);
+			rContext->cameras[i].vPMatrix.m32 = -(rContext->cameras[i].farPlane + rContext->cameras[i].nearPlane) / (rContext->cameras[i].farPlane - rContext->cameras[i].nearPlane);
+			break;
+		}
+		case SGL_CAMERA_TYPE_PERSPECTIVE:
+		{
+			const float aspect = rContext->windowHalfSizef.x / rContext->windowHalfSizef.y;
+			const float tanHalfFovy = SDL_tanf(rContext->cameras[i].FOWY / 2.0f);
+			rContext->cameras[i].vPMatrix.m00 = 1.0f / (aspect * tanHalfFovy);
+			rContext->cameras[i].vPMatrix.m11 = 1.0f / (tanHalfFovy);
+			rContext->cameras[i].vPMatrix.m22 = -(rContext->cameras[i].farPlane + rContext->cameras[i].nearPlane) / (rContext->cameras[i].farPlane - rContext->cameras[i].nearPlane);
+			rContext->cameras[i].vPMatrix.m23 = -1.0f;
+			rContext->cameras[i].vPMatrix.m32 = -2.0f * rContext->cameras[i].farPlane * rContext->cameras[i].nearPlane / (rContext->cameras[i].farPlane - rContext->cameras[i].nearPlane);
+			break;
+		}
+		default:
+		{
+			break;
+		}
+		}
+		//rotate
+		//SM_Rotate(,)
+		SGL_Vec4 back = { 0.0f, 0.0f, -1.0f, 0.0f };
+		SGL_Vec4 up = { 0.0f, 1.0f, 0.0f, 0.0f };
+		SGL_Vec4 center = SM_V4Add(&rContext->cameras[i].position, &back);
+		SM_LookAt(&rContext->cameras[i].position, &center, &up);
+	}
+}
+void SGL_StartRender(SGL_RenderContext * rContext)
+{
+	ADD_FLAGS(rContext->state, SGL_RENDER_STATE_RENDERING);
+	SGL_UpdateCameras(rContext);
+	glBindBuffer(GL_UNIFORM_BUFFER, rContext->uniformMatrixHandle);
+	glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(SGL_Mat4), &rContext->cameras[rContext->boundCamera].vPMatrix);
+}
+void SGL_EndRender(SGL_RenderContext * rContext)
+{
+	REMOVE_FLAGS(rContext->state, SGL_RENDER_STATE_RENDERING);
+}
+void SGL_BindCamera(SGL_RenderContext* rContext, U32 id)
+{
+	rContext->boundCamera = id;
+	if (CHECK_FLAGS(rContext->state, SGL_RENDER_STATE_RENDERING))
+	{
+		glBindBuffer(GL_UNIFORM_BUFFER, rContext->uniformMatrixHandle);
+		glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(SGL_Mat4), &rContext->cameras[rContext->boundCamera].vPMatrix);
+	}
 }
 
 void SGL_Quit(void)

@@ -1,15 +1,10 @@
 #pragma once
-#include <smmintrin.h>
 #include "SGL_types.h"
 #ifndef _SGL_math_h
 #define _SGL_math_h
-#define degreesToRadians(angleDegrees) (angleDegrees * (float)(M_PI / 180.0))
+#include <smmintrin.h>
+#define degreesToRadians(angleDegrees) (angleDegrees * (F32)(M_PI / 180.0))
 #define isPowerOfTwo(x) ((x & (x - 1)) == 0);
-//MATRIX INDEXES ARE ARRANGED LIKE THIS:
-//[0 ][1 ][2 ][3 ]
-//[4 ][5 ][6 ][7 ]
-//[8 ][9 ][10][11]
-//[12][13][14][15]
 #if !defined(ANDROID)
 __declspec(align(16))
 #else
@@ -21,13 +16,20 @@ typedef struct _SGL_Vec4
 	{
 		struct
 		{
-			float x;
-			float y;
-			float z;
-			float w;
+			F32 f[4];
+		};
+		struct
+		{
+			F32 x;
+			F32 y;
+			F32 z;
+			F32 w;
 		};
 #if !defined(ANDROID)
-		__m128 v;
+		struct
+		{
+			__m128 v;
+		};
 #endif
 	};
 } SGL_Vec4;
@@ -39,8 +41,8 @@ typedef struct _SGL_Vec3
 } SGL_Vec3;
 typedef struct _SGL_Vec2
 {
-	float x;
-	float y;
+	F32 x;
+	F32 y;
 } SGL_Vec2;
 typedef struct _SGL_Vec2i16
 {
@@ -59,18 +61,18 @@ __declspec(align(16))
 #endif
 typedef struct _SGL_Mat4
 {
-	union 
+	union
 	{
 		struct
 		{
-			float m00, m01, m02, m03;
-			float m10, m11, m12, m13;
-			float m20, m21, m22, m23;
-			float m30, m31, m32, m33;
+			F32 m00, m01, m02, m03;
+			F32 m10, m11, m12, m13;
+			F32 m20, m21, m22, m23;
+			F32 m30, m31, m32, m33;
 		};
 		struct
 		{
-			float m[16];
+			F32 m[16];
 		};
 		struct
 		{
@@ -85,31 +87,82 @@ typedef struct _SGL_Mat4
 #endif
 	};
 } SGL_Mat4;
+#if !defined(ANDROID)
+__declspec(align(16))
+#else
+#pragma message ("CREATE ARM NEON IMPLEMENTATIONS FOR Vec2x4")
+#endif
+typedef struct _SGL_Vec2x4
+{
+	SGL_Vec2 v[4];
+}SGL_Vec2x4;
 //MATRIX INDEXES ARE ARRANGED LIKE THIS:
-//[0 ][1 ][2 ]
-//[3 ][4 ][5 ]
-//[6 ][7 ][8 ]
+//[0 ][1 ][2 ] [UNUSED]
+//[4 ][5 ][6 ] [UNUSED]
+//[8 ][9 ][10] [UNUSED]
+#if !defined(ANDROID)
+__declspec(align(16))
+#else
+#pragma message ("CREATE ARM NEON IMPLEMENTATIONS FOR MAT3")
+#endif
 typedef struct _SGL_Mat3
 {
 	union
 	{
 		struct
 		{
-			float m00, m01, m02;
-			float m10, m11, m12;
-			float m20, m21, m22;
+			F32 m00, m01, m02, m03;
+			F32 m10, m11, m12, m13;
+			F32 m20, m21, m22, m23;
 		};
 		struct
 		{
-			float m[9];
+			F32 m[12];
 		};
 		struct
 		{
-			SGL_Vec3 v0, v1, v2;
+			SGL_Vec4 v0, v1, v2;
 		};
+#if !defined(ANDROID)
+		struct
+		{
+
+			__m128 m0, m1, m2;
+		};
+#endif
 	};
 
 } SGL_Mat3;
+#if !defined(ANDROID)
+__declspec(align(16))
+#else
+#pragma message ("CREATE ARM NEON IMPLEMENTATIONS FOR TEXREGION")
+#endif
+typedef struct _SGL_TexRegion
+{
+	union
+	{
+		struct
+		{
+			SGL_Vec2 offset;
+			SGL_Vec2 size;
+		};
+#if !defined(ANDROID)
+		struct
+		{
+			__m128 v;
+		};
+#endif
+	};
+} SGL_TexRegion;
+inline const SGL_Mat3 SM_IdentityMat3()
+{
+	SGL_Mat3 r;
+	r.m00 = 1.0f; r.m01 = 0.0f; r.m02 = 0.0f; r.m03 = 0.0f;
+	r.m10 = 0.0f; r.m11 = 1.0f; r.m12 = 0.0f; r.m13 = 0.0f;
+	r.m20 = 0.0f; r.m21 = 0.0f; r.m22 = 1.0f; r.m23 = 0.0f;
+	return r;
+}
 inline const SGL_Mat4 SM_IdentityMat4()
 {
 	SGL_Mat4 r;
@@ -131,15 +184,15 @@ inline const SGL_Vec4 SM_IdentityVec4()
 inline const SGL_Mat4 SM_QuatToMat4(const SGL_Vec4* q)
 {
 	SGL_Mat4 r;
-	const float qxx = q->x * q->x;
-	const float qyy = q->y * q->y;
-	const float qzz = q->z * q->z;
-	const float qxz = q->x * q->z;
-	const float qxy = q->x * q->y;
-	const float qyz = q->y * q->z;
-	const float qwx = q->w * q->x;
-	const float qwy = q->w * q->y;
-	const float qwz = q->w * q->z;
+	const F32 qxx = q->x * q->x;
+	const F32 qyy = q->y * q->y;
+	const F32 qzz = q->z * q->z;
+	const F32 qxz = q->x * q->z;
+	const F32 qxy = q->x * q->y;
+	const F32 qyz = q->y * q->z;
+	const F32 qwx = q->w * q->x;
+	const F32 qwy = q->w * q->y;
+	const F32 qwz = q->w * q->z;
 	r.m00 = 1.0f - 2.0f * (qyy + qzz);
 	r.m01 = 2.0f * (qxy + qwz);
 	r.m02 = 2.0f * (qxz - qwy);
@@ -161,6 +214,207 @@ inline const SGL_Mat4 SM_QuatToMat4(const SGL_Vec4* q)
 	r.m33 = 1.0f;
 	return r;
 
+}
+inline const SGL_Vec2 SM_M3V2Multiply(const SGL_Mat3* a, const SGL_Vec2* b)
+{
+	SGL_Vec2 r;
+	const float i00 = a->m00 * b->x + a->m01 * b->y;
+	const float i01 = a->m10 * b->x + a->m11 * b->y;
+	r.x = i00;
+	r.y = i01;
+	return r;
+}
+inline const SGL_Vec4 SM_M4V4Multiply(const SGL_Mat4* a, const SGL_Vec4* b)
+{
+	SGL_Vec4 r;
+#if defined(ANDROID)
+	const float i00 = a->m00 * b->x + a->m01 * b->y + a->m02 * b->z + a->m03 * b->w;
+	const float i01 = a->m10 * b->x + a->m11 * b->y + a->m12 * b->z + a->m13 * b->w;
+	const float i02 = a->m20 * b->x + a->m21 * b->y + a->m22 * b->z + a->m23 * b->w;
+	const float i03 = a->m30 * b->x + a->m31 * b->y + a->m32 * b->z + a->m33 * b->w;
+	r.x = i00;
+	r.y = i01;
+	r.z = i02;
+	r.w = i03;
+#else
+	const SGL_Vec4 t0 = { a->m00, a->m10, a->m20, a->m30 };
+	const SGL_Vec4 t1 = { a->m01, a->m11, a->m21, a->m31 };
+	const SGL_Vec4 t2 = { a->m02, a->m12, a->m22, a->m32 };
+	const SGL_Vec4 t3 = { a->m03, a->m13, a->m23, a->m33 };
+	const __m128 v0 = _mm_load_ps((F32*)&t0);
+	const __m128 v1 = _mm_load_ps((F32*)&t1);
+	const __m128 v2 = _mm_load_ps((F32*)&t2);
+	const __m128 v3 = _mm_load_ps((F32*)&t3);
+	__m128 tmp0, tmp1;
+	tmp0 = _mm_set1_ps(b->x);
+	tmp1 = _mm_mul_ps(v0, tmp0);
+
+	tmp0 = _mm_set1_ps(b->y);
+	tmp0 = _mm_mul_ps(v1, tmp0);
+	tmp1 = _mm_add_ps(tmp0, tmp1);
+
+	tmp0 = _mm_set1_ps(b->z);
+	tmp0 = _mm_mul_ps(v2, tmp0);
+	tmp1 = _mm_add_ps(tmp0, tmp1);
+
+	tmp0 = _mm_set1_ps(b->w);
+	tmp0 = _mm_mul_ps(v3, tmp0);
+	tmp1 = _mm_add_ps(tmp0, tmp1);
+
+	_mm_store_ps(&r.x, tmp1);
+#endif
+	return r;
+}
+inline const SGL_Vec2x4 SM_M3V2X4Multiply(const SGL_Mat3* a, const SGL_Vec4* x, const SGL_Vec4* y)
+{
+	SGL_Vec2x4 r;
+	const __m128 vx = _mm_load_ps((F32*)&x->x);
+	const __m128 vy = _mm_load_ps((F32*)&y->x);
+	__m128 t1, t2;
+	SGL_Vec4 arr[2];
+	t1 = _mm_set1_ps(a->m00);
+	t2 = _mm_mul_ps(vx, t1);
+	t1 = _mm_set1_ps(a->m01);
+	t2 = _mm_add_ps(_mm_mul_ps(vy, t1), t2);
+	_mm_store_ps(arr[0].f, t2);
+	t1 = _mm_set1_ps(a->m10);
+	t2 = _mm_mul_ps(vx, t1);
+	t1 = _mm_set1_ps(a->m11);
+	t2 = _mm_add_ps(_mm_mul_ps(vy, t1), t2);
+	_mm_store_ps(arr[1].f, t2);
+	for (size_t i = 0; i < 4; i++)
+	{
+		r.v[i].x = arr[0].f[i];
+		r.v[i].y = arr[1].f[i];
+	}
+	return r;
+}
+inline void SM_M3V2X4MultiplyStride(const SGL_Mat3* a, const SGL_Vec4* x, const SGL_Vec4* y, float* dst, U32 floatStride)
+{
+	const __m128 vx = _mm_load_ps((F32*)&x->x);
+	const __m128 vy = _mm_load_ps((F32*)&y->x);
+	__m128 t1, t2;
+	SGL_Vec4 arr[2];
+	t1 = _mm_set1_ps(a->m00);
+	t2 = _mm_mul_ps(vx, t1);
+	t1 = _mm_set1_ps(a->m01);
+	t2 = _mm_add_ps(_mm_mul_ps(vy, t1), t2);
+	_mm_store_ps(arr[0].f, t2);
+	t1 = _mm_set1_ps(a->m10);
+	t2 = _mm_mul_ps(vx, t1);
+	t1 = _mm_set1_ps(a->m11);
+	t2 = _mm_add_ps(_mm_mul_ps(vy, t1), t2);
+	_mm_store_ps(arr[1].f, t2);
+	for (size_t i = 0; i < 4; i++)
+	{
+		dst[floatStride * i] = arr[0].f[i];
+		dst[floatStride * i + 1] = arr[1].f[i];
+	}
+}
+inline const SGL_Mat3 SM_M3Multiply(const SGL_Mat3* a, const SGL_Mat3* b)
+{
+	SGL_Mat3 r;
+#if defined(ANDROID)
+	const float i00 = a->m00 * b->m00 + a->m01 * b->m10 + a->m02 * b->m20;
+	const float i01 = a->m00 * b->m01 + a->m01 * b->m11 + a->m02 * b->m21;
+	const float i02 = a->m00 * b->m02 + a->m01 * b->m12 + a->m02 * b->m22;
+	const float i03 = a->m00 * b->m03 + a->m01 * b->m13 + a->m02 * b->m23;
+	const float i10 = a->m10 * b->m00 + a->m11 * b->m10 + a->m12 * b->m20;
+	const float i11 = a->m10 * b->m01 + a->m11 * b->m11 + a->m12 * b->m21;
+	const float i12 = a->m10 * b->m02 + a->m11 * b->m12 + a->m12 * b->m22;
+	const float i13 = a->m10 * b->m03 + a->m11 * b->m13 + a->m12 * b->m23;
+	const float i20 = a->m20 * b->m00 + a->m21 * b->m10 + a->m22 * b->m20;
+	const float i21 = a->m20 * b->m01 + a->m21 * b->m11 + a->m22 * b->m21;
+	const float i22 = a->m20 * b->m02 + a->m21 * b->m12 + a->m22 * b->m22;
+	const float i23 = a->m20 * b->m03 + a->m21 * b->m13 + a->m22 * b->m23;
+	r.m00 = i00;
+	r.m01 = i01;
+	r.m02 = i02;
+	r.m03 = 0.0f;
+	r.m10 = i10;
+	r.m11 = i11;
+	r.m12 = i12;
+	r.m13 = 0.0f;
+	r.m20 = i20;
+	r.m21 = i21;
+	r.m22 = i22;
+	r.m23 = 0.0f;
+#else
+
+	const __m128 av = _mm_load_ps((F32*)&b->m00);
+	const __m128 bv = _mm_load_ps((F32*)&b->m10);
+	const __m128 cv = _mm_load_ps((F32*)&b->m20);
+
+
+	__m128 t1, t2;
+
+	t1 = _mm_set1_ps(a->m00);
+	t2 = _mm_mul_ps(av, t1);
+	t1 = _mm_set1_ps(a->m01);
+	t2 = _mm_add_ps(_mm_mul_ps(bv, t1), t2);
+	t1 = _mm_set1_ps(a->m02);
+	t2 = _mm_add_ps(_mm_mul_ps(cv, t1), t2);
+
+	_mm_store_ps(&r.m00, t2);
+
+	t1 = _mm_set1_ps(a->m10);
+	t2 = _mm_mul_ps(av, t1);
+	t1 = _mm_set1_ps(a->m11);
+	t2 = _mm_add_ps(_mm_mul_ps(bv, t1), t2);
+	t1 = _mm_set1_ps(a->m12);
+	t2 = _mm_add_ps(_mm_mul_ps(cv, t1), t2);
+
+	_mm_store_ps(&r.m10, t2);
+
+	t1 = _mm_set1_ps(a->m20);
+	t2 = _mm_mul_ps(av, t1);
+	t1 = _mm_set1_ps(a->m21);
+	t2 = _mm_add_ps(_mm_mul_ps(bv, t1), t2);
+	t1 = _mm_set1_ps(a->m22);
+	t2 = _mm_add_ps(_mm_mul_ps(cv, t1), t2);
+
+	_mm_store_ps(&r.m20, t2);
+
+#endif
+	return r;
+
+}
+inline const SGL_Mat4 SM_M4MultiplySIMPLE(const SGL_Mat4* a, const SGL_Mat4* b)
+{
+	SGL_Mat4 r;
+	const float i00 = a->m00 * b->m00 + a->m01 * b->m10 + a->m02 * b->m20 + a->m03 * b->m30;
+	const float i01 = a->m00 * b->m01 + a->m01 * b->m11 + a->m02 * b->m21 + a->m03 * b->m31;
+	const float i02 = a->m00 * b->m02 + a->m01 * b->m12 + a->m02 * b->m22 + a->m03 * b->m32;
+	const float i03 = a->m00 * b->m03 + a->m01 * b->m13 + a->m02 * b->m23 + a->m03 * b->m33;
+	const float i10 = a->m10 * b->m00 + a->m11 * b->m10 + a->m12 * b->m20 + a->m13 * b->m30;
+	const float i11 = a->m10 * b->m01 + a->m11 * b->m11 + a->m12 * b->m21 + a->m13 * b->m31;
+	const float i12 = a->m10 * b->m02 + a->m11 * b->m12 + a->m12 * b->m22 + a->m13 * b->m32;
+	const float i13 = a->m10 * b->m03 + a->m11 * b->m13 + a->m12 * b->m23 + a->m13 * b->m33;
+	const float i20 = a->m20 * b->m00 + a->m21 * b->m10 + a->m22 * b->m20 + a->m23 * b->m30;
+	const float i21 = a->m20 * b->m01 + a->m21 * b->m11 + a->m22 * b->m21 + a->m23 * b->m31;
+	const float i22 = a->m20 * b->m02 + a->m21 * b->m12 + a->m22 * b->m22 + a->m23 * b->m32;
+	const float i23 = a->m20 * b->m03 + a->m21 * b->m13 + a->m22 * b->m23 + a->m23 * b->m33;
+	const float i30 = a->m30 * b->m00 + a->m31 * b->m10 + a->m32 * b->m20 + a->m33 * b->m30;
+	const float i31 = a->m30 * b->m01 + a->m31 * b->m11 + a->m32 * b->m21 + a->m33 * b->m31;
+	const float i32 = a->m30 * b->m02 + a->m31 * b->m12 + a->m32 * b->m22 + a->m33 * b->m32;
+	const float i33 = a->m30 * b->m03 + a->m31 * b->m13 + a->m32 * b->m23 + a->m33 * b->m33;
+	r.m00 = i00;
+	r.m01 = i01;
+	r.m02 = i02;
+	r.m03 = i03;
+	r.m10 = i10;
+	r.m11 = i11;
+	r.m12 = i12;
+	r.m13 = i13;
+	r.m20 = i20;
+	r.m21 = i21;
+	r.m22 = i22;
+	r.m23 = i23;
+	r.m30 = i30;
+	r.m31 = i31;
+	r.m32 = i32;
+	r.m33 = i33;
+	return r;
 }
 inline const SGL_Mat4 SM_M4Multiply(const SGL_Mat4* a, const SGL_Mat4* b)
 {
@@ -199,10 +453,10 @@ inline const SGL_Mat4 SM_M4Multiply(const SGL_Mat4* a, const SGL_Mat4* b)
 	r.m32 = i32;
 	r.m33 = i33;
 #else
-	const __m128 av = _mm_load_ps((float*)&b->m00);
-	const __m128 bv = _mm_load_ps((float*)&b->m10);
-	const __m128 cv = _mm_load_ps((float*)&b->m20);
-	const __m128 dv = _mm_load_ps((float*)&b->m30);
+	const __m128 av = _mm_load_ps((F32*)&b->m00);
+	const __m128 bv = _mm_load_ps((F32*)&b->m10);
+	const __m128 cv = _mm_load_ps((F32*)&b->m20);
+	const __m128 dv = _mm_load_ps((F32*)&b->m30);
 
 	__m128 t1, t2;
 
@@ -273,7 +527,7 @@ inline const SGL_Vec4 SM_V4Subtract(const SGL_Vec4* a, const SGL_Vec4* b)
 	r.x = a->x - b->x;
 	r.y = a->y - b->y;
 	r.z = a->z - b->z;
-	r.w = a->w - b->w;	
+	r.w = a->w - b->w;
 #else
 	r.v = _mm_sub_ps(a->v, b->v);
 #endif
@@ -341,14 +595,14 @@ inline const SGL_Vec4 SM_V4NormalizePrecise(const SGL_Vec4* a)
 }
 inline const float SM_Dot(const SGL_Vec4* a, const SGL_Vec4* b)
 {
-//#if defined(ANDROID)
+	//#if defined(ANDROID)
 	return a->x * b->x + a->y * b->y + a->z * b->z;
-/*#else
+	/*#else
 	SGL_Vec4 r;
 	//this function is way slower than the code above, SSE4 isnt supported?
 	r.v = _mm_dp_ps(a->v,b->v, 0x7F);
 	return r.x;
-#endif*/
+	#endif*/
 }
 inline const SGL_Vec4 SM_V4Cross(const SGL_Vec4* a, const SGL_Vec4* b)
 {
@@ -407,11 +661,11 @@ inline const SGL_Mat4 SM_Translate(const SGL_Mat4* m, const SGL_Vec4* v)
 	r.m33 = m->m03 * v->x + m->m13 * v->y + m->m23 * v->z + m->m33;
 	return r;
 };
-inline const SGL_Mat4 SM_Rotate(const SGL_Mat4* m, const float angle, const SGL_Vec4* v)
+inline const SGL_Mat4 SM_Rotate(const SGL_Mat4* m, const F32 angle, const SGL_Vec4* v)
 {
 	SGL_Mat4 r;
-	const float c = SDL_cosf(angle);
-	const float s = SDL_sinf(angle);
+	const F32 c = SDL_cosf(angle);
+	const F32 s = SDL_sinf(angle);
 	const SGL_Vec4 vC = { c, c, c, 0 };
 	const SGL_Vec4 axis = SM_V4NormalizePrecise(v);
 	SGL_Vec4 sinA = { s, s, s, 0 };
@@ -443,10 +697,10 @@ inline const SGL_Mat4 SM_Rotate(const SGL_Mat4* m, const float angle, const SGL_
 	r.v3 = m->v3;
 	return r;
 }
-inline const SGL_Mat4 SM_Perspective(const float FOWY,const float aspect,const float nearPlane,const float farPlane)
+inline const SGL_Mat4 SM_Perspective(const F32 FOWY, const F32 aspect, const F32 nearPlane, const F32 farPlane)
 {
 	SGL_Mat4 r;
-	const float tanHalfFovy = SDL_tanf(FOWY / 2.0f);
+	const F32 tanHalfFovy = SDL_tanf(FOWY / 2.0f);
 
 	r.m00 = 1.0f / (aspect * tanHalfFovy);
 	r.m01 = 0.0f;
@@ -468,5 +722,20 @@ inline const SGL_Mat4 SM_Perspective(const float FOWY,const float aspect,const f
 	r.m32 = -2.0f * farPlane * nearPlane / (farPlane - nearPlane);
 	r.m33 = 0.0f;
 	return r;
+}
+inline void SM_CalculateUVs(const SGL_TexRegion* reg, const SGL_Vec4* texSize, float* dst, U32 floatStride)
+{
+	SGL_Vec4 mReg;
+	mReg.v = _mm_div_ps(reg->v, texSize->v);
+	mReg.v = _mm_add_ps(mReg.v, _mm_loadh_pi(_mm_setzero_ps(), (__m64*)&mReg.v));
+	dst[0] = mReg.f[2];
+	dst[1] = mReg.f[3];
+	dst[floatStride] = mReg.f[0];
+	dst[floatStride + 1] = mReg.f[3];
+	dst[floatStride * 2] = mReg.f[0];
+	dst[floatStride * 2 + 1] = mReg.f[1];
+	dst[floatStride * 3] = mReg.f[2];
+	dst[floatStride * 3 + 1] = mReg.f[1];
+	int g = 0;
 }
 #endif

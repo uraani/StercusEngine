@@ -134,7 +134,7 @@
 /* #undef HAVE_STRNCASECMP */
 /* #undef HAVE_VSSCANF */
 /* #undef HAVE_VSNPRINTF */
-#define HAVE_M_PI 1
+//#define HAVE_M_PI 1
 #define HAVE_ATAN 1
 #define HAVE_ATAN2 1
 #define HAVE_ACOS 1
