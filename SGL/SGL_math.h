@@ -2,6 +2,7 @@
 #include "SGL_types.h"
 #ifndef _SGL_math_h
 #define _SGL_math_h
+#include "SDL.h"
 #include <smmintrin.h>
 #define degreesToRadians(angleDegrees) (angleDegrees * (F32)(M_PI / 180.0))
 #define isPowerOfTwo(x) ((x & (x - 1)) == 0);
@@ -94,7 +95,21 @@ __declspec(align(16))
 #endif
 typedef struct _SGL_Vec2x4
 {
-	SGL_Vec2 v[4];
+	struct
+	{
+		F32 f[8];
+	};
+	struct
+	{
+		SGL_Vec2 v[4];
+	};
+#if !defined(ANDROID)
+	struct
+	{
+
+		__m128 v0, v1;
+	};
+#endif
 }SGL_Vec2x4;
 //MATRIX INDEXES ARE ARRANGED LIKE THIS:
 //[0 ][1 ][2 ] [UNUSED]
@@ -218,8 +233,8 @@ inline const SGL_Mat4 SM_QuatToMat4(const SGL_Vec4* q)
 inline const SGL_Vec2 SM_M3V2Multiply(const SGL_Mat3* a, const SGL_Vec2* b)
 {
 	SGL_Vec2 r;
-	const float i00 = a->m00 * b->x + a->m01 * b->y;
-	const float i01 = a->m10 * b->x + a->m11 * b->y;
+	const float i00 = a->m00 * b->x + a->m01 * b->y + a->m20; 
+	const float i01 = a->m10 * b->x + a->m11 * b->y + a->m21;
 	r.x = i00;
 	r.y = i01;
 	return r;
@@ -265,22 +280,24 @@ inline const SGL_Vec4 SM_M4V4Multiply(const SGL_Mat4* a, const SGL_Vec4* b)
 #endif
 	return r;
 }
-inline const SGL_Vec2x4 SM_M3V2X4Multiply(const SGL_Mat3* a, const SGL_Vec4* x, const SGL_Vec4* y)
+/*inline const SGL_Vec2x4 SM_M3V2X4Multiply(const SGL_Mat3* a, const SGL_Vec4* x, const SGL_Vec4* y)
 {
 	SGL_Vec2x4 r;
-	const __m128 vx = _mm_load_ps((F32*)&x->x);
-	const __m128 vy = _mm_load_ps((F32*)&y->x);
 	__m128 t1, t2;
 	SGL_Vec4 arr[2];
 	t1 = _mm_set1_ps(a->m00);
-	t2 = _mm_mul_ps(vx, t1);
+	t2 = _mm_mul_ps(x->v, t1);
 	t1 = _mm_set1_ps(a->m01);
-	t2 = _mm_add_ps(_mm_mul_ps(vy, t1), t2);
+	t2 = _mm_add_ps(_mm_mul_ps(y->v, t1), t2);
+	t1 = _mm_set1_ps(a->m20);
+	t2 = _mm_add_ps(t1, t2);
 	_mm_store_ps(arr[0].f, t2);
 	t1 = _mm_set1_ps(a->m10);
-	t2 = _mm_mul_ps(vx, t1);
+	t2 = _mm_mul_ps(x->v, t1);
 	t1 = _mm_set1_ps(a->m11);
-	t2 = _mm_add_ps(_mm_mul_ps(vy, t1), t2);
+	t2 = _mm_add_ps(_mm_mul_ps(y->v, t1), t2);
+	t1 = _mm_set1_ps(a->m21);
+	t2 = _mm_add_ps(t1, t2);
 	_mm_store_ps(arr[1].f, t2);
 	for (size_t i = 0; i < 4; i++)
 	{
@@ -289,28 +306,27 @@ inline const SGL_Vec2x4 SM_M3V2X4Multiply(const SGL_Mat3* a, const SGL_Vec4* x, 
 	}
 	return r;
 }
-inline void SM_M3V2X4MultiplyStride(const SGL_Mat3* a, const SGL_Vec4* x, const SGL_Vec4* y, float* dst, U32 floatStride)
+inline const SGL_Vec2x4 SM_M3V2X4MultiplyTest(const SGL_Mat3* a)
 {
-	const __m128 vx = _mm_load_ps((F32*)&x->x);
-	const __m128 vy = _mm_load_ps((F32*)&y->x);
-	__m128 t1, t2;
-	SGL_Vec4 arr[2];
-	t1 = _mm_set1_ps(a->m00);
-	t2 = _mm_mul_ps(vx, t1);
-	t1 = _mm_set1_ps(a->m01);
-	t2 = _mm_add_ps(_mm_mul_ps(vy, t1), t2);
-	_mm_store_ps(arr[0].f, t2);
-	t1 = _mm_set1_ps(a->m10);
-	t2 = _mm_mul_ps(vx, t1);
-	t1 = _mm_set1_ps(a->m11);
-	t2 = _mm_add_ps(_mm_mul_ps(vy, t1), t2);
-	_mm_store_ps(arr[1].f, t2);
-	for (size_t i = 0; i < 4; i++)
-	{
-		dst[floatStride * i] = arr[0].f[i];
-		dst[floatStride * i + 1] = arr[1].f[i];
-	}
-}
+	SGL_Vec2x4 r;
+	const SGL_Vec4 x0 = { 0.5f, 0.5f, -0.5f, -0.5f };
+	const SGL_Vec4 x1 = { -0.5f, -0.5f, 0.5f, 0.5f };
+	const SGL_Vec4 y0 = { 0.5f,  0.5f,  0.5f,  0.5f};
+	const SGL_Vec4 y1 = { -0.5f, -0.5f, -0.5f, -0.5f};
+	const SGL_Vec4 col0 = { a->m00, a->m10, a->m00, a->m10 };
+	const SGL_Vec4 col1 = { a->m01, a->m11, a->m01, a->m11 };
+	const SGL_Vec4 col2 = { a->m20, a->m21, a->m20, a->m21 };
+	__m128 t0;
+	t0 = _mm_mul_ps(col0.v, x0.v);
+	t0 = _mm_add_ps(_mm_mul_ps(y0.v, col1.v), t0);
+	t0 = _mm_add_ps(col2.v, t0);
+	_mm_store_ps(&r.v[0].x, t0);
+	t0 = _mm_mul_ps(col0.v, x1.v);
+	t0 = _mm_add_ps(_mm_mul_ps(y1.v, col1.v), t0);
+	t0 = _mm_add_ps(col2.v, t0);
+	_mm_store_ps(&r.v[2].x, t0);
+	return r;
+}*/
 inline const SGL_Mat3 SM_M3Multiply(const SGL_Mat3* a, const SGL_Mat3* b)
 {
 	SGL_Mat3 r;
@@ -507,6 +523,35 @@ inline const SGL_Mat4 SM_M4Multiply(const SGL_Mat4* a, const SGL_Mat4* b)
 	return r;
 
 }
+inline const SGL_Vec2 SM_V2Normalize(const SGL_Vec2 a)
+{
+	SGL_Vec2 r;
+	float m = sqrtf(a.x * a.x + a.y * a.y);
+	r.x = a.x / m;
+	r.y = a.y / m;
+	return r;
+}
+inline const SGL_Vec2 SM_V2Add(const SGL_Vec2 a, const SGL_Vec2 b)
+{
+	SGL_Vec2 r;
+	r.x = a.x + b.x;
+	r.y = a.y + b.y;
+	return r;
+}
+inline const SGL_Vec2 SM_V2FMultiply(const SGL_Vec2 a, const float b)
+{
+	SGL_Vec2 r;
+	r.x = a.x * b;
+	r.y = a.y * b;
+	return r;
+}
+inline const SGL_Vec2 SM_V2Multiply(const SGL_Vec2 a, const SGL_Vec2 b)
+{
+	SGL_Vec2 r;
+	r.x = a.x * b.x;
+	r.y = a.y * b.y;
+	return r;
+}
 inline const SGL_Vec4 SM_V4Multiply(const SGL_Vec4* a, const SGL_Vec4* b)
 {
 	SGL_Vec4 r;
@@ -604,6 +649,15 @@ inline const float SM_Dot(const SGL_Vec4* a, const SGL_Vec4* b)
 	return r.x;
 	#endif*/
 }
+inline const SGL_Vec4 SM_V4CrossSimple(const SGL_Vec4* a, const SGL_Vec4* b)
+{
+	SGL_Vec4 r;
+	r.x = a->y * b->z - a->z * b->y;
+	r.y = a->z * b->x - a->x * b->z;
+	r.z = a->x * b->y - a->y * b->x;
+	r.w = 0.0f;
+	return r;
+}
 inline const SGL_Vec4 SM_V4Cross(const SGL_Vec4* a, const SGL_Vec4* b)
 {
 	SGL_Vec4 r;
@@ -631,28 +685,47 @@ inline const SGL_Mat4 SM_LookAt(const SGL_Vec4* eye, const SGL_Vec4* center, con
 	const SGL_Vec4 s = SM_V4NormalizePrecise(&t1);
 	const SGL_Vec4 u = SM_V4Cross(&s, &f);
 	r.m00 = s.x;
-	r.m10 = s.y;
-	r.m20 = s.z;
-
 	r.m01 = u.x;
-	r.m11 = u.y;
-	r.m21 = u.z;
-
 	r.m02 = -f.x;
+	r.m03 = 0.0f;
+
+	r.m10 = s.y;
+	r.m11 = u.y;
 	r.m12 = -f.y;
+	r.m13 = 0.0f;
+
+	r.m20 = s.z;
+	r.m21 = u.z;
 	r.m22 = -f.z;
+	r.m23 = 0.0f;
 
 	r.m30 = -SM_Dot(&s, eye);
 	r.m31 = -SM_Dot(&u, eye);
 	r.m32 = SM_Dot(&f, eye);
-
-	r.m03 = 0.0f;
-	r.m13 = 0.0f;
-	r.m23 = 0.0f;
 	r.m33 = 1.0f;
+
 	return r;
 }
-inline const SGL_Mat4 SM_Translate(const SGL_Mat4* m, const SGL_Vec4* v)
+inline const SGL_Mat3 SM_M3Scale(const SGL_Mat3* m, const SGL_Vec2* v)
+{
+	SGL_Mat3 r = *m;
+	r.m00 *= v->x;
+	r.m01 *= v->x;
+	r.m02 *= v->x;
+	r.m10 *= v->y;
+	r.m11 *= v->y;
+	r.m12 *= v->y;
+	return r;
+};
+inline const SGL_Mat3 SM_M3Translate(const SGL_Mat3* m, const SGL_Vec2* v)
+{
+	SGL_Mat3 r = *m;
+	r.m20 = m->m00 * v->x + m->m10 * v->y + m->m20;
+	r.m21 = m->m01 * v->x + m->m11 * v->y + m->m21;
+	r.m22 = m->m02 * v->x + m->m12 * v->y + m->m22;
+	return r;
+};
+inline const SGL_Mat4 SM_M4Translate(const SGL_Mat4* m, const SGL_Vec4* v)
 {
 	SGL_Mat4 r = *m;
 	r.m30 = m->m00 * v->x + m->m10 * v->y + m->m20 * v->z + m->m30;
@@ -661,7 +734,7 @@ inline const SGL_Mat4 SM_Translate(const SGL_Mat4* m, const SGL_Vec4* v)
 	r.m33 = m->m03 * v->x + m->m13 * v->y + m->m23 * v->z + m->m33;
 	return r;
 };
-inline const SGL_Mat4 SM_Rotate(const SGL_Mat4* m, const F32 angle, const SGL_Vec4* v)
+inline const SGL_Mat4 SM_M4Rotate(const SGL_Mat4* m, const F32 angle, const SGL_Vec4* v)
 {
 	SGL_Mat4 r;
 	const F32 c = SDL_cosf(angle);
@@ -720,22 +793,82 @@ inline const SGL_Mat4 SM_Perspective(const F32 FOWY, const F32 aspect, const F32
 	r.m30 = 0.0f;
 	r.m31 = 0.0f;
 	r.m32 = -2.0f * farPlane * nearPlane / (farPlane - nearPlane);
-	r.m33 = 0.0f;
+	r.m33 = 1.0f;
 	return r;
 }
-inline void SM_CalculateUVs(const SGL_TexRegion* reg, const SGL_Vec4* texSize, float* dst, U32 floatStride)
+inline const SGL_Mat4 SM_Ortho(F32 left, F32 right, F32 bottom, F32 top)
+{
+	SGL_Mat4 r;
+	r.m00 = 2.0f / (right - left);
+	r.m01 = 0.0f;
+	r.m02 = 0.0f;
+	r.m03 = 0.0f;
+
+	r.m10 = 0.0f;
+	r.m11 = 2.0f / (top - bottom);
+	r.m12 = 0.0f;
+	r.m13 = 0.0f;
+
+	r.m20 = 0.0f;
+	r.m21 = 0.0f;
+	r.m22 = -1.0f;
+	r.m23 = 0.0f;
+
+	r.m30 = -(right + left) / (right - left);
+	r.m31 = -(top + bottom) / (top - bottom);
+	r.m32 = 0.0f;
+	r.m33 = 1.0f;
+	return r;
+}
+/*inline void SM_CalculateSpriteData(const SGL_TexRegion* reg, const SGL_Vec4* texSize, const SGL_Mat3* a, const SGL_Vec4* x, const SGL_Vec4* y, SGL_Vec2* dst)
+{
+	SGL_Vec4 arr[2];
+	SGL_Vec4 mReg;
+	{
+		const __m128 vx = _mm_load_ps((F32*)&x->x);
+		const __m128 vy = _mm_load_ps((F32*)&y->x);
+		__m128 t1, t2;
+		t1 = _mm_set1_ps(a->m00);
+		t2 = _mm_mul_ps(vx, t1);
+		t1 = _mm_set1_ps(a->m01);
+		t2 = _mm_add_ps(_mm_mul_ps(vy, t1), t2);
+		t1 = _mm_set1_ps(a->m20);
+		t2 = _mm_add_ps(t1, t2);
+		_mm_store_ps(arr[0].f, t2);
+		t1 = _mm_set1_ps(a->m10);
+		t2 = _mm_mul_ps(vx, t1);
+		t1 = _mm_set1_ps(a->m11);
+		t2 = _mm_add_ps(_mm_mul_ps(vy, t1), t2);
+		t1 = _mm_set1_ps(a->m21);
+		t2 = _mm_add_ps(t1, t2);
+		_mm_store_ps(arr[1].f, t2);
+		mReg.v = _mm_div_ps(reg->v, texSize->v);
+		mReg.v = _mm_add_ps(mReg.v, _mm_loadh_pi(_mm_setzero_ps(), (__m64*)&mReg.v));
+	}
+	dst[0].x = arr[0].f[0];
+	dst[0].y = arr[1].f[0];
+	dst[1].x = mReg.f[2];
+	dst[1].y = mReg.f[3];
+	dst[2].x = arr[0].f[1];
+	dst[2].y = arr[1].f[1];
+	dst[3].x = mReg.f[0];
+	dst[3].y = mReg.f[3];
+	dst[4].x = arr[0].f[2];
+	dst[4].y = arr[1].f[2];
+	dst[5].x = mReg.f[0];
+	dst[5].y = mReg.f[1];
+	dst[6].x = arr[0].f[3];
+	dst[6].y = arr[1].f[3];
+	dst[7].x = mReg.f[2];
+	dst[7].y = mReg.f[1];
+}*/
+inline const SGL_Vec4 SM_CalculateUVs(const SGL_TexRegion* reg, const SGL_Vec2* texSize)
 {
 	SGL_Vec4 mReg;
-	mReg.v = _mm_div_ps(reg->v, texSize->v);
-	mReg.v = _mm_add_ps(mReg.v, _mm_loadh_pi(_mm_setzero_ps(), (__m64*)&mReg.v));
-	dst[0] = mReg.f[2];
-	dst[1] = mReg.f[3];
-	dst[floatStride] = mReg.f[0];
-	dst[floatStride + 1] = mReg.f[3];
-	dst[floatStride * 2] = mReg.f[0];
-	dst[floatStride * 2 + 1] = mReg.f[1];
-	dst[floatStride * 3] = mReg.f[2];
-	dst[floatStride * 3 + 1] = mReg.f[1];
-	int g = 0;
+	mReg.x = reg->offset.x / texSize->x;
+	mReg.y = reg->offset.y / texSize->y;
+	mReg.z = reg->size.x / texSize->x + mReg.x;
+	mReg.w = reg->size.y / texSize->y + mReg.y;
+	return mReg;
 }
 #endif

@@ -1,5 +1,34 @@
 #include "SGL.h"
 #include <GL\glew.h>
+const SGL_ShaderInfo debugShader[] =
+{
+	{
+		GL_VERTEX_SHADER,
+		"#version 330\n"
+		"layout (std140) uniform globalMatrices\n"
+		"{\n"
+		"	mat4 vPMatrix;\n"
+		"};\n"
+		"layout(location = 0) in vec2 vPosition;"	//0
+		"void main()"
+		"{"
+		"	gl_Position = vPMatrix * vec4(vPosition, 1.0, 1.0);"
+		"}"
+	},
+	{
+		GL_FRAGMENT_SHADER,
+		"#version 330 core\n"
+		"out vec4 fColor;"
+		"void main()"
+		"{"
+		"	fColor = vec4(0.5,0.0,0.5,0.5);"
+		"}"
+	},
+	{
+		GL_NONE,
+		NULL
+	}
+};
 const SGL_ShaderInfo colorShader[] =
 {
 	{
@@ -42,24 +71,29 @@ const SGL_ShaderInfo spriteShader[] =
 		"{\n"
 		"	mat4 vPMatrix;\n"
 		"};\n"
+		"uniform float gamma;"
 		"layout(location = 0) in vec2 vPosition;"	//0
 		"layout(location = 1) in vec2 vTexCoord;"	//2
 		"out vec2 texCoord;"
+		"out float vGamma;"
 		"void main()"
 		"{"
+		"	vGamma = gamma;"
 		"	texCoord = vTexCoord;"
 		"	gl_Position = vPMatrix * vec4(vPosition, 1.0, 1.0);"
-		"}"
+	//"	gl_Position = vec4(vPosition, 1.0, 1.0);"
+	"}"
 	},
 	{
 		GL_FRAGMENT_SHADER,
 		"#version 330 core\n"
 		"in vec2 texCoord;"
+		"in float vGamma;"
 		"out vec4 fColor;"
 		"uniform sampler2D tex;"
 		"void main()"
 		"{"
-		"	fColor = texture(tex, texCoord);"
+		"	fColor = texture(tex, texCoord)+vec4(0.0,0.0,0.0,vGamma);"
 		"}"
 	},
 	{
@@ -107,18 +141,21 @@ const SGL_ShaderInfo coloredSpriteShader[] =
 };
 const char* shaderNames[] =
 {
+	"         Debug Shader",
 	"         Color Shader",
 	"        Sprite Shader",
 	"Colored Sprite Shader",
 };
 const SGL_ShaderInfo* builtInShaders[] =
 {
+	&debugShader,
 	&colorShader,
 	&spriteShader,
 	&coloredSpriteShader,
 };
 const U32 shaderVertSizes[] =
 {
+	sizeof(SGL_Vec2),
 	sizeof(SGL_Vec2) + sizeof(SGL_Color),
 	sizeof(SGL_Vec2) + sizeof(SGL_Vec2),
 	sizeof(SGL_Vec2) + sizeof(SGL_Vec2) + sizeof(SGL_Color),
@@ -152,7 +189,8 @@ void colorShaderBindFunction(void* vao, U32 shaderHandle, U32 vertexCount, U32 i
 void spriteShaderBindFunction(void* vao, U32 shaderHandle, U32 vertexCount, U32 indexCount, U32 drawType)
 {
 	SGL_VAO* VAO = (SGL_VAO*)vao;
-	glGenBuffers(1, &VAO->VBO);
+	//this is a hazard
+	glGenBuffers(2, &VAO->VBO);
 
 	glGenVertexArrays(1, &VAO->handle);
 	glBindVertexArray(VAO->handle);
@@ -204,6 +242,7 @@ void coloredSpriteShaderBindFunction(void* vao, U32 shaderHandle, U32 vertexCoun
 }
 const void(*shaderFunctions[])(void* vao, U32 shaderHandle, U32 vertexCount, U32 indexCount, U32 drawType) =
 {
+	NULL,
 	&colorShaderBindFunction,
 	&spriteShaderBindFunction,
 	&coloredSpriteShaderBindFunction,
@@ -218,6 +257,70 @@ inline U32 CreateProgram(SGL_ShaderInfo* shaders)
 	GLuint program = glCreateProgram();
 	//there is currently only 4 shader types but making space for 8 handles just to be sure
 	GLuint shaderHandles[8] = {0};
+	for (size_t i = 0; shaders[i].type != GL_NONE; i++)
+	{
+		shaderHandles[i] = glCreateShader(shaders[i].type);
+		const GLchar* source = shaders[i].source;
+		if (source == NULL)
+		{
+			for (size_t j = 0; j < i; j++)
+			{
+				glDeleteShader(shaderHandles[i]);
+			}
+			return 0;
+		}
+		glShaderSource(shaderHandles[i], 1, &source, NULL);
+		glCompileShader(shaderHandles[i]);
+		GLint compiled;
+		glGetShaderiv(shaderHandles[i], GL_COMPILE_STATUS, &compiled);
+		if (!compiled)
+		{
+#if !defined(NDEBUG)
+			GLsizei len;
+			glGetShaderiv(shaderHandles[i], GL_INFO_LOG_LENGTH, &len);
+
+			GLchar* log = SDL_malloc(sizeof(GLchar)*(len + 1));
+			glGetShaderInfoLog(shaderHandles[i], len, &len, log);
+			//this takes care of deletion
+			SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Shader Compilation Failed", log, NULL);
+			SDL_free(log);
+#endif /* DEBUG */
+			return 0;
+		}
+		glAttachShader(program, shaderHandles[i]);
+	}
+	glLinkProgram(program);
+	GLint linked;
+	glGetProgramiv(program, GL_LINK_STATUS, &linked);
+	if (!linked)
+	{
+#if !defined(NDEBUG)
+		GLsizei len;
+		glGetProgramiv(program, GL_INFO_LOG_LENGTH, &len);
+
+		GLchar* log = SDL_malloc(sizeof(GLchar)*(len + 1));
+		glGetProgramInfoLog(program, len, &len, log);
+		SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Shader linking failed", log, NULL);
+		SDL_free(log);
+#endif /* DEBUG */
+		for (size_t i = 0; shaderHandles[i] != 0; i++)
+		{
+			glDeleteShader(shaderHandles[i]);
+		}
+		return 0;
+	}
+	return program;
+}
+U32 SGL_CreateProgram(SGL_ShaderInfo* shaders)
+{
+	if (shaders == NULL)
+	{
+		SDL_Log("Shader loading failed, ShaderInfo is null.");
+		return 0;
+	}
+	GLuint program = glCreateProgram();
+	//there is currently only 4 shader types but making space for 8 handles just to be sure
+	GLuint shaderHandles[8] = { 0 };
 	for (size_t i = 0; shaders[i].type != GL_NONE; i++)
 	{
 		shaderHandles[i] = glCreateShader(shaders[i].type);

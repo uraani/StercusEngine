@@ -3,6 +3,7 @@
 #define BUFFER_OFFSET(x) (void*)(x) 
 enum SGL_ShaderName
 {
+	SGL_SHADER_DEBUG,
 	SGL_SHADER_COLOR,
 	SGL_SHADER_SPRITE,
 	SGL_SHADER_COLOREDSPRITE,
@@ -24,3 +25,4 @@ typedef struct _SGL_ShaderInfo
 
 typedef struct _SGL_RenderContext SGL_RenderContext;
 extern U32 SGL_LoadShaders(SGL_RenderContext* context);
+extern U32 SGL_CreateProgram(SGL_ShaderInfo* shaders);

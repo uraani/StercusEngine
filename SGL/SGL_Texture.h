@@ -13,8 +13,9 @@ typedef struct _SGL_Tex2D
 	void* data;
 	U32 handle;
 	U32 type;
-	U32 width;
-	U32 height;
+	U32 format;
+	U16 width;
+	U16 height;
 } SGL_Tex2D;
 extern SGL_TexParams SGL_ParamsLinear;
 extern SGL_TexParams SGL_ParamsNearest;

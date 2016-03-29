@@ -73,6 +73,9 @@ SGL_Window SGL_CreateWindow(const char* title, int GLMajorVersion, int GLMinorVe
 	SDL_GetWindowSize(window.handle, &window.rContext.windowSize.x, &window.rContext.windowSize.y);
 	window.rContext.windowHalfSizef.x = (F32)window.rContext.windowSize.x*0.5f;
 	window.rContext.windowHalfSizef.y = (F32)window.rContext.windowSize.y*0.5f;
+	GLenum error = glGetError();
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	for (size_t i = 0; i < SGL_CAMERA_COUNT; i++)
 	{
 		window.rContext.cameras[i].camType = 0;
@@ -205,10 +208,14 @@ inline SGL_UpdateCameras(SGL_RenderContext* rContext)
 			const float top = rContext->windowHalfSizef.y * rContext->cameras[i].scale;
 			rContext->cameras[i].vPMatrix.m00 = 2.0f / (right - left);
 			rContext->cameras[i].vPMatrix.m11 = 2.0f / (top - bottom);
-			rContext->cameras[i].vPMatrix.m22 = -2.0f / (rContext->cameras[i].farPlane - rContext->cameras[i].nearPlane);
+			rContext->cameras[i].vPMatrix.m22 = -1.0f;
+			//rContext->cameras[i].vPMatrix.m22 = -2.0f / (rContext->cameras[i].farPlane - rContext->cameras[i].nearPlane);
 			rContext->cameras[i].vPMatrix.m30 = -(right + left) / (right - left);
 			rContext->cameras[i].vPMatrix.m31 = -(top + bottom) / (top - bottom);
-			rContext->cameras[i].vPMatrix.m32 = -(rContext->cameras[i].farPlane + rContext->cameras[i].nearPlane) / (rContext->cameras[i].farPlane - rContext->cameras[i].nearPlane);
+			rContext->cameras[i].vPMatrix.m32 = 0.0f;
+			//rContext->cameras[i].vPMatrix.m32 = -(rContext->cameras[i].farPlane + rContext->cameras[i].nearPlane) / (rContext->cameras[i].farPlane - rContext->cameras[i].nearPlane);
+			//SGL_Vec4 forward = { 0.0f, 0.0f, 1.0f, 0.0f };
+			//rContext->cameras[i].vPMatrix = SM_M4Rotate(&rContext->cameras[i].vPMatrix, rContext->cameras[i].rotation.z, &forward);
 			break;
 		}
 		case SGL_CAMERA_TYPE_PERSPECTIVE:
@@ -229,22 +236,32 @@ inline SGL_UpdateCameras(SGL_RenderContext* rContext)
 		}
 		//rotate
 		//SM_Rotate(,)
+
 		SGL_Vec4 back = { 0.0f, 0.0f, -1.0f, 0.0f };
 		SGL_Vec4 up = { 0.0f, 1.0f, 0.0f, 0.0f };
 		SGL_Vec4 center = SM_V4Add(&rContext->cameras[i].position, &back);
-		SM_LookAt(&rContext->cameras[i].position, &center, &up);
+		SGL_Mat4 look = SM_LookAt(&rContext->cameras[i].position, &center, &up);
+		rContext->cameras[i].vPMatrix = SM_M4Multiply(&look, &rContext->cameras[i].vPMatrix);
 	}
 }
-void SGL_StartRender(SGL_RenderContext * rContext)
+void SGL_StartRender(SGL_Window * window)
 {
-	ADD_FLAGS(rContext->state, SGL_RENDER_STATE_RENDERING);
-	SGL_UpdateCameras(rContext);
-	glBindBuffer(GL_UNIFORM_BUFFER, rContext->uniformMatrixHandle);
-	glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(SGL_Mat4), &rContext->cameras[rContext->boundCamera].vPMatrix);
+	ADD_FLAGS(window->rContext.state, SGL_RENDER_STATE_RENDERING);
+	SGL_UpdateCameras(&window->rContext);
+	glBindBuffer(GL_UNIFORM_BUFFER, window->rContext.uniformMatrixHandle);
+	glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(SGL_Mat4), &window->rContext.cameras[window->rContext.boundCamera].vPMatrix);
+	//static float asd = 0.0f;
+	//asd	= asd < M_PI*2.0f ? asd + 0.02f : 0.0f;
+	//float color = SDL_sinf(asd)*0.25f + 0.75f;
+	float color = 0.75f;
+	glClearColor(color, color, color, 1.0f);
+	glClear(GL_COLOR_BUFFER_BIT);
+
 }
-void SGL_EndRender(SGL_RenderContext * rContext)
+void SGL_EndRender(SGL_Window * window)
 {
-	REMOVE_FLAGS(rContext->state, SGL_RENDER_STATE_RENDERING);
+	REMOVE_FLAGS(window->rContext.state, SGL_RENDER_STATE_RENDERING);
+	SDL_GL_SwapWindow(window->handle);
 }
 void SGL_BindCamera(SGL_RenderContext* rContext, U32 id)
 {
