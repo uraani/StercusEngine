@@ -253,7 +253,7 @@ void SGL_StartRender(SGL_Window * window)
 	//static float asd = 0.0f;
 	//asd	= asd < M_PI*2.0f ? asd + 0.02f : 0.0f;
 	//float color = SDL_sinf(asd)*0.25f + 0.75f;
-	float color = 0.75f;
+	float color = 0.05f;
 	glClearColor(color, color, color, 1.0f);
 	glClear(GL_COLOR_BUFFER_BIT);
 

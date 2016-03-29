@@ -12,7 +12,7 @@ int main(int argc, char* argv[])
 	SGL_CreateTextures(&tex, &SGL_ParamsNearest, 1);
 	U32 spriteMaxCount = 10000;
 	U32 spriteCount = 0;
-	float speed = 128.0f;
+	float speed = 0.0f;
 	float spriteSize = 128.0f;
 	float spriteSizeHalf = 64.0f;
 	bool anim = false;
@@ -47,7 +47,7 @@ int main(int argc, char* argv[])
 	float spriteOffset = 0;
 	float gamma = 0.0f;
 	bool quit = false;
-	U32 debug = 1;
+	U32 debug = 0;
 	float timeDelta = SDL_GetTicks();
 	U32 time = SDL_GetTicks();
 	//U32 timer = SDL_GetTicks();
