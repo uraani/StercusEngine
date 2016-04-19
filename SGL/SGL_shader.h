@@ -23,6 +23,7 @@ typedef struct _SGL_Shader
 } SGL_Shader;
 typedef struct _SGL_ShaderInfo
 {
+	//shader stage type
 	U32 type;
 	const char* source;
 } SGL_ShaderInfo;
