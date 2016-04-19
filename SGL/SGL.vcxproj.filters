@@ -544,9 +544,6 @@
     <ClCompile Include="SGL_sprite.c">
       <Filter>SGL</Filter>
     </ClCompile>
-    <ClCompile Include="SGL_dynamic_renderer.c">
-      <Filter>SGL</Filter>
-    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="SDL2">
@@ -596,22 +593,19 @@
     <ClInclude Include="murmur3.h">
       <Filter>SGL</Filter>
     </ClInclude>
-    <ClInclude Include="linmath.h">
-      <Filter>SGL</Filter>
-    </ClInclude>
     <ClInclude Include="SGL_shader.h">
       <Filter>SGL</Filter>
     </ClInclude>
     <ClInclude Include="SGL_texture.h">
       <Filter>SGL</Filter>
     </ClInclude>
-    <ClInclude Include="SGL_dynamic_renderer.h">
-      <Filter>SGL</Filter>
-    </ClInclude>
     <ClInclude Include="SGL_sprite.h">
       <Filter>SGL</Filter>
     </ClInclude>
     <ClInclude Include="SGL_ubo.h">
+      <Filter>SGL</Filter>
+    </ClInclude>
+    <ClInclude Include="SGL_font.h">
       <Filter>SGL</Filter>
     </ClInclude>
   </ItemGroup>

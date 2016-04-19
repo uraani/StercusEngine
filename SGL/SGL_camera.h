@@ -21,8 +21,8 @@ typedef enum SGL_CameraType
 typedef struct _SGL_Camera
 {
 	SGL_Mat4 vPMatrix;
-	SGL_Vec4 rotation;
-	SGL_Vec3 position;
+	SGL_Quat rotation;
+	SGL_Vec4 position;
 	F32 nearPlane;
 	F32 farPlane;
 	F32 FOWY;

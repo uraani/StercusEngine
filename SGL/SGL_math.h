@@ -34,6 +34,34 @@ typedef struct _SGL_Vec4
 #endif
 	};
 } SGL_Vec4;
+#if !defined(ANDROID)
+__declspec(align(16))
+#else
+#pragma message ("CREATE ARM NEON IMPLEMENTATIONS FOR VEC4")
+#endif
+typedef struct _SGL_Quat
+{
+	union
+	{
+		struct
+		{
+			F32 f[4];
+		};
+		struct
+		{
+			F32 x;
+			F32 y;
+			F32 z;
+			F32 w;
+		};
+#if !defined(ANDROID)
+		struct
+		{
+			__m128 v;
+		};
+#endif
+	};
+} SGL_Quat;
 typedef struct _SGL_Vec3
 {
 	float x;
@@ -111,6 +139,7 @@ typedef struct _SGL_Vec2x4
 	};
 #endif
 }SGL_Vec2x4;
+
 //MATRIX INDEXES ARE ARRANGED LIKE THIS:
 //[0 ][1 ][2 ] [UNUSED]
 //[4 ][5 ][6 ] [UNUSED]
@@ -148,28 +177,25 @@ typedef struct _SGL_Mat3
 	};
 
 } SGL_Mat3;
-#if !defined(ANDROID)
-__declspec(align(16))
-#else
-#pragma message ("CREATE ARM NEON IMPLEMENTATIONS FOR TEXREGION")
-#endif
+typedef struct _SGL_SquareTexRegion
+{
+	SGL_Vec2 offset;
+	float size;
+} SGL_SquareTexRegion;
 typedef struct _SGL_TexRegion
 {
-	union
-	{
-		struct
-		{
-			SGL_Vec2 offset;
-			SGL_Vec2 size;
-		};
-#if !defined(ANDROID)
-		struct
-		{
-			__m128 v;
-		};
-#endif
-	};
+	SGL_Vec2 offset;
+	SGL_Vec2 size;
 } SGL_TexRegion;
+typedef struct _SGL_Trans2D
+{
+	SGL_Mat3 mat;
+	SGL_Vec2 position;
+	SGL_Vec2 scale;
+	F32 rotation;
+	//currently unused
+	U32 state;
+}SGL_Trans2D;
 inline const SGL_Mat3 SM_IdentityMat3()
 {
 	SGL_Mat3 r;
@@ -230,13 +256,26 @@ inline const SGL_Mat4 SM_QuatToMat4(const SGL_Vec4* q)
 	return r;
 
 }
-inline const SGL_Vec2 SM_M3V2Multiply(const SGL_Mat3* a, const SGL_Vec2* b)
+inline const SGL_Vec2 SM_V2M3Multiply(const SGL_Vec2 b, const SGL_Mat3* a)
 {
 	SGL_Vec2 r;
-	const float i00 = a->m00 * b->x + a->m01 * b->y + a->m20; 
-	const float i01 = a->m10 * b->x + a->m11 * b->y + a->m21;
+	const float i00 = a->m00 * b.x + a->m01 * b.y + a->m02; 
+	const float i01 = a->m10 * b.x + a->m11 * b.y + a->m12;
 	r.x = i00;
 	r.y = i01;
+	return r;
+}
+inline const SGL_Vec2 SM_M3V2Multiply(const SGL_Mat3* a, const SGL_Vec2 b)
+{
+	const SGL_Vec2 r = 
+	{
+		a->m00 * b.x + a->m10 * b.y + a->m20,
+		a->m01 * b.x + a->m11 * b.y + a->m21,
+	};
+	//const float i00 = a->m00 * b.x + a->m10 * b.y + a->m20;
+	//const float i01 = a->m01 * b.x + a->m11 * b.y + a->m21;
+	//r.x = i00;
+	//r.y = i01;
 	return r;
 }
 inline const SGL_Vec4 SM_M4V4Multiply(const SGL_Mat4* a, const SGL_Vec4* b)
@@ -327,6 +366,27 @@ inline const SGL_Vec2x4 SM_M3V2X4MultiplyTest(const SGL_Mat3* a)
 	_mm_store_ps(&r.v[2].x, t0);
 	return r;
 }*/
+inline const SGL_Mat3 SM_M3Inverse(const SGL_Mat3* a)
+{
+	SGL_Mat3 r;
+	F32 OneOverDeterminant = 
+		1.0f / 
+		(
+		+ a->m00 * (a->m11 * a->m22 - a->m21 * a->m12)
+		- a->m10 * (a->m01 * a->m22 - a->m21 * a->m02)
+		+ a->m20 * (a->m01 * a->m12 - a->m11 * a->m02)
+		);
+	r.m00 = +(a->m11 * a->m22 - a->m21 * a->m12) * OneOverDeterminant;
+	r.m10 = -(a->m10 * a->m22 - a->m20 * a->m12) * OneOverDeterminant;
+	r.m20 = +(a->m10 * a->m21 - a->m20 * a->m11) * OneOverDeterminant;
+	r.m01 = -(a->m01 * a->m22 - a->m21 * a->m02) * OneOverDeterminant;
+	r.m11 = +(a->m00 * a->m22 - a->m20 * a->m02) * OneOverDeterminant;
+	r.m21 = -(a->m00 * a->m21 - a->m20 * a->m01) * OneOverDeterminant;
+	r.m02 = +(a->m01 * a->m12 - a->m11 * a->m02) * OneOverDeterminant;
+	r.m12 = -(a->m00 * a->m12 - a->m10 * a->m02) * OneOverDeterminant;
+	r.m22 = +(a->m00 * a->m11 - a->m10 * a->m01) * OneOverDeterminant;
+	return r;
+}
 inline const SGL_Mat3 SM_M3Multiply(const SGL_Mat3* a, const SGL_Mat3* b)
 {
 	SGL_Mat3 r;
@@ -526,7 +586,7 @@ inline const SGL_Mat4 SM_M4Multiply(const SGL_Mat4* a, const SGL_Mat4* b)
 inline const SGL_Vec2 SM_V2Normalize(const SGL_Vec2 a)
 {
 	SGL_Vec2 r;
-	float m = sqrtf(a.x * a.x + a.y * a.y);
+	float m = SDL_sqrtf(a.x * a.x + a.y * a.y);
 	r.x = a.x / m;
 	r.y = a.y / m;
 	return r;
@@ -640,14 +700,11 @@ inline const SGL_Vec4 SM_V4NormalizePrecise(const SGL_Vec4* a)
 }
 inline const float SM_Dot(const SGL_Vec4* a, const SGL_Vec4* b)
 {
-	//#if defined(ANDROID)
 	return a->x * b->x + a->y * b->y + a->z * b->z;
-	/*#else
-	SGL_Vec4 r;
-	//this function is way slower than the code above, SSE4 isnt supported?
-	r.v = _mm_dp_ps(a->v,b->v, 0x7F);
-	return r.x;
-	#endif*/
+}
+inline const float SM_V2Dot(const SGL_Vec2 a, const SGL_Vec2 b)
+{
+	return a.x * b.x + a.y * b.y;
 }
 inline const SGL_Vec4 SM_V4CrossSimple(const SGL_Vec4* a, const SGL_Vec4* b)
 {
@@ -706,25 +763,150 @@ inline const SGL_Mat4 SM_LookAt(const SGL_Vec4* eye, const SGL_Vec4* center, con
 
 	return r;
 }
-inline const SGL_Mat3 SM_M3Scale(const SGL_Mat3* m, const SGL_Vec2* v)
+inline const SGL_Quat SM_QAngleAxis(const float radAngle, const SGL_Vec4* axis)
+{
+	SGL_Quat r;
+	const float s = SDL_sinf(radAngle * 0.5f);
+	r.w = SDL_cosf(radAngle * 0.5f);
+	r.x = axis->x * s;
+	r.y = axis->y * s;
+	r.z = axis->z * s;
+	return r;
+}
+inline const U32 SM_TransDecompose(SGL_Trans2D* trans)
+{
+	SGL_Vec2 row0 = { trans->mat.m00, trans->mat.m01 };
+	SGL_Vec2 row1 = { trans->mat.m10, trans->mat.m11 };
+	F32 kx = SDL_sqrtf(row0.x * row0.x + row0.y * row0.y);
+	row0.x /= kx;
+	row0.y /= kx;
+	F32 kz = SM_V2Dot(row0, row1);
+	row1.x += -kz * row0.x;
+	row1.y += -kz * row0.y;
+	F32 ky = SDL_sqrtf(row1.x * row1.x + row1.y * row1.y);
+	if (kx == 0.0f || ky == 0.0f)
+	{
+		return SGL_FALSE;
+	}
+	trans->position.x = trans->mat.m20;
+	trans->position.y = trans->mat.m21;
+	trans->scale.x = kx;
+	trans->scale.y = ky;
+	trans->rotation = (float)SDL_atan2((double)trans->mat.m01, (double)trans->mat.m00);
+	//skew = kz / ky;
+	return SGL_TRUE;
+}
+inline const U32 SM_M3Decompose(const SGL_Mat3* m, SGL_Vec2* pos, SGL_Vec2* scale, F32* rot)
+{
+	SGL_Vec2 row0 = { m->m00, m->m01 };
+	SGL_Vec2 row1 = { m->m10, m->m11 };
+	F32 kx = SDL_sqrtf(row0.x * row0.x + row0.y * row0.y);
+	row0.x /= kx;
+	row0.y /= kx;
+	F32 kz = SM_V2Dot(row0, row1);
+	row1.x += -kz * row0.x;
+	row1.y += -kz * row0.y;
+	F32 ky = SDL_sqrtf(row1.x * row1.x + row1.y * row1.y);
+	if (kx == 0.0f || ky == 0.0f)
+	{
+		return SGL_FALSE;
+	}
+	pos->x = m->m20;
+	pos->y = m->m21;
+	scale->x = kx;
+	scale->y = ky;
+	*rot = (float)SDL_atan2((double)m->m01, (double)m->m00);
+	//skew = kz / ky;
+	return SGL_TRUE;
+}
+inline const SGL_Mat3 SM_M3Scale(const SGL_Mat3* m, const SGL_Vec2 v)
 {
 	SGL_Mat3 r = *m;
-	r.m00 *= v->x;
-	r.m01 *= v->x;
-	r.m02 *= v->x;
-	r.m10 *= v->y;
-	r.m11 *= v->y;
-	r.m12 *= v->y;
+	r.m00 *= v.x;
+	r.m01 *= v.x;
+	r.m02 *= v.x;
+	r.m10 *= v.y;
+	r.m11 *= v.y;
+	r.m12 *= v.y;
 	return r;
 };
-inline const SGL_Mat3 SM_M3Translate(const SGL_Mat3* m, const SGL_Vec2* v)
+inline const SGL_Mat3 SM_M3Rotate(const SGL_Mat3* m, const float radAngle)
+{
+	const float c = SDL_cosf(radAngle);
+	const float s = SDL_sinf(radAngle);
+
+	SGL_Mat3 r;
+	r.m00 = m->m00 * c + m->m10 * s;
+	r.m01 = m->m01 * c + m->m11 * s;
+	r.m02 = m->m02 * c + m->m12 * s;
+	r.m03 = 0.0f;
+	r.m10 = m->m00 * -s + m->m10 * c;
+	r.m11 = m->m01 * -s + m->m11 * c;
+	r.m12 = m->m02 * -s + m->m12 * c;
+	r.m13 = 0.0f;
+	r.m20 = m->m20;
+	r.m21 = m->m21;
+	r.m22 = m->m22;
+	r.m23 = 0.0f;
+	return r;
+}
+//inline const SGL_Mat3 SM_M3TranslateOrigin(const SGL_Mat3* m, const SGL_Vec2 v)
+//{
+//	SGL_Mat3 r = *m;
+//	r.m02 += v.x;
+//	r.m12 += v.y;
+//	return r;
+//};
+inline const SGL_Mat3 SM_M3TranslatePos(const SGL_Mat3* m, const SGL_Vec2 v)
 {
 	SGL_Mat3 r = *m;
-	r.m20 = m->m00 * v->x + m->m10 * v->y + m->m20;
-	r.m21 = m->m01 * v->x + m->m11 * v->y + m->m21;
-	r.m22 = m->m02 * v->x + m->m12 * v->y + m->m22;
+	r.m20 += v.x;
+	r.m21 += v.y;
 	return r;
 };
+inline const SGL_Mat3 SM_M3Translate(const SGL_Mat3* m, const SGL_Vec2 v)
+{
+	SGL_Mat3 r = *m;
+	r.m20 = m->m00 * v.x + m->m10 * v.y + m->m20;
+	r.m21 = m->m01 * v.x + m->m11 * v.y + m->m21;
+	r.m22 = m->m02 * v.x + m->m12 * v.y + m->m22;
+	return r;
+};
+inline const SGL_Mat4 SM_QToM4(const SGL_Quat* q)
+{
+	SGL_Mat4 r;
+	const float qxx = q->x * q->x;
+	const float qyy = q->y * q->y;
+	const float qzz = q->z * q->z;
+	const float qxz = q->x * q->z;
+	const float qxy = q->x * q->y;
+	const float qyz = q->y * q->z;
+	const float qwx = q->w * q->x;
+	const float qwy = q->w * q->y;
+	const float qwz = q->w * q->z;
+
+	r.m00 = 1.0f - 2.0f * (qyy + qzz);
+	r.m01 = 2.0f * (qxy + qwz);
+	r.m02 = 2.0f * (qxz - qwy);
+	r.m03 = 0.0f;
+
+	r.m10 = 2.0f * (qxy - qwz);
+	r.m11 = 1.0f - 2.0f * (qxx + qzz);
+	r.m12 = 2.0f * (qyz + qwx);
+	r.m13 = 0.0f;
+
+	r.m20 = 2.0f * (qxz + qwy);
+	r.m21 = 2.0f * (qyz - qwx);
+	r.m22 = 1.0f - 2.0f * (qxx + qyy);
+	r.m23 = 0.0f;
+
+	r.m30 = 0.0f;
+	r.m31 = 0.0f;
+	r.m32 = 0.0f;
+	r.m33 = 1.0f;
+
+	return r;
+}
 inline const SGL_Mat4 SM_M4Translate(const SGL_Mat4* m, const SGL_Vec4* v)
 {
 	SGL_Mat4 r = *m;
@@ -870,5 +1052,26 @@ inline const SGL_Vec4 SM_CalculateUVs(const SGL_TexRegion* reg, const SGL_Vec2* 
 	mReg.z = reg->size.x / texSize->x + mReg.x;
 	mReg.w = reg->size.y / texSize->y + mReg.y;
 	return mReg;
+}
+inline void SM_UpdateTransform(SGL_Trans2D* trans)
+{
+	SGL_Mat3 mat = SM_IdentityMat3();
+	mat = SM_M3Translate(&mat, trans->position);
+	mat = SM_M3Rotate(&mat, trans->rotation);
+	mat = SM_M3Scale(&mat, trans->scale);
+	trans->mat = mat;
+}
+inline const U32 SM_GlobalToLocalTrans(SGL_Trans2D* trans, const SGL_Mat3* invertedParentMat)
+{
+	//create global matrix
+	SGL_Mat3 mat = SM_IdentityMat3();
+	mat = SM_M3Translate(&mat, trans->position);
+	mat = SM_M3Rotate(&mat, trans->rotation);
+	mat = SM_M3Scale(&mat, trans->scale);
+	//convert it to local matrix
+	mat = SM_M3Multiply(&mat, invertedParentMat);
+	trans->mat = mat;
+	//decompose matrix into position, scale and rotation
+	return SM_TransDecompose(trans);
 }
 #endif

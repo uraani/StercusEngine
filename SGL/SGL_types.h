@@ -1,6 +1,7 @@
 #pragma once
 #ifndef _SGL_types_h
 #define _SGL_types_h
+#define SGL_BUFFER_COUNT_MAX 3
 typedef unsigned __int8  U8;
 typedef unsigned __int16 U16;
 typedef unsigned __int32 U32;
@@ -32,6 +33,13 @@ typedef struct _SGL_Mesh
 	U32 vertexCount;
 	U32 indexCount;
 } SGL_Mesh;
+typedef struct _SGL_SMesh
+{
+	void* vertexData;
+	U16* indexData;
+	U32 vertexCount;
+	U32 indexCount;
+} SGL_SMesh;
 typedef struct _SGL_VAO
 {
 	//VAO id
@@ -44,4 +52,13 @@ typedef struct _SGL_VAO
 	//contains indexData
 	U32 EBO;
 } SGL_VAO;
+typedef struct _SGL_PointVAO
+{
+	//VAO id
+	//contains attribute and buffer binding data
+	U32 handle;
+	//Vertex buffer object id
+	//contains vertexData
+	U32 VBO;
+} SGL_PointVAO;
 #endif //_SGL_types_h

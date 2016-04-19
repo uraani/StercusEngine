@@ -32,15 +32,20 @@ inline void SGL_BindShader(SGL_RenderContext* rContext, U32 shaderHandle)
 		glUseProgram(shaderHandle);
 	}
 }
-inline void SGL_CheckGLErrors()
+#if defined(NDEBUG) || !defined(_DEBUG) 
+#define SGL_CHECK_GL_ERROR ((void)(0))
+#else
+#define SGL_CHECK_GL_ERROR _CheckGLErrors(__FILE__, __LINE__)
+inline void _CheckGLErrors(const char *file, int line)
 {
 	GLenum error = glGetError();
 	if (error != 0)
 	{
-		SDL_Log("OpenGL Error: %i", error);
+		SDL_Log("OpenGL Error: %i, File: %s, Line: %i", error, file, line);
 	}
 }
-extern SGL_Window SGL_CreateWindow(const char* title, int GLMajorVersion, int GLMinorVersion, int x, int y, int w, int h, Uint32 SDLflags);
+#endif
+extern SGL_Window SGL_CreateWindow(const char* title, I32 GLMajorVersion, I32 GLMinorVersion, U32 bufferCount, I32 x, I32 y, I32 w, I32 h, Uint32 SDLflags);
 #ifdef __cplusplus
 }
 #endif

@@ -36,7 +36,6 @@
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGUID>{FDFB4783-5ADC-388E-A579-11EDC5B51D84}</ProjectGUID>
-    <WindowsTargetPlatformVersion>10.0.10586.0</WindowsTargetPlatformVersion>
     <Keyword>Win32Proj</Keyword>
     <Platform>x64</Platform>
     <ProjectName>SGLstatic</ProjectName>
@@ -52,7 +51,7 @@
     <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseOfMfc>false</UseOfMfc>
     <CharacterSet>Unicode</CharacterSet>
-    <PlatformToolset>v140</PlatformToolset>
+    <PlatformToolset>v140_xp</PlatformToolset>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
     <ConfigurationType>StaticLibrary</ConfigurationType>
@@ -644,18 +643,16 @@
     <ClCompile Include="SGL.c" />
     <ClCompile Include="SGL_camera.c" />
     <ClCompile Include="SGL_data.c" />
-    <ClCompile Include="SGL_dynamic_renderer.c" />
     <ClCompile Include="SGL_shader.c" />
     <ClCompile Include="SGL_sprite.c" />
     <ClCompile Include="SGL_texture.c" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="linmath.h" />
     <ClInclude Include="murmur3.h" />
     <ClInclude Include="SGL.h" />
     <ClInclude Include="SGL_camera.h" />
     <ClInclude Include="SGL_data.h" />
-    <ClInclude Include="SGL_dynamic_renderer.h" />
+    <ClInclude Include="SGL_font.h" />
     <ClInclude Include="SGL_math.h" />
     <ClInclude Include="SGL_shader.h" />
     <ClInclude Include="SGL_sprite.h" />

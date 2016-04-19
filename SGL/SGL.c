@@ -16,7 +16,7 @@ int SGL_Init(void)
 	SGL_InitDataSystem();
 	return 0;
 }
-SGL_Window SGL_CreateWindow(const char* title, int GLMajorVersion, int GLMinorVersion, int x, int y, int w, int h, Uint32 SDLflags)
+SGL_Window SGL_CreateWindow(const char* title, I32 GLMajorVersion, I32 GLMinorVersion, U32 bufferCount, I32 x, I32 y, I32 w, I32 h, Uint32 SDLflags)
 {
 #if defined(_WINDOWS)
 	SGL_Window window;
@@ -30,8 +30,13 @@ SGL_Window SGL_CreateWindow(const char* title, int GLMajorVersion, int GLMinorVe
 	SDL_GetClosestDisplayMode(0, &targetMode, &closestMode);
 	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, GLMajorVersion);
 	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, GLMinorVersion);
-	SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
+	
 	SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
+	SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
+
+	//SDL_GL_SetAttribute(SDL_GL_MULTISAMPLEBUFFERS, 1);
+	//SDL_GL_SetAttribute(SDL_GL_MULTISAMPLESAMPLES, 2); //2-8
+
 	window.handle = SDL_CreateWindow
 		(
 			title,
@@ -42,6 +47,7 @@ SGL_Window SGL_CreateWindow(const char* title, int GLMajorVersion, int GLMinorVe
 	window.rContext.glHandle = SDL_GL_CreateContext(window.handle);
 	glewExperimental = GL_TRUE;
 	glewInit();
+	glGetError();
 #elif defined(ANDROID)
 	SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_ES);
 	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, GLMajorVersion > 3 ? GLMajorVersion : 3);
@@ -73,9 +79,16 @@ SGL_Window SGL_CreateWindow(const char* title, int GLMajorVersion, int GLMinorVe
 	SDL_GetWindowSize(window.handle, &window.rContext.windowSize.x, &window.rContext.windowSize.y);
 	window.rContext.windowHalfSizef.x = (F32)window.rContext.windowSize.x*0.5f;
 	window.rContext.windowHalfSizef.y = (F32)window.rContext.windowSize.y*0.5f;
-	GLenum error = glGetError();
+	SDL_assert(bufferCount <= SGL_BUFFER_COUNT_MAX);
+	window.rContext.bufferCount = bufferCount;
+	glEnable(GL_MULTISAMPLE);
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	glEnable(GL_POINT_SPRITE);
+	glEnable(GL_VERTEX_PROGRAM_POINT_SIZE);
+	glPointParameteri(GL_POINT_SPRITE_COORD_ORIGIN, GL_LOWER_LEFT);
+	SGL_CHECK_GL_ERROR;
+	SDL_GL_SetSwapInterval(0);
 	for (size_t i = 0; i < SGL_CAMERA_COUNT; i++)
 	{
 		window.rContext.cameras[i].camType = 0;
@@ -206,14 +219,38 @@ inline SGL_UpdateCameras(SGL_RenderContext* rContext)
 			const float right = rContext->windowHalfSizef.x * rContext->cameras[i].scale;
 			const float bottom = rContext->windowHalfSizef.y * -rContext->cameras[i].scale;
 			const float top = rContext->windowHalfSizef.y * rContext->cameras[i].scale;
+			//rContext->cameras[i].vPMatrix.m00 = 2.0f / (right - left);
+			//rContext->cameras[i].vPMatrix.m11 = 2.0f / (top - bottom);
+			//rContext->cameras[i].vPMatrix.m22 = -1.0f;
+			////rContext->cameras[i].vPMatrix.m22 = -2.0f / (rContext->cameras[i].farPlane - rContext->cameras[i].nearPlane);
+			//rContext->cameras[i].vPMatrix.m30 = -(right + left) / (right - left);
+			//rContext->cameras[i].vPMatrix.m31 = -(top + bottom) / (top - bottom);
+			//rContext->cameras[i].vPMatrix.m32 = 0.0f;
+
 			rContext->cameras[i].vPMatrix.m00 = 2.0f / (right - left);
+			rContext->cameras[i].vPMatrix.m01 = 0.0f;
+			rContext->cameras[i].vPMatrix.m02 = 0.0f;
+			rContext->cameras[i].vPMatrix.m03 = 0.0f;
+			
+			rContext->cameras[i].vPMatrix.m10 = 0.0f;
 			rContext->cameras[i].vPMatrix.m11 = 2.0f / (top - bottom);
+			rContext->cameras[i].vPMatrix.m12 = 0.0f;
+			rContext->cameras[i].vPMatrix.m13 = 0.0f;
+			
+			rContext->cameras[i].vPMatrix.m20 = 0.0f;
+			rContext->cameras[i].vPMatrix.m21 = 0.0f;
 			rContext->cameras[i].vPMatrix.m22 = -1.0f;
 			//rContext->cameras[i].vPMatrix.m22 = -2.0f / (rContext->cameras[i].farPlane - rContext->cameras[i].nearPlane);
+			rContext->cameras[i].vPMatrix.m23 = 0.0f;
+			
 			rContext->cameras[i].vPMatrix.m30 = -(right + left) / (right - left);
 			rContext->cameras[i].vPMatrix.m31 = -(top + bottom) / (top - bottom);
 			rContext->cameras[i].vPMatrix.m32 = 0.0f;
+			rContext->cameras[i].vPMatrix.m33 = 1.0f;
+
 			//rContext->cameras[i].vPMatrix.m32 = -(rContext->cameras[i].farPlane + rContext->cameras[i].nearPlane) / (rContext->cameras[i].farPlane - rContext->cameras[i].nearPlane);
+			SGL_Mat4 rot = SM_QToM4(&rContext->cameras[i].rotation);
+			rContext->cameras[i].vPMatrix = SM_M4Multiply(&rot, &rContext->cameras[i].vPMatrix);
 			//SGL_Vec4 forward = { 0.0f, 0.0f, 1.0f, 0.0f };
 			//rContext->cameras[i].vPMatrix = SM_M4Rotate(&rContext->cameras[i].vPMatrix, rContext->cameras[i].rotation.z, &forward);
 			break;
@@ -247,6 +284,8 @@ inline SGL_UpdateCameras(SGL_RenderContext* rContext)
 void SGL_StartRender(SGL_Window * window)
 {
 	ADD_FLAGS(window->rContext.state, SGL_RENDER_STATE_RENDERING);
+	//
+	//glDisable(GL_BLEND);
 	SGL_UpdateCameras(&window->rContext);
 	glBindBuffer(GL_UNIFORM_BUFFER, window->rContext.uniformMatrixHandle);
 	glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(SGL_Mat4), &window->rContext.cameras[window->rContext.boundCamera].vPMatrix);

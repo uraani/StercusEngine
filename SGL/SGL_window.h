@@ -30,6 +30,7 @@ typedef struct _SGL_RenderContext
 	SGL_Shader shaders[SGL_SHADER_COUNT];
 	SGL_Vec2 windowHalfSizef;
 	SGL_Vec2i windowSize;
+	U32 bufferCount;
 	U32 state;
 	U32 uniformMatrixHandle;
 	U32 boundCamera;

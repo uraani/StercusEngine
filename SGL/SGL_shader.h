@@ -6,15 +6,19 @@ enum SGL_ShaderName
 	SGL_SHADER_DEBUG,
 	SGL_SHADER_COLOR,
 	SGL_SHADER_SPRITE,
+	SGL_SHADER_POINTSPRITE,
 	SGL_SHADER_COLOREDSPRITE,
 	SGL_SHADER_COUNT
 };
 typedef struct _SGL_Shader
 {
+	//openGL handle
 	U32 handle;
-	//size in 4 byte units
+	//size in byte units
 	U32 vertexSize;
-	void(*bindFunction)(void* vao, U32 shaderHandle, U32 vertexCount, U32 indexCount, U32 drawType);
+	//function that binds attributes to VAO
+	void(*bindFunction)(void* vao, U32 shaderHandle);
+	//shaders name
 	const char* name;
 } SGL_Shader;
 typedef struct _SGL_ShaderInfo

@@ -1,170 +1,180 @@
 #include "SGL.h"
-SGL_DynamicSpriteRenderer SGL_CreateDynamicSpriteRenderer(U32 spriteCountMax, const SGL_Tex2D* tex, const SGL_RenderContext* rContext)
+inline void LockBuffer(GLsync* gSync)
 {
-	SGL_DynamicSpriteRenderer dsr;
-	dsr.renderer = SGL_CreateDynamicRenderer(&rContext->shaders[SGL_SHADER_SPRITE], tex->handle, spriteCountMax *4, spriteCountMax *6);
-	dsr.texSize.x = (F32)tex->width;
-	dsr.texSize.y = (F32)tex->height;
-	dsr.spriteCount = 0;
-	dsr.spriteCountMax = spriteCountMax;
-	dsr.sprites = SDL_malloc(spriteCountMax*sizeof(SGL_Sprite));
-	return dsr;
-	
+	if (*gSync)
+	{
+		glDeleteSync(*gSync);
+	}
+	*gSync = glFenceSync(GL_SYNC_GPU_COMMANDS_COMPLETE, 0);
+}
+SGL_PointSpriteRenderer SGL_CreatePointSpriteRenderer(U32 spriteCountMax, const SGL_Tex2D * tex, const SGL_RenderContext * rContext)
+{
+	SGL_PointSpriteRenderer psr;
+	psr.vertexCount = spriteCountMax;
+	psr.texHandle = tex->handle;
+	psr.shaderHandle = rContext->shaders[SGL_SHADER_POINTSPRITE].handle;
+	psr.maxOffset = rContext->bufferCount;
+	psr.bufferOffset = 0;
+	glGenBuffers(1, &psr.VAO.VBO);
+	glGenVertexArrays(1, &psr.VAO.handle);
+	glBindVertexArray(psr.VAO.handle);
+	glBindBuffer(GL_ARRAY_BUFFER, psr.VAO.VBO);
+	GLbitfield flags = GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT;
+	glBufferStorage(GL_ARRAY_BUFFER, rContext->shaders[SGL_SHADER_POINTSPRITE].vertexSize *  spriteCountMax * psr.maxOffset, NULL, flags);
+	psr.vertexData = glMapBufferRange(GL_ARRAY_BUFFER, 0, rContext->shaders[SGL_SHADER_POINTSPRITE].vertexSize * spriteCountMax * psr.maxOffset, flags);
+	SGL_CHECK_GL_ERROR;
+	glUseProgram(psr.shaderHandle);
+	glEnableVertexAttribArray(0);
+	glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, rContext->shaders[SGL_SHADER_POINTSPRITE].vertexSize, BUFFER_OFFSET(0));
+	glEnableVertexAttribArray(2);
+	glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, rContext->shaders[SGL_SHADER_POINTSPRITE].vertexSize, BUFFER_OFFSET(sizeof(SGL_Vec2)));
+	glBindVertexArray(0);
+	SGL_CHECK_GL_ERROR;
+	psr.texSize.x = (F32)tex->width;
+	psr.texSize.y = (F32)tex->height;
+	for (size_t i = 0; i < psr.maxOffset; i++)
+	{
+		psr.syncs[i] = NULL;
+		psr.spriteCount[i] = 0;
+		LockBuffer(&psr.syncs[i]);
+	}
+	psr.spriteCountMax = spriteCountMax;
+	return psr;
 }
 SGL_SimpleSpriteRenderer SGL_CreateSimpleSpriteRenderer(U32 spriteCountMax, const SGL_Tex2D * tex, const SGL_RenderContext * rContext)
 {
 	SGL_SimpleSpriteRenderer ssr;
-	ssr.renderer = SGL_CreateDynamicRenderer(&rContext->shaders[SGL_SHADER_SPRITE], tex->handle, spriteCountMax * 4, spriteCountMax * 6);
+	ssr.mesh.vertexCount = spriteCountMax * 4;
+	ssr.mesh.indexCount = spriteCountMax * 6;
+	ssr.texHandle = tex->handle;
+	ssr.shaderHandle = rContext->shaders[SGL_SHADER_SPRITE].handle;
+	ssr.maxOffset = rContext->bufferCount;
+	ssr.bufferOffset = 0;
+	glGenBuffers(1, &ssr.VAO.VBO);
+	glGenBuffers(1, &ssr.VAO.EBO);
+	glGenVertexArrays(1, &ssr.VAO.handle);
+	glBindVertexArray(ssr.VAO.handle);
+	glBindBuffer(GL_ARRAY_BUFFER, ssr.VAO.VBO);
+	GLbitfield flags = GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT;
+	glBufferStorage(GL_ARRAY_BUFFER, rContext->shaders[SGL_SHADER_SPRITE].vertexSize *  spriteCountMax * 4 * ssr.maxOffset, NULL, flags);
+	ssr.mesh.vertexData = glMapBufferRange(GL_ARRAY_BUFFER, 0, rContext->shaders[SGL_SHADER_SPRITE].vertexSize * spriteCountMax * 4 * ssr.maxOffset, flags);
+	SGL_CHECK_GL_ERROR;
+	ssr.mesh.indexData = SDL_malloc(sizeof(U32) * spriteCountMax * 6);
+	for (U32 i = 0; i < spriteCountMax; i++)
+	{
+		ssr.mesh.indexData[i * 6 + 0] = i * 4 + 0;
+		ssr.mesh.indexData[i * 6 + 1] = i * 4 + 1;
+		ssr.mesh.indexData[i * 6 + 2] = i * 4 + 2;
+		ssr.mesh.indexData[i * 6 + 3] = i * 4 + 2;
+		ssr.mesh.indexData[i * 6 + 4] = i * 4 + 3;
+		ssr.mesh.indexData[i * 6 + 5] = i * 4 + 0;
+	}
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ssr.VAO.EBO);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(U32) * spriteCountMax * 6, ssr.mesh.indexData, GL_STATIC_DRAW);
+	SDL_free(ssr.mesh.indexData);
+	SGL_CHECK_GL_ERROR;
+	rContext->shaders[SGL_SHADER_SPRITE].bindFunction(&ssr.VAO, rContext->shaders[SGL_SHADER_SPRITE].handle);
+	ssr.texSize.x = (F32)tex->width;
+	ssr.texSize.y = (F32)tex->height;
+	for (size_t i = 0; i < ssr.maxOffset; i++)
+	{
+		ssr.syncs[i] = NULL;
+		ssr.spriteCount[i] = 0;
+		LockBuffer(&ssr.syncs[i]);
+	}
+	ssr.spriteCountMax = spriteCountMax;
+	return ssr;
+}
+SGL_StaticSpriteRenderer SGL_CreateStaticSpriteRenderer(U32 spriteCountMax, const SGL_Tex2D * tex, const SGL_RenderContext * rContext)
+{
+	SGL_StaticSpriteRenderer ssr;
+	ssr.mesh.vertexCount = spriteCountMax * 4;
+	ssr.mesh.indexCount = spriteCountMax * 6;
+	ssr.texHandle = tex->handle;
+	ssr.shaderHandle = rContext->shaders[SGL_SHADER_SPRITE].handle;
+	glGenBuffers(1, &ssr.VAO.VBO);
+	glGenBuffers(1, &ssr.VAO.EBO);
+	glGenVertexArrays(1, &ssr.VAO.handle);
+	glBindVertexArray(ssr.VAO.handle);
+	glBindBuffer(GL_ARRAY_BUFFER, ssr.VAO.VBO);
+	ssr.mesh.vertexData = SDL_malloc(rContext->shaders[SGL_SHADER_SPRITE].vertexSize *  spriteCountMax * 4);
+	ssr.mesh.indexData = SDL_malloc(sizeof(U32) * spriteCountMax * 6);
+	for (U32 i = 0; i < spriteCountMax; i++)
+	{
+		ssr.mesh.indexData[i * 6 + 0] = i * 4 + 0;
+		ssr.mesh.indexData[i * 6 + 1] = i * 4 + 1;
+		ssr.mesh.indexData[i * 6 + 2] = i * 4 + 2;
+		ssr.mesh.indexData[i * 6 + 3] = i * 4 + 2;
+		ssr.mesh.indexData[i * 6 + 4] = i * 4 + 3;
+		ssr.mesh.indexData[i * 6 + 5] = i * 4 + 0;
+	}
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ssr.VAO.EBO);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(U32) * spriteCountMax * 6, ssr.mesh.indexData, GL_STATIC_DRAW);
+	SDL_free(ssr.mesh.indexData);
+	SGL_CHECK_GL_ERROR;
+	rContext->shaders[SGL_SHADER_SPRITE].bindFunction(&ssr.VAO, rContext->shaders[SGL_SHADER_SPRITE].handle);
 	ssr.texSize.x = (F32)tex->width;
 	ssr.texSize.y = (F32)tex->height;
 	ssr.spriteCount = 0;
 	ssr.spriteCountMax = spriteCountMax;
 	return ssr;
 }
-void SGL_SimpleSpriteRendererDraw(SGL_SimpleSpriteRenderer* ssr, const SGL_RenderContext * rContext, float gamma, U32 debug)
+void SGL_StaticSpriteRendererDraw(SGL_StaticSpriteRenderer * ssr, const SGL_RenderContext * rContext, float opacity)
 {
-	if (CHECK_FLAGS(rContext->state, SGL_RENDER_STATE_RENDERING))
+	glBindTexture(GL_TEXTURE_2D, ssr->texHandle);
+	SGL_BindShader(rContext, ssr->shaderHandle);
+	GLint loc = glGetUniformLocation(ssr->shaderHandle, "gamma");
+	if (loc != -1)
 	{
-		for (size_t i = 0; i < ssr->spriteCount; i++)
-		{
-			ssr->renderer.mesh.indexData[i * 6 + 0] = i * 4 + 0;
-			ssr->renderer.mesh.indexData[i * 6 + 1] = i * 4 + 1;
-			ssr->renderer.mesh.indexData[i * 6 + 2] = i * 4 + 2;
-			ssr->renderer.mesh.indexData[i * 6 + 3] = i * 4 + 2;
-			ssr->renderer.mesh.indexData[i * 6 + 4] = i * 4 + 3;
-			ssr->renderer.mesh.indexData[i * 6 + 5] = i * 4 + 0;
-		}
+		glUniform1f(loc, opacity);
 	}
-	glBindBuffer(GL_ARRAY_BUFFER, ssr->renderer.VAO.VBO);
-	glBufferSubData(GL_ARRAY_BUFFER, 0, ssr->spriteCount*sizeof(SGL_SpriteData), ssr->renderer.mesh.vertexData);
-	glBindBuffer(GL_ARRAY_BUFFER, ssr->renderer.VAO.EBO);
-	glBufferSubData(GL_ARRAY_BUFFER, 0, ssr->spriteCount*sizeof(U32) * 6, ssr->renderer.mesh.indexData);
-	glBindTexture(GL_TEXTURE_2D, ssr->renderer.texHandle);
-	if (debug)
-	{
-		SGL_DrawDebugDynamicRenderer(rContext, &ssr->renderer, ssr->spriteCount * 6);
-	}
-	else
-	{
-		GLint loc = glGetUniformLocation(ssr->renderer.shaderHandle, "gamma");
-		if (loc != -1)
-		{
-			glUniform1f(loc, gamma);
-		}
-		SGL_DrawDynamicRenderer(rContext, &ssr->renderer, ssr->spriteCount * 6);
-	}
-	//glBufferData(GL_ARRAY_BUFFER, ssr->spriteCount*sizeof(SGL_SpriteData), NULL, GL_DYNAMIC_DRAW);
-	ssr->spriteCount = 0;
+	glBindVertexArray(ssr->VAO.handle);
+	glDrawElements(GL_TRIANGLES, ssr->spriteCount * 6, GL_UNSIGNED_INT, NULL);
+	glBindVertexArray(0);
 }
-void SGL_DynamicSpriteRendererDraw(SGL_DynamicSpriteRenderer* dsr, const SGL_RenderContext* rContext)
+void SGL_SimpleSpriteRendererDraw(SGL_SimpleSpriteRenderer* ssr, const SGL_RenderContext * rContext, float opacity)
 {
-	
-	if (CHECK_FLAGS(rContext->state, SGL_RENDER_STATE_RENDERING))
+	glBindTexture(GL_TEXTURE_2D, ssr->texHandle);
+	SGL_BindShader(rContext, ssr->shaderHandle);
+	GLint loc = glGetUniformLocation(ssr->shaderHandle, "gamma");
+	if (loc != -1)
 	{
-		///*
-		{
-			U32 timer = SDL_GetTicks();
-			const SGL_Vec2 quadPosition[] =
-			{
-				{  0.5f, 0.5f },
-				{ -0.5f, 0.5f },
-				{ -0.5f,-0.5f },
-				{  0.5f,-0.5f },
-			};
-			SGL_Vec2* vertexData = (SGL_Vec2*)dsr->renderer.mesh.vertexData;
-			U32 targetIndex = 0;
-			for (size_t i = 0; i < dsr->spriteCount; i++)
-			{
-				if (dsr->sprites[i].visible)
-				{
-					SGL_Vec4 uvs = SM_CalculateUVs(&dsr->sprites[i].region, &dsr->texSize);
-					vertexData[targetIndex*(sizeof(SGL_SpriteData)/sizeof(SGL_Vec2)) + 0] = SM_M3V2Multiply(&dsr->sprites[i].transform, &quadPosition[0]);
-					vertexData[targetIndex*(sizeof(SGL_SpriteData)/sizeof(SGL_Vec2)) + 1].x = uvs.f[2];
-					vertexData[targetIndex*(sizeof(SGL_SpriteData)/sizeof(SGL_Vec2)) + 1].y = uvs.f[3];
-					vertexData[targetIndex*(sizeof(SGL_SpriteData)/sizeof(SGL_Vec2)) + 2] = SM_M3V2Multiply(&dsr->sprites[i].transform, &quadPosition[1]);
-					vertexData[targetIndex*(sizeof(SGL_SpriteData)/sizeof(SGL_Vec2)) + 3].x = uvs.f[0];
-					vertexData[targetIndex*(sizeof(SGL_SpriteData)/sizeof(SGL_Vec2)) + 3].y = uvs.f[3];
-					vertexData[targetIndex*(sizeof(SGL_SpriteData)/sizeof(SGL_Vec2)) + 4] = SM_M3V2Multiply(&dsr->sprites[i].transform, &quadPosition[2]);
-					vertexData[targetIndex*(sizeof(SGL_SpriteData)/sizeof(SGL_Vec2)) + 5].x = uvs.f[0];
-					vertexData[targetIndex*(sizeof(SGL_SpriteData)/sizeof(SGL_Vec2)) + 5].y = uvs.f[1];
-					vertexData[targetIndex*(sizeof(SGL_SpriteData)/sizeof(SGL_Vec2)) + 6] = SM_M3V2Multiply(&dsr->sprites[i].transform, &quadPosition[3]);
-					vertexData[targetIndex*(sizeof(SGL_SpriteData)/sizeof(SGL_Vec2)) + 7].x = uvs.f[2];
-					vertexData[targetIndex*(sizeof(SGL_SpriteData)/sizeof(SGL_Vec2)) + 7].y = uvs.f[1];
-					targetIndex++;
-				}
-			}
-			targetIndex = 0;
-			for (size_t i = 0; i < dsr->spriteCount; i++)
-			{
-				if (dsr->sprites[i].visible)
-				{
-					dsr->renderer.mesh.indexData[targetIndex * 6 + 0] = targetIndex * 4 + 0;
-					dsr->renderer.mesh.indexData[targetIndex * 6 + 1] = targetIndex * 4 + 1;
-					dsr->renderer.mesh.indexData[targetIndex * 6 + 2] = targetIndex * 4 + 2;
-					dsr->renderer.mesh.indexData[targetIndex * 6 + 3] = targetIndex * 4 + 2;
-					dsr->renderer.mesh.indexData[targetIndex * 6 + 4] = targetIndex * 4 + 3;
-					dsr->renderer.mesh.indexData[targetIndex * 6 + 5] = targetIndex * 4 + 0;
-					targetIndex++;
-				}
-			}
-			SDL_Log("ticks spent in simple: %i", SDL_GetTicks() - timer);
-			glBindBuffer(GL_ARRAY_BUFFER, dsr->renderer.VAO.VBO);
-			glBufferSubData(GL_ARRAY_BUFFER, 0, dsr->spriteCount*sizeof(SGL_SpriteData), dsr->renderer.mesh.vertexData);
-			glBindBuffer(GL_ARRAY_BUFFER, dsr->renderer.VAO.EBO);
-			glBufferSubData(GL_ARRAY_BUFFER, 0, dsr->spriteCount*sizeof(U32) * 6, dsr->renderer.mesh.indexData);
-			//SGL_SpriteVertex* sVert = (SGL_SpriteVertex*)vertexData;
-			//for (size_t i = 0; i < 4; i++)
-			//{
-			//	SDL_Log("Vert:%i, X:%f, Y:%f, U:%f, V:%f", i, sVert[i].pos.x, sVert[i].pos.y, sVert[i].texCoord.x, sVert[i].texCoord.y);
-			//}
-			SGL_DrawDynamicRenderer(rContext, &dsr->renderer, targetIndex * 6);
-		}
-		//*/	
-		/*
-		{
-			U32 timer = SDL_GetTicks();
-			const SGL_Vec4 quadPosX = { 0.5f,-0.5f,-0.5f, 0.5f };
-			const SGL_Vec4 quadPosY = { 0.5f, 0.5f,-0.5f,-0.5f };
-			const SGL_Vec4 texSize = { dsr.texSize.x,dsr.texSize.y,dsr.texSize.x,dsr.texSize.y };
-			SGL_Vec2* vertexData = (SGL_Vec2*)dsr.renderer.mesh.vertexData;
-			for (size_t i = 0; i < dsr.spriteCount; i++)
-			{
-				SGL_Vec2x4 verts = SM_M3V2X4Multiply(&dsr.sprites[i].transform, &quadPosX, &quadPosY);
-				SGL_Vec4 uvs = SM_CalculateUVs(&dsr.sprites[i].region, &texSize);
-				vertexData[i*(sizeof(SGL_SpriteData)/sizeof(SGL_Vec2))] = verts.v[0];
-				vertexData[i*(sizeof(SGL_SpriteData)/sizeof(SGL_Vec2)) + 1].x = uvs.f[2];
-				vertexData[i*(sizeof(SGL_SpriteData)/sizeof(SGL_Vec2)) + 1].y = uvs.f[3];
-				vertexData[i*(sizeof(SGL_SpriteData)/sizeof(SGL_Vec2)) + 2] = verts.v[1];
-				vertexData[i*(sizeof(SGL_SpriteData)/sizeof(SGL_Vec2)) + 3].x = uvs.f[0];
-				vertexData[i*(sizeof(SGL_SpriteData)/sizeof(SGL_Vec2)) + 3].y = uvs.f[3];
-				vertexData[i*(sizeof(SGL_SpriteData)/sizeof(SGL_Vec2)) + 4] = verts.v[2];
-				vertexData[i*(sizeof(SGL_SpriteData)/sizeof(SGL_Vec2)) + 5].x = uvs.f[0];
-				vertexData[i*(sizeof(SGL_SpriteData)/sizeof(SGL_Vec2)) + 5].y = uvs.f[1];
-				vertexData[i*(sizeof(SGL_SpriteData)/sizeof(SGL_Vec2)) + 6] = verts.v[3];
-				vertexData[i*(sizeof(SGL_SpriteData)/sizeof(SGL_Vec2)) + 7].x = uvs.f[2];
-				vertexData[i*(sizeof(SGL_SpriteData)/sizeof(SGL_Vec2)) + 7].y = uvs.f[1];
-			}
-			for (size_t i = 0; i < dsr.spriteCount; i++)
-			{
-				dsr.renderer.mesh.indexData[i * 6] = i * 4 + 0;
-				dsr.renderer.mesh.indexData[i * 6 + 1] = i * 4 + 1;
-				dsr.renderer.mesh.indexData[i * 6 + 2] = i * 4 + 2;
-				dsr.renderer.mesh.indexData[i * 6 + 3] = i * 4 + 2;
-				dsr.renderer.mesh.indexData[i * 6 + 4] = i * 4 + 3;
-				dsr.renderer.mesh.indexData[i * 6 + 5] = i * 4 + 0;
-			}
-			SDL_Log("ticks spent in SIMD: %i", SDL_GetTicks() - timer);
-			glBindBuffer(GL_ARRAY_BUFFER, dsr.renderer.VAO.VBO);
-			glBufferSubData(GL_ARRAY_BUFFER, 0, dsr.spriteCount*sizeof(SGL_SpriteVertex) * 4, dsr.renderer.mesh.vertexData);
-			glBindBuffer(GL_ARRAY_BUFFER, dsr.renderer.VAO.EBO);
-			glBufferSubData(GL_ARRAY_BUFFER, 0, dsr.spriteCount*sizeof(U32) * 6, dsr.renderer.mesh.indexData);
-			//SGL_SpriteVertex* sVert = (SGL_SpriteVertex*)vertexData;
-			//for (size_t i = 0; i < 4; i++)
-			//{
-			//	SDL_Log("Vert:%i, X:%f, Y:%f, U:%f, V:%f", i, sVert[i].pos.x, sVert[i].pos.y, sVert[i].texCoord.x, sVert[i].texCoord.y);
-			//}
-			SGL_DrawDynamicRenderer(rContext, &dsr.renderer, dsr.spriteCount * 6);
-		}
-		//*/
+		glUniform1f(loc, opacity);
 	}
+	glBindVertexArray(ssr->VAO.handle);
+	glDrawElementsBaseVertex(GL_TRIANGLES, ssr->spriteCount[ssr->bufferOffset] * 6, GL_UNSIGNED_INT, NULL, ssr->bufferOffset*ssr->mesh.vertexCount);
+	glBindVertexArray(0);
+	LockBuffer(&ssr->syncs[ssr->bufferOffset]);
+	ssr->spriteCount[ssr->bufferOffset] = 0;
+	ssr->bufferOffset = (ssr->bufferOffset +1) % ssr->maxOffset;
+}
+void SGL_PointSpriteRendererDraw(SGL_PointSpriteRenderer * renderer, const SGL_RenderContext * rContext)
+{
+	glBindTexture(GL_TEXTURE_2D, renderer->texHandle);
+	SGL_BindShader(rContext, renderer->shaderHandle);
+	GLint loc = glGetUniformLocation(renderer->shaderHandle, "texSize");
+	if (loc != -1)
+	{
+		glUniform2f(loc, renderer->texSize.x, renderer->texSize.y);
+	}
+	glBindVertexArray(renderer->VAO.handle);
+	glDrawArrays(GL_POINTS, renderer->spriteCountMax*renderer->bufferOffset, renderer->spriteCount[renderer->bufferOffset]);
+	glBindVertexArray(0);
+	LockBuffer(&renderer->syncs[renderer->bufferOffset]);
+	renderer->spriteCount[renderer->bufferOffset] = 0;
+	renderer->bufferOffset = (renderer->bufferOffset + 1) % renderer->maxOffset;
+}
+void SGL_DestroySSRenderer(SGL_SimpleSpriteRenderer * ssr)
+{
+	glFinish();
+	glBindBuffer(GL_ARRAY_BUFFER, ssr->VAO.VBO);
+	SGL_CHECK_GL_ERROR;
+	glUnmapBuffer(GL_ARRAY_BUFFER);
+	SGL_CHECK_GL_ERROR;
+	glDeleteBuffers(1, &ssr->VAO.VBO);
+	SGL_CHECK_GL_ERROR;
+	glDeleteBuffers(1, &ssr->VAO.EBO);
+	SGL_CHECK_GL_ERROR;
+	glDeleteVertexArrays(1, &ssr->VAO.handle);
+	SGL_CHECK_GL_ERROR;
 }

@@ -37,13 +37,12 @@
   <PropertyGroup Label="Globals">
     <ProjectGuid>{DA208252-7E7A-4FDA-B3C7-E3B28A4DF7F1}</ProjectGuid>
     <RootNamespace>SGLdemo</RootNamespace>
-    <WindowsTargetPlatformVersion>8.1</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
-    <PlatformToolset>v140</PlatformToolset>
+    <PlatformToolset>v140_xp</PlatformToolset>
     <CharacterSet>MultiByte</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
@@ -125,49 +124,49 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">
-    <IncludePath>..\vulkan\include;..\glew-1.13.0\include;..\lpng1621;..\SGL;..\SDL2VC;..\SDL2-2.0.4\include;..\SDL2_image-2.0.1;$(IncludePath)</IncludePath>
+    <IncludePath>..\AntTweakBar\include;..\glew-1.13.0\include;..\lpng1621;..\SGL;..\SDL2VC;..\SDL2-2.0.4\include;..\SDL2_image-2.0.1;$(IncludePath)</IncludePath>
     <LibraryPath>..\SGL\x86\RelWithDebInfo;$(LibraryPath)</LibraryPath>
     <IntDir>SGLdemo.dir\x86\$(Configuration)\</IntDir>
     <OutDir>x86\$(Configuration)\</OutDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <IncludePath>..\vulkan\include;..\glew-1.13.0\include;..\lpng1621;..\SGL;..\SDL2VC;..\SDL2-2.0.4\include;..\SDL2_image-2.0.1;$(IncludePath)</IncludePath>
+    <IncludePath>..\AntTweakBar\include;..\glew-1.13.0\include;..\lpng1621;..\SGL;..\SDL2VC;..\SDL2-2.0.4\include;..\SDL2_image-2.0.1;$(IncludePath)</IncludePath>
     <LibraryPath>..\SGL\x86\Debug;$(LibraryPath)</LibraryPath>
     <IntDir>SGLdemo.dir\x86\$(Configuration)\</IntDir>
     <OutDir>x86\$(Configuration)\</OutDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|Win32'">
-    <IncludePath>..\vulkan\include;..\glew-1.13.0\include;..\lpng1621;..\SGL;..\SDL2VC;..\SDL2-2.0.4\include;..\SDL2_image-2.0.1;$(IncludePath)</IncludePath>
+    <IncludePath>..\AntTweakBar\include;..\glew-1.13.0\include;..\lpng1621;..\SGL;..\SDL2VC;..\SDL2-2.0.4\include;..\SDL2_image-2.0.1;$(IncludePath)</IncludePath>
     <LibraryPath>..\SGL\x86\MinSizeRel;$(LibraryPath)</LibraryPath>
     <IntDir>SGLdemo.dir\x86\$(Configuration)\</IntDir>
     <OutDir>x86\$(Configuration)\</OutDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-    <IncludePath>..\vulkan\include;..\glew-1.13.0\include;..\lpng1621;..\SGL;..\SDL2VC;..\SDL2-2.0.4\include;..\SDL2_image-2.0.1;$(IncludePath)</IncludePath>
+    <IncludePath>..\AntTweakBar\include;..\glew-1.13.0\include;..\lpng1621;..\SGL;..\SDL2VC;..\SDL2-2.0.4\include;..\SDL2_image-2.0.1;$(IncludePath)</IncludePath>
     <LibraryPath>..\SGL\x86\Release;$(LibraryPath)</LibraryPath>
     <IntDir>SGLdemo.dir\x86\$(Configuration)\</IntDir>
     <OutDir>x86\$(Configuration)\</OutDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">
-    <IncludePath>..\vulkan\include;..\glew-1.13.0\include;..\lpng1621;..\SGL;..\SDL2VC;..\SDL2-2.0.4\include;..\SDL2_image-2.0.1;$(IncludePath)</IncludePath>
+    <IncludePath>..\AntTweakBar\include;..\glew-1.13.0\include;..\lpng1621;..\SGL;..\SDL2VC;..\SDL2-2.0.4\include;..\SDL2_image-2.0.1;$(IncludePath)</IncludePath>
     <LibraryPath>..\SGL\x64\RelWithDebInfo;$(LibraryPath)</LibraryPath>
     <OutDir>$(Platform)\$(Configuration)\</OutDir>
     <IntDir>SGLdemo.dir\$(Platform)\$(Configuration)\</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <IncludePath>..\vulkan\include;..\glew-1.13.0\include;..\lpng1621;..\SGL;..\SDL2VC;..\SDL2-2.0.4\include;..\SDL2_image-2.0.1;$(IncludePath)</IncludePath>
+    <IncludePath>..\AntTweakBar\include;..\glew-1.13.0\include;..\lpng1621;..\SGL;..\SDL2VC;..\SDL2-2.0.4\include;..\SDL2_image-2.0.1;$(IncludePath)</IncludePath>
     <LibraryPath>..\SGL\x64\Debug;$(LibraryPath)</LibraryPath>
     <OutDir>$(Platform)\$(Configuration)\</OutDir>
     <IntDir>SGLdemo.dir\$(Platform)\$(Configuration)\</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">
-    <IncludePath>..\vulkan\include;..\glew-1.13.0\include;..\lpng1621;..\SGL;..\SDL2VC;..\SDL2-2.0.4\include;..\SDL2_image-2.0.1;$(IncludePath)</IncludePath>
+    <IncludePath>..\AntTweakBar\include;..\glew-1.13.0\include;..\lpng1621;..\SGL;..\SDL2VC;..\SDL2-2.0.4\include;..\SDL2_image-2.0.1;$(IncludePath)</IncludePath>
     <LibraryPath>..\SGL\x64\MinSizeRel;$(LibraryPath)</LibraryPath>
     <OutDir>$(Platform)\$(Configuration)\</OutDir>
     <IntDir>SGLdemo.dir\$(Platform)\$(Configuration)\</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <IncludePath>..\vulkan\include;..\glew-1.13.0\include;..\lpng1621;..\SGL;..\SDL2VC;..\SDL2-2.0.4\include;..\SDL2_image-2.0.1;$(IncludePath)</IncludePath>
+    <IncludePath>..\AntTweakBar\include;..\glew-1.13.0\include;..\lpng1621;..\SGL;..\SDL2VC;..\SDL2-2.0.4\include;..\SDL2_image-2.0.1;$(IncludePath)</IncludePath>
     <LibraryPath>..\SGL\x64\Release;$(LibraryPath)</LibraryPath>
     <OutDir>$(Platform)\$(Configuration)\</OutDir>
     <IntDir>SGLdemo.dir\$(Platform)\$(Configuration)\</IntDir>
@@ -178,7 +177,7 @@
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
       <EnableEnhancedInstructionSet>NotSet</EnableEnhancedInstructionSet>
-      <PreprocessorDefinitions>VK_USE_PLATFORM_WIN32_KHR;VK_PROTOTYPES;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>TW_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
     </ClCompile>
     <Link>
@@ -192,7 +191,7 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>VK_USE_PLATFORM_WIN32_KHR;VK_PROTOTYPES;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>TW_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
     </ClCompile>
     <Link>
@@ -208,7 +207,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>VK_USE_PLATFORM_WIN32_KHR;VK_PROTOTYPES;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>TW_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
@@ -225,7 +224,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>VK_USE_PLATFORM_WIN32_KHR;VK_PROTOTYPES;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>TW_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
@@ -242,7 +241,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>VK_USE_PLATFORM_WIN32_KHR;VK_PROTOTYPES;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>TW_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
@@ -259,7 +258,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>VK_USE_PLATFORM_WIN32_KHR;VK_PROTOTYPES;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>TW_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
@@ -276,7 +275,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>VK_USE_PLATFORM_WIN32_KHR;VK_PROTOTYPES;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>TW_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
@@ -293,7 +292,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>VK_USE_PLATFORM_WIN32_KHR;VK_PROTOTYPES;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>TW_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
@@ -312,7 +311,27 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="..\AntTweakBar\src\TwBar.cpp" />
+    <ClCompile Include="..\AntTweakBar\src\TwColors.cpp" />
+    <ClCompile Include="..\AntTweakBar\src\TwEventSDL2.cpp" />
+    <ClCompile Include="..\AntTweakBar\src\TwFonts.cpp" />
+    <ClCompile Include="..\AntTweakBar\src\TwMgr.cpp" />
+    <ClCompile Include="..\AntTweakBar\src\TwOpenGLCore.cpp" />
     <ClCompile Include="demo.cpp" />
+    <ClCompile Include="entity.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\AntTweakBar\src\AntPerfTimer.h" />
+    <ClInclude Include="..\AntTweakBar\src\resource.h" />
+    <ClInclude Include="..\AntTweakBar\src\res\TwXCursors.h" />
+    <ClInclude Include="..\AntTweakBar\src\TwBar.h" />
+    <ClInclude Include="..\AntTweakBar\src\TwColors.h" />
+    <ClInclude Include="..\AntTweakBar\src\TwFonts.h" />
+    <ClInclude Include="..\AntTweakBar\src\TwGraph.h" />
+    <ClInclude Include="..\AntTweakBar\src\TwMgr.h" />
+    <ClInclude Include="..\AntTweakBar\src\TwOpenGLCore.h" />
+    <ClInclude Include="..\AntTweakBar\src\TwPrecomp.h" />
+    <ClInclude Include="entity.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
