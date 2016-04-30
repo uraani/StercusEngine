@@ -32,7 +32,7 @@ int main(int argc, char* argv[])
 	U32 anim = false;
 	float animSpeed = 0.1f;
 	float opacity = 0.0f;
-	SGL_StaticSpriteRenderer sssr = SGL_CreateStaticSpriteRenderer(spriteMaxCount, &tex, &window.rContext);
+	//SGL_StaticSpriteRenderer sssr = SGL_CreateStaticSpriteRenderer(spriteMaxCount, &tex, &window.rContext);
 	SGL_PointSpriteRenderer psr = SGL_CreatePointSpriteRenderer(spriteMaxCount, &tex, &window.rContext);
 	SGL_SimpleSpriteRenderer ssr = SGL_CreateSimpleSpriteRenderer(spriteMaxCount, &tex, &window.rContext);
 	SGL_TexRegion texReg = {spriteSize, spriteSize, spriteSize, spriteSize };
@@ -79,9 +79,9 @@ int main(int argc, char* argv[])
 			SDL_cosf(rot)*speed,
 			SDL_sinf(rot)*speed,
 		};
-		SGL_AddStaticSpritePS(&sssr, posVecs[i], scaleVecs[i], texReg);
+		//SGL_AddStaticSpritePS(&sssr, posVecs[i], scaleVecs[i], texReg);
 	}
-	SGL_StaticSpriteRendererCommit(&sssr);
+	//SGL_StaticSpriteRendererCommit(&sssr);
 	float animTimer = 0;
 	float spriteOffset = 0;
 	bool quit = false;
@@ -282,7 +282,7 @@ int main(int argc, char* argv[])
 			SGL_AddPointSpritePS(&psr, posVecs[i], sqrTexReg);
 		}
 		SGL_StartRender(&window);
-		SGL_StaticSpriteRendererDraw(&sssr, &window.rContext, opacity);
+		//SGL_StaticSpriteRendererDraw(&sssr, &window.rContext, opacity);
 		SGL_SimpleSpriteRendererDraw(&ssr, &window.rContext, opacity);
 		SGL_PointSpriteRendererDraw(&psr, &window.rContext);
 		TwDraw();
