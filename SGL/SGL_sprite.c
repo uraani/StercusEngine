@@ -132,15 +132,10 @@ void SGL_StaticSpriteRendererDraw(SGL_StaticSpriteRenderer * ssr, const SGL_Rend
 	glDrawElements(GL_TRIANGLES, ssr->spriteCount * 6, GL_UNSIGNED_INT, NULL);
 	glBindVertexArray(0);
 }
-void SGL_SimpleSpriteRendererDraw(SGL_SimpleSpriteRenderer* ssr, const SGL_RenderContext * rContext, float opacity)
+void SGL_SimpleSpriteRendererDraw(SGL_SimpleSpriteRenderer* ssr, const SGL_RenderContext * rContext)
 {
 	glBindTexture(GL_TEXTURE_2D, ssr->texHandle);
 	SGL_BindShader(rContext, ssr->shaderHandle);
-	GLint loc = glGetUniformLocation(ssr->shaderHandle, "gamma");
-	if (loc != -1)
-	{
-		glUniform1f(loc, opacity);
-	}
 	glBindVertexArray(ssr->VAO.handle);
 	glDrawElementsBaseVertex(GL_TRIANGLES, ssr->spriteCount[ssr->bufferOffset] * 6, GL_UNSIGNED_INT, NULL, ssr->bufferOffset*ssr->mesh.vertexCount);
 	glBindVertexArray(0);

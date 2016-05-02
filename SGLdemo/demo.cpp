@@ -2,8 +2,36 @@
 #include "entity.h"
 #include <AntTweakBar.h>
 #include <thread>
+void TestRenderLoop()
+{
+SGL_Init();
+SGL_Window window = SGL_CreateWindow("SGLDemo", 4, 5, 3, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 800, 600, SDL_WINDOW_RESIZABLE | SDL_WINDOW_OPENGL);
+SGL_Camera* camera0 = SGL_CreateCamera(&window.rContext, SGL_CAMERA_TYPE_ORTHO, SGL_CAMERA_ORTHO, 0.1f, 2.0f, degreesToRadians(45.0f), 1.0f);
+SGL_BindCamera(&window.rContext, SGL_CAMERA_ORTHO);
+SGL_DataSelect("Demo_data");
+SDL_Surface* surf = SGL_DataLoadImage("spriteGridTex");
+SGL_Tex2D tex = { surf->pixels, 0, GL_BGRA, GL_RGBA8, surf->w, surf->h };
+SGL_CreateTextures(&tex, &SGL_ParamsNearest, 1);
+SGL_SimpleSpriteRenderer ssr = SGL_CreateSimpleSpriteRenderer(10, &tex, &window.rContext);
+SGL_TexRegion texReg = { 64.0f,  64.0f,  64.0f,  64.0f };
+SGL_Vec2 scale = { 64.0f, 64.0f };
+bool quit = false;
+while (!quit)
+{
+	SGL_RendererSync(ssr.syncs[ssr.bufferOffset]);
+	for (size_t i = 0; i < 10; i++)
+	{
+		SGL_Vec2 pos = { i*64.0f-window.rContext.windowHalfSizef.x+32.0f, 0.0f };
+		SGL_AddSpritePS(&ssr, pos, scale, texReg);
+	}
+	SGL_StartRender(&window);
+	SGL_SimpleSpriteRendererDraw(&ssr, &window.rContext);
+	SGL_EndRender(&window);
+}
+}
 int main(int argc, char* argv[])
 {
+	//TestRenderLoop();
 #define SPRITE_COUNT 1000000
 #define SPRITE_COUNT_STRING "1000000"
 	SGL_Init();
@@ -27,7 +55,7 @@ int main(int argc, char* argv[])
 	U32 actualDrawCount = 0;
 	float rotation = degreesToRadians(-0.0f);
 	float speed = 0.0f;
-	float spriteSize = 8.0f;
+	float spriteSize = 32.0f;
 	float spriteSizeHalf = spriteSize*0.5f;
 	U32 anim = false;
 	float animSpeed = 0.1f;
@@ -42,8 +70,8 @@ int main(int argc, char* argv[])
 	SGL_Vec2 * directions = (SGL_Vec2*)SDL_malloc(sizeof(SGL_Vec2)*spriteMaxCount);
 	Entity* entities = (Entity*)SDL_calloc(1, sizeof(Entity)*entityMaxCount);
 	entities[0].transform.rotation = rotation;
-	entities[0].transform.scale.x = spriteSize;
-	entities[0].transform.scale.y = spriteSize;
+	entities[0].transform.scale.x = spriteSize*2;
+	entities[0].transform.scale.y = spriteSize*2;
 	entities[0].transform.position.x = 0.375f;
 	entities[0].transform.position.y = 0.375f;
 	SM_UpdateTransform(&entities[0].transform);
@@ -283,7 +311,7 @@ int main(int argc, char* argv[])
 		}
 		SGL_StartRender(&window);
 		//SGL_StaticSpriteRendererDraw(&sssr, &window.rContext, opacity);
-		SGL_SimpleSpriteRendererDraw(&ssr, &window.rContext, opacity);
+		SGL_SimpleSpriteRendererDraw(&ssr, &window.rContext);
 		SGL_PointSpriteRendererDraw(&psr, &window.rContext);
 		TwDraw();
 		SGL_EndRender(&window);
@@ -294,4 +322,5 @@ int main(int argc, char* argv[])
 	SGL_DestroyWindow(&window);
 	SGL_Quit();
 	return EXIT_SUCCESS;
+	//*/
 }

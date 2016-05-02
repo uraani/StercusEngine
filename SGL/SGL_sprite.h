@@ -128,34 +128,34 @@ inline void SGL_AddStaticSpritePS(SGL_StaticSpriteRenderer* ssr, SGL_Vec2 pos, S
 }
 inline void SGL_AddSpritePS(SGL_SimpleSpriteRenderer* ssr, SGL_Vec2 pos, SGL_Vec2 size, SGL_TexRegion reg)
 {
-	SDL_assert(ssr->spriteCount[ssr->bufferOffset] < ssr->spriteCountMax);
-	const SGL_Vec2 quadPosition[] =
-	{
-		{ 0.5f, 0.5f },
-		{ -0.5f, 0.5f },
-		{ -0.5f,-0.5f },
-		{ 0.5f,-0.5f },
-	};
-	SGL_SpriteData* vertexData = (SGL_SpriteData*)ssr->mesh.vertexData;
-	SGL_Vec4 uvs = SM_CalculateUVs(&reg, &ssr->texSize);
-	size_t spriteOffset = ssr->spriteCountMax*ssr->bufferOffset + ssr->spriteCount[ssr->bufferOffset];
-	vertexData[spriteOffset].verts[0].pos.x = quadPosition[0].x * size.x + pos.x;
-	vertexData[spriteOffset].verts[0].pos.y = quadPosition[0].y * size.y + pos.y;
-	vertexData[spriteOffset].verts[0].uvs.x = uvs.f[2];
-	vertexData[spriteOffset].verts[0].uvs.y = uvs.f[3];
-	vertexData[spriteOffset].verts[1].pos.x = quadPosition[1].x * size.x + pos.x;
-	vertexData[spriteOffset].verts[1].pos.y = quadPosition[1].y * size.y + pos.y;
-	vertexData[spriteOffset].verts[1].uvs.x = uvs.f[0];
-	vertexData[spriteOffset].verts[1].uvs.y = uvs.f[3];
-	vertexData[spriteOffset].verts[2].pos.x = quadPosition[2].x * size.x + pos.x;
-	vertexData[spriteOffset].verts[2].pos.y = quadPosition[2].y * size.y + pos.y;
-	vertexData[spriteOffset].verts[2].uvs.x = uvs.f[0];
-	vertexData[spriteOffset].verts[2].uvs.y = uvs.f[1];
-	vertexData[spriteOffset].verts[3].pos.x = quadPosition[3].x * size.x + pos.x;
-	vertexData[spriteOffset].verts[3].pos.y = quadPosition[3].y * size.y + pos.y;
-	vertexData[spriteOffset].verts[3].uvs.x = uvs.f[2];
-	vertexData[spriteOffset].verts[3].uvs.y = uvs.f[1];
-	ssr->spriteCount[ssr->bufferOffset]++;
+SDL_assert(ssr->spriteCount[ssr->bufferOffset] < ssr->spriteCountMax);
+const SGL_Vec2 quadPosition[] =
+{
+	{ 0.5f, 0.5f },
+	{ -0.5f, 0.5f },
+	{ -0.5f,-0.5f },
+	{ 0.5f,-0.5f },
+};
+SGL_SpriteData* vertexData = (SGL_SpriteData*)ssr->mesh.vertexData;
+SGL_Vec4 uvs = SM_CalculateUVs(&reg, &ssr->texSize);
+size_t spriteOffset = ssr->spriteCountMax*ssr->bufferOffset + ssr->spriteCount[ssr->bufferOffset];
+vertexData[spriteOffset].verts[0].pos.x = quadPosition[0].x * size.x + pos.x;
+vertexData[spriteOffset].verts[0].pos.y = quadPosition[0].y * size.y + pos.y;
+vertexData[spriteOffset].verts[0].uvs.x = uvs.f[2];
+vertexData[spriteOffset].verts[0].uvs.y = uvs.f[3];
+vertexData[spriteOffset].verts[1].pos.x = quadPosition[1].x * size.x + pos.x;
+vertexData[spriteOffset].verts[1].pos.y = quadPosition[1].y * size.y + pos.y;
+vertexData[spriteOffset].verts[1].uvs.x = uvs.f[0];
+vertexData[spriteOffset].verts[1].uvs.y = uvs.f[3];
+vertexData[spriteOffset].verts[2].pos.x = quadPosition[2].x * size.x + pos.x;
+vertexData[spriteOffset].verts[2].pos.y = quadPosition[2].y * size.y + pos.y;
+vertexData[spriteOffset].verts[2].uvs.x = uvs.f[0];
+vertexData[spriteOffset].verts[2].uvs.y = uvs.f[1];
+vertexData[spriteOffset].verts[3].pos.x = quadPosition[3].x * size.x + pos.x;
+vertexData[spriteOffset].verts[3].pos.y = quadPosition[3].y * size.y + pos.y;
+vertexData[spriteOffset].verts[3].uvs.x = uvs.f[2];
+vertexData[spriteOffset].verts[3].uvs.y = uvs.f[1];
+ssr->spriteCount[ssr->bufferOffset]++;
 }
 inline void SGL_AddSpriteM3(SGL_SimpleSpriteRenderer* ssr, SGL_Mat3* mat3, SGL_TexRegion reg)
 {
@@ -189,6 +189,6 @@ inline void SGL_AddSpriteM3(SGL_SimpleSpriteRenderer* ssr, SGL_Mat3* mat3, SGL_T
 	ssr->spriteCount[ssr->bufferOffset]++;
 }
 extern void SGL_StaticSpriteRendererDraw(SGL_StaticSpriteRenderer* renderer, const SGL_RenderContext* rContext, float opacity);
-extern void SGL_SimpleSpriteRendererDraw(SGL_SimpleSpriteRenderer* renderer, const SGL_RenderContext* rContext, float opacity);
+extern void SGL_SimpleSpriteRendererDraw(SGL_SimpleSpriteRenderer* renderer, const SGL_RenderContext* rContext);
 extern void SGL_PointSpriteRendererDraw(SGL_PointSpriteRenderer* renderer, const SGL_RenderContext* rContext);
 extern void SGL_DestroySSRenderer(SGL_SimpleSpriteRenderer* renderer);
