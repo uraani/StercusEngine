@@ -591,6 +591,17 @@ inline const SGL_Vec2 SM_V2Normalize(const SGL_Vec2 a)
 	r.y = a.y / m;
 	return r;
 }
+inline const float SM_V2Magnitude(const SGL_Vec2 a)
+{
+	return SDL_sqrtf(a.x * a.x + a.y * a.y);
+}
+inline const SGL_Vec2 SM_V2Substract(const SGL_Vec2 a, const SGL_Vec2 b)
+{
+	SGL_Vec2 r;
+	r.x = a.x - b.x;
+	r.y = a.y - b.y;
+	return r;
+}
 inline const SGL_Vec2 SM_V2Add(const SGL_Vec2 a, const SGL_Vec2 b)
 {
 	SGL_Vec2 r;

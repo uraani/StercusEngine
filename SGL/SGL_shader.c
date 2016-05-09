@@ -45,6 +45,7 @@ const SGL_ShaderInfo colorShader[] =
 		"{"
 		"	color = vColor;"
 		"	gl_Position = vPMatrix * vec4(vPosition, 1.0, 1.0);"
+		//"	gl_Position = vec4(vPosition, 1.0, 1.0);"
 		"}"
 	},
 	{
@@ -84,18 +85,52 @@ const SGL_ShaderInfo spriteShader[] =
 		GL_FRAGMENT_SHADER,
 		"#version 330 core\n"
 		"uniform sampler2D tex;"
-		"uniform float gamma;"
 		"in vec2 texCoord;"
 		"out vec4 fColor;"
 		"void main()"
 		"{"
-		"	fColor = texture(tex, texCoord)+vec4(0.0,0.0,0.0,gamma);"
+		"	fColor = texture(tex, texCoord);"
 		"}"
 	},
 	{
 		GL_NONE,
 		NULL
 	}
+};
+const SGL_ShaderInfo offsetSpriteShader[] =
+{
+	{
+		GL_VERTEX_SHADER,
+		"#version 330\n"
+		"layout (std140) uniform globalMatrices\n"
+		"{\n"
+		"	mat4 vPMatrix;\n"
+		"};\n"
+		"uniform vec2 offset;"
+		"layout(location = 0) in vec2 vPosition;"	//0
+		"layout(location = 2) in vec2 vTexCoord;"	//2
+		"out vec2 texCoord;"
+		"void main()"
+		"{"
+		"	texCoord = vTexCoord;"
+		"	gl_Position = vPMatrix * vec4(vPosition+offset, 1.0, 1.0);"
+		"}"
+	},
+	{
+		GL_FRAGMENT_SHADER,
+		"#version 330 core\n"
+		"uniform sampler2D tex;"
+		"in vec2 texCoord;"
+		"out vec4 fColor;"
+		"void main()"
+		"{"
+		"	fColor = texture(tex, texCoord);"
+		"}"
+		},
+		{
+			GL_NONE,
+			NULL
+		}
 };
 const SGL_ShaderInfo pointSpriteShader[] =
 {
@@ -172,46 +207,71 @@ const SGL_ShaderInfo coloredSpriteShader[] =
 		NULL
 	}
 };
+const SGL_ShaderInfo screenSpaceColorShader[] =
+{
+	{
+		GL_VERTEX_SHADER,
+		"#version 330 core\n"
+		"layout(location = 0) in vec2 vPosition;"
+		"layout(location = 1) in vec4 vColor;"
+		"out vec4 color;"
+		"void main()"
+		"{"
+		"	color = vColor;"
+		"	gl_Position = vec4(vPosition, 1.0, 1.0);"
+		"}"
+	},
+	{
+		GL_FRAGMENT_SHADER,
+		"#version 330 core\n"
+		"in vec4 color;"
+		"out vec4 fColor;"
+		"void main()"
+		"{"
+		"	fColor = color;"
+		"}"
+	},
+	{
+		GL_NONE,
+		NULL
+	}
+};
 const char* shaderNames[] =
 {
 	"         Debug Shader",
 	"         Color Shader",
 	"        Sprite Shader",
+	" Offset Sprite Shader",
 	"   PointSprite Shader",
 	"Colored Sprite Shader",
+	"      SP Color Shader",
 };
 const SGL_ShaderInfo* builtInShaders[] =
 {
 	&debugShader,
 	&colorShader,
 	&spriteShader,
+	&offsetSpriteShader,
 	&pointSpriteShader,
 	&coloredSpriteShader,
+	&screenSpaceColorShader,
 };
 const U32 shaderVertSizes[] =
 {
 	sizeof(SGL_Vec2),
 	sizeof(SGL_Vec2) + sizeof(SGL_Color),
 	sizeof(SGL_Vec2) + sizeof(SGL_Vec2),
+	sizeof(SGL_Vec2) + sizeof(SGL_Vec2),
 	sizeof(SGL_Vec2) + sizeof(SGL_Vec3),
 	sizeof(SGL_Vec2) + sizeof(SGL_Vec2) + sizeof(SGL_Color),
+	sizeof(SGL_Vec2) + sizeof(SGL_Color),
 };
 void colorShaderBindFunction(void* vao, U32 shaderHandle)
 {
 	SGL_VAO* VAO = (SGL_VAO*)vao;
-	//glGenBuffers(VAO->maxOffset, &VAO->VBO);
-
-	glGenVertexArrays(1, &VAO->handle);
 	glBindVertexArray(VAO->handle);
-
-	glBindBuffer(GL_ARRAY_BUFFER, VAO->VBO);
-	//glBufferData(GL_ARRAY_BUFFER, vertexCount * shaderVertSizes[SGL_SHADER_COLOR], NULL, drawType);
-
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, VAO->EBO);
-	//glBufferData(GL_ELEMENT_ARRAY_BUFFER, indexCount * sizeof(U32), NULL, drawType);
-
-	//binding starts here
 	glUseProgram(shaderHandle);
+	glBindBuffer(GL_ARRAY_BUFFER, VAO->VBO);
 
 	glEnableVertexAttribArray(0);
 	glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, shaderVertSizes[SGL_SHADER_COLOR], BUFFER_OFFSET(0));
@@ -219,8 +279,8 @@ void colorShaderBindFunction(void* vao, U32 shaderHandle)
 	glEnableVertexAttribArray(1);
 	glVertexAttribPointer(1, 4, GL_UNSIGNED_BYTE, GL_TRUE, shaderVertSizes[SGL_SHADER_COLOR], BUFFER_OFFSET(sizeof(SGL_Vec2)));
 
-	glBindBuffer(GL_ARRAY_BUFFER, 0);
 	glBindVertexArray(0);
+	SGL_CHECK_GL_ERROR;
 }
 void spriteShaderBindFunction(void* vao, U32 shaderHandle)
 {
@@ -271,8 +331,10 @@ const void(*shaderFunctions[])(void* vao, U32 shaderHandle) =
 	NULL,
 	&colorShaderBindFunction,
 	&spriteShaderBindFunction,
+	&spriteShaderBindFunction,
 	NULL,
 	&coloredSpriteShaderBindFunction,
+	&colorShaderBindFunction,
 };
 inline U32 CreateProgram(SGL_ShaderInfo* shaders)
 {
@@ -426,7 +488,11 @@ U32 SGL_LoadShaders(SGL_RenderContext * rContext)
 		rContext->shaders[i].vertexSize = shaderVertSizes[i];
 		rContext->shaders[i].bindFunction = shaderFunctions[i];
 		rContext->shaders[i].name = shaderNames[i];
-		BindShaderToMatrixBlock(rContext->shaders[i].handle);
+		//screen space shaders shouldnt be bound to the matrix block
+		if (i < SGL_SHADER_SP_START)
+		{
+			BindShaderToMatrixBlock(rContext->shaders[i].handle);
+		}
 		if (rContext->shaders[i].handle == 0)
 		{
 			result = SGL_FALSE;
