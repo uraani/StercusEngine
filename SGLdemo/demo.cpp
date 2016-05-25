@@ -21,7 +21,7 @@ void TestRenderLoop()
 	SDL_Surface* surf = SGL_DataLoadImage("spriteGridTex");
 	SGL_Tex2D tex = { surf->pixels, 0, GL_BGRA, GL_RGBA8, surf->w, surf->h };
 	SGL_CreateTextures(&tex, &SGL_ParamsNearest, 1);
-	SGL_SimpleSpriteRenderer ssr = SGL_CreateSimpleSpriteRenderer(10, &tex, &window.rContext);
+	SGL_DynamicRenderer ssr = SGL_CreateSimpleSpriteRenderer(10, &tex, &window.rContext);
 	SGL_TexRegion texReg = { 64.0f,  64.0f,  64.0f,  64.0f };
 	SGL_Vec2 scale = { 64.0f, 64.0f };
 	bool quit = false;
@@ -50,8 +50,8 @@ int main(int argc, char* argv[])
 	SDL_Log("%i concurrent threads are suggested (sdl2)", SDL_GetCPUCount());
 	U32 bufferCount = 3;
 	U32 lastBufferCount = bufferCount;
-	//SGL_Window window = SGL_CreateWindow("SGLDemo", 4, 5, bufferCount, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 800, 600, SDL_WINDOW_RESIZABLE | SDL_WINDOW_OPENGL);
-	SGL_Window window = SGL_CreateWindow("SGLDemo", 4, 5, bufferCount, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 0, 0, SDL_WINDOW_FULLSCREEN_DESKTOP | SDL_WINDOW_BORDERLESS | SDL_WINDOW_OPENGL);
+	SGL_Window window = SGL_CreateWindow("SGLDemo", 4, 5, bufferCount, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 800, 600, SDL_WINDOW_RESIZABLE | SDL_WINDOW_OPENGL);
+	//SGL_Window window = SGL_CreateWindow("SGLDemo", 4, 5, bufferCount, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 0, 0, SDL_WINDOW_FULLSCREEN_DESKTOP | SDL_WINDOW_BORDERLESS | SDL_WINDOW_OPENGL);
 	SGL_Camera* camera0 = SGL_CreateCamera(&window.rContext, SGL_CAMERA_TYPE_ORTHO, SGL_CAMERA_ORTHO, 0.1f, 2.0f, degreesToRadians(45.0f), 1.0f);
 	SGL_Vec2 cameraStartPos = { camera0->position.x, camera0->position.y };
 	//SGL_Camera* cameraScreenSpace = SGL_CreateCamera(&window.rContext, SGL_CAMERA_TYPE_ORTHO, SGL_CAMERA_ORTHO, 0.1f, 2.0f, degreesToRadians(45.0f), 1.0f);
@@ -87,12 +87,12 @@ int main(int argc, char* argv[])
 	U32 anim = false;
 	float animSpeed = 0.1f;
 	//SGL_PointRenderer pr = SGL_CreatePointRenderer(particleMaxCount, SGL_SHADER_COLOR, &window.rContext);
-	SGL_SimpleSpriteRenderer ssr = SGL_CreateSimpleSpriteRenderer(particleMaxCount, &tex[1], &window.rContext);
+	SGL_DynamicRenderer ssr = SGL_CreateSimpleSpriteRenderer(particleMaxCount, &tex[1], &window.rContext);
 	const U32 bigMountainCount = 8;
 	const U32 smallMountainCount = 4;
 	float mountainsBigParallax = 0.25f;
 	float mountainsSmallParallax = 0.75f;
-	SGL_StaticSpriteRenderer mountains = SGL_CreateStaticSpriteRenderer(16, &tex[0], &window.rContext);
+	SGL_StaticRenderer mountains = SGL_CreateStaticSpriteRenderer(16, &tex[0], &window.rContext);
 	{
 		SGL_Vec2 bigMountainSize[2] =
 		{
@@ -126,7 +126,7 @@ int main(int argc, char* argv[])
 		}
 		SGL_StaticSpriteRendererCommit(&mountains);
 	}
-	SGL_StaticColorRenderer background = SGL_CreateStaticColorRenderer(1, SGL_SHADER_SP_COLOR, &window.rContext);
+	SGL_StaticRenderer background = SGL_CreateStaticColorRenderer(1, SGL_SHADER_SP_COLOR, &window.rContext);
 	{
 		SGL_Color colors[4] =
 		{
@@ -158,13 +158,16 @@ int main(int argc, char* argv[])
 	float cameraSpeed = 512.0f;
 	float animTimer = 0;
 	float spriteOffset = 0;
-	float timer = 0.0f;	
+	//float timer = 0.0f;
+	//float testAverage = 1.0f;
 	bool quit = false;
 	U32 debug = 0;
 	float timeDelta = 0.0f;
 	float fpsTimer = 0.0f;
 	U32 fps = 0;
 	U32 time = SDL_GetTicks();
+	//U32 testTime = 0;
+	//U32 testFrames = 0;
 	U32 frameCount = 0;
 	SGL_Vec2 movement = { 0.0f,0.0f };
 
@@ -192,8 +195,8 @@ int main(int argc, char* argv[])
 			frameCount = 0;
 			fpsTimer--;
 		}
-		timer += timeDelta;
-		//if(timer > 5.0f && particleCount < )
+		time = SDL_GetTicks();
+		frameCount++;
 		if (bufferCount != lastBufferCount)
 		{
 			window.rContext.bufferCount = bufferCount;
@@ -201,8 +204,6 @@ int main(int argc, char* argv[])
 			SGL_DestroySSRenderer(&ssr);
 			ssr = SGL_CreateSimpleSpriteRenderer(particleMaxCount, &tex[1], &window.rContext);
 		}
-		frameCount++;
-		time = SDL_GetTicks();
 		SDL_Event e = SDL_Event();
 
 		while (SDL_PollEvent(&e))

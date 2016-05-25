@@ -623,6 +623,15 @@ inline const SGL_Vec2 SM_V2Multiply(const SGL_Vec2 a, const SGL_Vec2 b)
 	r.y = a.y * b.y;
 	return r;
 }
+inline const SGL_Vec4 SM_V4MultiplySIMPLE(const SGL_Vec4* a, const SGL_Vec4* b)
+{
+	SGL_Vec4 r;
+	r.x = a->x - b->x;
+	r.y = a->y - b->y;
+	r.z = a->z - b->z;
+	r.w = a->w - b->w;
+	return r;
+}
 inline const SGL_Vec4 SM_V4Multiply(const SGL_Vec4* a, const SGL_Vec4* b)
 {
 	SGL_Vec4 r;
@@ -868,20 +877,20 @@ inline const SGL_Mat3 SM_M3Rotate(const SGL_Mat3* m, const float radAngle)
 //	r.m12 += v.y;
 //	return r;
 //};
-inline const SGL_Mat3 SM_M3TranslatePos(const SGL_Mat3* m, const SGL_Vec2 v)
-{
-	SGL_Mat3 r = *m;
-	r.m20 += v.x;
-	r.m21 += v.y;
-	return r;
-};
+//inline const SGL_Mat3 SM_M3TranslatePos(const SGL_Mat3* m, const SGL_Vec2 v)
+//{
+//	SGL_Mat3 r = *m;
+//	r.m20 += v.x;
+//	r.m21 += v.y;
+//	return r;
+//};
 inline const SGL_Mat3 SM_M3Translate(const SGL_Mat3* m, const SGL_Vec2 v)
 {
-	SGL_Mat3 r = *m;
-	r.m20 = m->m00 * v.x + m->m10 * v.y + m->m20;
-	r.m21 = m->m01 * v.x + m->m11 * v.y + m->m21;
-	r.m22 = m->m02 * v.x + m->m12 * v.y + m->m22;
-	return r;
+   SGL_Mat3 r = *m;
+   r.m20 = m->m00 * v.x + m->m10 * v.y + m->m20;
+   r.m21 = m->m01 * v.x + m->m11 * v.y + m->m21;
+   r.m22 = m->m02 * v.x + m->m12 * v.y + m->m22;
+   return r;
 };
 inline const SGL_Mat4 SM_QToM4(const SGL_Quat* q)
 {
@@ -920,12 +929,12 @@ inline const SGL_Mat4 SM_QToM4(const SGL_Quat* q)
 }
 inline const SGL_Mat4 SM_M4Translate(const SGL_Mat4* m, const SGL_Vec4* v)
 {
-	SGL_Mat4 r = *m;
-	r.m30 = m->m00 * v->x + m->m10 * v->y + m->m20 * v->z + m->m30;
-	r.m31 = m->m01 * v->x + m->m11 * v->y + m->m21 * v->z + m->m31;
-	r.m32 = m->m02 * v->x + m->m12 * v->y + m->m22 * v->z + m->m32;
-	r.m33 = m->m03 * v->x + m->m13 * v->y + m->m23 * v->z + m->m33;
-	return r;
+   SGL_Mat4 r = *m;
+   r.m30 = m->m00 * v->x + m->m10 * v->y + m->m20 * v->z + m->m30;
+   r.m31 = m->m01 * v->x + m->m11 * v->y + m->m21 * v->z + m->m31;
+   r.m32 = m->m02 * v->x + m->m12 * v->y + m->m22 * v->z + m->m32;
+   r.m33 = m->m03 * v->x + m->m13 * v->y + m->m23 * v->z + m->m33;
+   return r;
 };
 inline const SGL_Mat4 SM_M4Rotate(const SGL_Mat4* m, const F32 angle, const SGL_Vec4* v)
 {

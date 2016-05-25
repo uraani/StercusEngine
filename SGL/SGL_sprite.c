@@ -7,10 +7,10 @@ inline void LockBuffer(GLsync* gSync)
 	}
 	*gSync = glFenceSync(GL_SYNC_GPU_COMMANDS_COMPLETE, 0);
 }
-SGL_PointSpriteRenderer SGL_CreatePointSpriteRenderer(U32 spriteCountMax, const SGL_Tex2D * tex, const SGL_RenderContext * rContext)
+SGL_DynamicRenderer SGL_CreatePointSpriteRenderer(U32 spriteCountMax, const SGL_Tex2D * tex, const SGL_RenderContext * rContext)
 {
-	SGL_PointSpriteRenderer psr;
-	psr.vertexCount = spriteCountMax;
+	SGL_DynamicRenderer psr;
+	psr.mesh.vertexCount = spriteCountMax;
 	psr.texHandle = tex->handle;
 	psr.shaderHandle = rContext->shaders[SGL_SHADER_POINTSPRITE].handle;
 	psr.maxOffset = rContext->bufferCount;
@@ -21,7 +21,7 @@ SGL_PointSpriteRenderer SGL_CreatePointSpriteRenderer(U32 spriteCountMax, const 
 	glBindBuffer(GL_ARRAY_BUFFER, psr.VAO.VBO);
 	GLbitfield flags = GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT;
 	glBufferStorage(GL_ARRAY_BUFFER, rContext->shaders[SGL_SHADER_POINTSPRITE].vertexSize *  spriteCountMax * psr.maxOffset, NULL, flags);
-	psr.vertexData = glMapBufferRange(GL_ARRAY_BUFFER, 0, rContext->shaders[SGL_SHADER_POINTSPRITE].vertexSize * spriteCountMax * psr.maxOffset, flags);
+	psr.mesh.vertexData = glMapBufferRange(GL_ARRAY_BUFFER, 0, rContext->shaders[SGL_SHADER_POINTSPRITE].vertexSize * spriteCountMax * psr.maxOffset, flags);
 	SGL_CHECK_GL_ERROR;
 	glUseProgram(psr.shaderHandle);
 	glEnableVertexAttribArray(0);
@@ -41,10 +41,10 @@ SGL_PointSpriteRenderer SGL_CreatePointSpriteRenderer(U32 spriteCountMax, const 
 	psr.spriteCountMax = spriteCountMax;
 	return psr;
 }
-SGL_PointRenderer SGL_CreatePointRenderer(U32 spriteCountMax, const U32 shaderEnum, const SGL_RenderContext * rContext)
+SGL_DynamicRenderer SGL_CreatePointRenderer(U32 spriteCountMax, const U32 shaderEnum, const SGL_RenderContext * rContext)
 {
-	SGL_PointRenderer pr;
-	pr.vertexCount = spriteCountMax;
+	SGL_DynamicRenderer pr;
+	pr.mesh.vertexCount = spriteCountMax;
 	pr.shaderHandle = rContext->shaders[shaderEnum].handle;
 	pr.maxOffset = rContext->bufferCount;
 	pr.bufferOffset = 0;
@@ -54,7 +54,7 @@ SGL_PointRenderer SGL_CreatePointRenderer(U32 spriteCountMax, const U32 shaderEn
 	glBindBuffer(GL_ARRAY_BUFFER, pr.VAO.VBO);
 	GLbitfield flags = GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT;
 	glBufferStorage(GL_ARRAY_BUFFER, rContext->shaders[shaderEnum].vertexSize *  spriteCountMax * pr.maxOffset, NULL, flags);
-	pr.vertexData = glMapBufferRange(GL_ARRAY_BUFFER, 0, rContext->shaders[shaderEnum].vertexSize * spriteCountMax * pr.maxOffset, flags);
+	pr.mesh.vertexData = glMapBufferRange(GL_ARRAY_BUFFER, 0, rContext->shaders[shaderEnum].vertexSize * spriteCountMax * pr.maxOffset, flags);
 	rContext->shaders[shaderEnum].bindFunction(&pr.VAO, rContext->shaders[SGL_SHADER_SPRITE].handle);
 	SGL_CHECK_GL_ERROR;
 	for (size_t i = 0; i < pr.maxOffset; i++)
@@ -66,9 +66,9 @@ SGL_PointRenderer SGL_CreatePointRenderer(U32 spriteCountMax, const U32 shaderEn
 	pr.spriteCountMax = spriteCountMax;
 	return pr;
 }
-SGL_SimpleSpriteRenderer SGL_CreateSimpleSpriteRenderer(U32 spriteCountMax, const SGL_Tex2D * tex, const SGL_RenderContext * rContext)
+SGL_DynamicRenderer SGL_CreateSimpleSpriteRenderer(U32 spriteCountMax, const SGL_Tex2D * tex, const SGL_RenderContext * rContext)
 {
-	SGL_SimpleSpriteRenderer ssr;
+	SGL_DynamicRenderer ssr;
 	ssr.mesh.vertexCount = spriteCountMax * 4;
 	ssr.mesh.indexCount = spriteCountMax * 6;
 	ssr.texHandle = tex->handle;
@@ -110,9 +110,9 @@ SGL_SimpleSpriteRenderer SGL_CreateSimpleSpriteRenderer(U32 spriteCountMax, cons
 	ssr.spriteCountMax = spriteCountMax;
 	return ssr;
 }
-SGL_StaticSpriteRenderer SGL_CreateStaticSpriteRenderer(U32 spriteCountMax, const SGL_Tex2D * tex, const SGL_RenderContext * rContext)
+SGL_StaticRenderer SGL_CreateStaticSpriteRenderer(U32 spriteCountMax, const SGL_Tex2D * tex, const SGL_RenderContext * rContext)
 {
-	SGL_StaticSpriteRenderer ssr;
+	SGL_StaticRenderer ssr;
 	ssr.mesh.vertexCount = spriteCountMax * 4;
 	ssr.mesh.indexCount = spriteCountMax * 6;
 	ssr.texHandle = tex->handle;
@@ -144,9 +144,9 @@ SGL_StaticSpriteRenderer SGL_CreateStaticSpriteRenderer(U32 spriteCountMax, cons
 	ssr.spriteCountMax = spriteCountMax;
 	return ssr;
 }
-SGL_StaticColorRenderer SGL_CreateStaticColorRenderer(U32 spriteCountMax, U32 shader, const SGL_RenderContext * rContext)
+SGL_StaticRenderer SGL_CreateStaticColorRenderer(U32 spriteCountMax, U32 shader, const SGL_RenderContext * rContext)
 {
-	SGL_StaticColorRenderer scr;
+	SGL_StaticRenderer scr;
 	scr.mesh.vertexCount = spriteCountMax * 4;
 	scr.mesh.indexCount = spriteCountMax * 6;
 	scr.shaderHandle = rContext->shaders[shader].handle;
@@ -175,7 +175,7 @@ SGL_StaticColorRenderer SGL_CreateStaticColorRenderer(U32 spriteCountMax, U32 sh
 	scr.spriteCountMax = spriteCountMax;
 	return scr;
 }
-void SGL_StaticSpriteRendererDraw(SGL_StaticSpriteRenderer * ssr, const SGL_RenderContext * rContext)
+void SGL_StaticSpriteRendererDraw(SGL_StaticRenderer * ssr, const SGL_RenderContext * rContext)
 {
 	glBindTexture(GL_TEXTURE_2D, ssr->texHandle);
 	SGL_BindShader(rContext, ssr->shaderHandle);
@@ -183,7 +183,7 @@ void SGL_StaticSpriteRendererDraw(SGL_StaticSpriteRenderer * ssr, const SGL_Rend
 	glDrawElements(GL_TRIANGLES, ssr->spriteCount * 6, GL_UNSIGNED_INT, NULL);
 	glBindVertexArray(0);
 }
-void SGL_StaticSpriteRendererDrawRange(SGL_StaticSpriteRenderer * ssr, const SGL_RenderContext * rContext, U32 startSprite, U32 count, SGL_Vec2 offset)
+void SGL_StaticSpriteRendererDrawRange(SGL_StaticRenderer * ssr, const SGL_RenderContext * rContext, U32 startSprite, U32 count, SGL_Vec2 offset)
 {
 	glBindTexture(GL_TEXTURE_2D, ssr->texHandle);
 	SGL_BindShader(rContext, ssr->shaderHandle);
@@ -197,7 +197,7 @@ void SGL_StaticSpriteRendererDrawRange(SGL_StaticSpriteRenderer * ssr, const SGL
 	glDrawElements(GL_TRIANGLES, count*6, GL_UNSIGNED_INT, (GLvoid*)(startSprite*6*4)); //6 vertices with 4 float values
 	glBindVertexArray(0);
 }
-void SGL_StaticColorRendererDraw(SGL_StaticColorRenderer * scr, const SGL_RenderContext * rContext)
+void SGL_StaticColorRendererDraw(SGL_StaticRenderer * scr, const SGL_RenderContext * rContext)
 {
 	SGL_BindShader(rContext, scr->shaderHandle);
 	glBindVertexArray(scr->VAO.handle);
@@ -205,7 +205,7 @@ void SGL_StaticColorRendererDraw(SGL_StaticColorRenderer * scr, const SGL_Render
 	glBindVertexArray(0);
 	SGL_CHECK_GL_ERROR;
 }
-void SGL_SimpleSpriteRendererDraw(SGL_SimpleSpriteRenderer* ssr, const SGL_RenderContext * rContext)
+void SGL_SimpleSpriteRendererDraw(SGL_DynamicRenderer* ssr, const SGL_RenderContext * rContext)
 {
 	glBindTexture(GL_TEXTURE_2D, ssr->texHandle);
 	SGL_BindShader(rContext, ssr->shaderHandle);
@@ -216,7 +216,7 @@ void SGL_SimpleSpriteRendererDraw(SGL_SimpleSpriteRenderer* ssr, const SGL_Rende
 	ssr->spriteCount[ssr->bufferOffset] = 0;
 	ssr->bufferOffset = (ssr->bufferOffset +1) % ssr->maxOffset;
 }
-void SGL_PointSpriteRendererDraw(SGL_PointSpriteRenderer * renderer, const SGL_RenderContext * rContext)
+void SGL_PointSpriteRendererDraw(SGL_DynamicRenderer * renderer, const SGL_RenderContext * rContext)
 {
 	glBindTexture(GL_TEXTURE_2D, renderer->texHandle);
 	SGL_BindShader(rContext, renderer->shaderHandle);
@@ -232,7 +232,7 @@ void SGL_PointSpriteRendererDraw(SGL_PointSpriteRenderer * renderer, const SGL_R
 	renderer->spriteCount[renderer->bufferOffset] = 0;
 	renderer->bufferOffset = (renderer->bufferOffset + 1) % renderer->maxOffset;
 }
-void SGL_PointRendererDraw(SGL_PointRenderer * renderer, const SGL_RenderContext * rContext)
+void SGL_PointRendererDraw(SGL_DynamicRenderer * renderer, const SGL_RenderContext * rContext)
 {
 	SGL_BindShader(rContext, renderer->shaderHandle);
 	glBindVertexArray(renderer->VAO.handle);
@@ -242,7 +242,7 @@ void SGL_PointRendererDraw(SGL_PointRenderer * renderer, const SGL_RenderContext
 	renderer->spriteCount[renderer->bufferOffset] = 0;
 	renderer->bufferOffset = (renderer->bufferOffset + 1) % renderer->maxOffset;
 }
-void SGL_DestroySSRenderer(SGL_SimpleSpriteRenderer * ssr)
+void SGL_DestroySSRenderer(SGL_DynamicRenderer * ssr)
 {
 	glFinish();
 	glBindBuffer(GL_ARRAY_BUFFER, ssr->VAO.VBO);
