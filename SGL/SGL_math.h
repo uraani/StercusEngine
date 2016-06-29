@@ -4,7 +4,7 @@
 #define _SGL_math_h
 #include "SDL.h"
 #include <smmintrin.h>
-#define degreesToRadians(angleDegrees) (angleDegrees * (F32)(M_PI / 180.0))
+#define degreesToRadians(angleDegrees) ((F32)((F64)angleDegrees * (M_PI / 180.0)))
 #define isPowerOfTwo(x) ((x & (x - 1)) == 0);
 #if !defined(ANDROID)
 __declspec(align(16))

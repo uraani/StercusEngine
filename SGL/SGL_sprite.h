@@ -37,6 +37,12 @@ typedef struct _SGL_ColorVertex
 	SGL_Vec2 pos;
 	SGL_Color color;
 } SGL_ColorVertex;
+typedef struct _SGL_ColoredSpriteVertex
+{
+	SGL_Vec2 pos;
+	SGL_Color color;
+	SGL_Vec2 uvs;
+} SGL_ColoredSpriteVertex;
 typedef struct _SGL_PointSpriteData
 {
 	SGL_Vec2 pos;
@@ -57,6 +63,7 @@ typedef struct _SGL_Sprite
 	SGL_TexRegion region;
 } SGL_Sprite;
 typedef struct _SGL_RenderContext SGL_RenderContext;
+extern SGL_DynamicRenderer SGL_CreateSectorRenderer(const SGL_RenderContext* rContext);
 extern SGL_DynamicRenderer SGL_CreatePointSpriteRenderer(U32 spriteCountMax, const SGL_Tex2D* tex, const SGL_RenderContext* rContext);
 extern SGL_DynamicRenderer SGL_CreatePointRenderer(U32 spriteCountMax, const U32 shaderEnum, const SGL_RenderContext* rContext);
 extern SGL_DynamicRenderer SGL_CreateSimpleSpriteRenderer(U32 spriteCountMax, const SGL_Tex2D* tex, const SGL_RenderContext* rContext);
@@ -108,6 +115,36 @@ inline void SGL_AddPointPC(SGL_DynamicRenderer* pr, SGL_Vec2 pos, SGL_Color col)
 	vertexData[spriteOffset].pos = pos;
 	vertexData[spriteOffset].color = col;
 	pr->spriteCount[pr->bufferOffset]++;
+}
+inline void SGL_AddStaticSpriteMask(SGL_StaticRenderer* scr)
+{
+	SDL_assert(scr->spriteCount < scr->spriteCountMax);
+	const SGL_Vec2 quadPosition[] =
+	{
+		{ 1.0f, 1.0f },
+		{ -1.0f, 1.0f },
+		{ -1.0f,-1.0f },
+		{ 1.0f,-1.0f },
+	};
+	SGL_SpriteData* vertexData = (SGL_SpriteData*)scr->mesh.vertexData;
+	size_t spriteOffset = scr->spriteCount;
+	vertexData[spriteOffset].verts[0].pos.x =  1.0f;
+	vertexData[spriteOffset].verts[0].pos.y =  1.0f;
+	vertexData[spriteOffset].verts[0].uvs.x =  1.0f;
+	vertexData[spriteOffset].verts[0].uvs.y =  1.0f;
+	vertexData[spriteOffset].verts[1].pos.x = -1.0f;
+	vertexData[spriteOffset].verts[1].pos.y =  1.0f;
+	vertexData[spriteOffset].verts[1].uvs.x =  0.0f;
+	vertexData[spriteOffset].verts[1].uvs.y =  1.0f;
+	vertexData[spriteOffset].verts[2].pos.x = -1.0f;
+	vertexData[spriteOffset].verts[2].pos.y = -1.0f;
+	vertexData[spriteOffset].verts[2].uvs.x =  0.0f;
+	vertexData[spriteOffset].verts[2].uvs.y =  0.0f;
+	vertexData[spriteOffset].verts[3].pos.x =  1.0f;
+	vertexData[spriteOffset].verts[3].pos.y = -1.0f;
+	vertexData[spriteOffset].verts[3].uvs.x =  1.0f;
+	vertexData[spriteOffset].verts[3].uvs.y =  0.0f;
+	scr->spriteCount++;
 }
 inline void SGL_AddStaticColoredRectanglePS(SGL_StaticRenderer* scr, SGL_Vec2 pos, SGL_Vec2 size, SGL_Color* colors)
 {
@@ -201,6 +238,7 @@ inline void SGL_AddSpritePS(SGL_DynamicRenderer* ssr, SGL_Vec2 pos, SGL_Vec2 siz
 inline void SGL_AddSpriteM3(SGL_DynamicRenderer* ssr, SGL_Mat3* mat3, SGL_TexRegion reg)
 {
 	SDL_assert(ssr->spriteCount[ssr->bufferOffset] < ssr->spriteCountMax);
+	//this has to replaced at some point
 	const SGL_Vec2 quadPosition[] =
 	{									   
 		{  0.5f,   0.5f },
@@ -225,9 +263,13 @@ inline void SGL_AddSpriteM3(SGL_DynamicRenderer* ssr, SGL_Mat3* mat3, SGL_TexReg
 	vertexData[spriteOffset].verts[3].uvs.y = uvs.f[1];
 	ssr->spriteCount[ssr->bufferOffset]++;
 }
+extern void SGL_DrawLightSector(float lightSize, SGL_Vec2 position, SGL_Vec2 direction, F32 angle,const SGL_Tex2D* tex, SGL_DynamicRenderer* renderer, const SGL_RenderContext* rContext);
+extern void SGL_MapShadows(float lightSize, U32 texHandle, const SGL_RenderContext* rContext);
+extern void SGL_MapSectorShadows(float lightSize, SGL_Vec2 position, SGL_Vec2 direction, F32 angle,const SGL_Tex2D* tex, const SGL_RenderContext * rContext);
+extern void SGL_DrawShadows(float lightSize, U32 texHandle, const SGL_RenderContext* rContext);
 extern void SGL_StaticSpriteRendererDraw(SGL_StaticRenderer* renderer, const SGL_RenderContext* rContext);
 extern void SGL_StaticSpriteRendererDrawRange(SGL_StaticRenderer* renderer, const SGL_RenderContext* rContext, U32 startSprite, U32 count, SGL_Vec2 offset);
-extern void SGL_StaticColorRendererDraw(SGL_StaticRenderer* renderer, const SGL_RenderContext* rContext);
+extern void SGL_StaticRendererDrawSP(SGL_StaticRenderer* renderer, const SGL_RenderContext* rContext);
 extern void SGL_SimpleSpriteRendererDraw(SGL_DynamicRenderer* renderer, const SGL_RenderContext* rContext);
 extern void SGL_PointSpriteRendererDraw(SGL_DynamicRenderer* renderer, const SGL_RenderContext* rContext);
 extern void SGL_PointRendererDraw(SGL_DynamicRenderer * renderer, const SGL_RenderContext * rContext);

@@ -16,6 +16,7 @@ typedef enum SGL_CameraType
 {
 	SGL_CAMERA_TYPE_UNUSED,
 	SGL_CAMERA_TYPE_ORTHO,
+	SGL_CAMERA_TYPE_ORTHO_FORCED_SIZE,
 	SGL_CAMERA_TYPE_PERSPECTIVE
 } SGL_CameraType;
 typedef struct _SGL_Camera
@@ -23,6 +24,7 @@ typedef struct _SGL_Camera
 	SGL_Mat4 vPMatrix;
 	SGL_Quat rotation;
 	SGL_Vec4 position;
+	SGL_Vec2 forcedSize;
 	F32 nearPlane;
 	F32 farPlane;
 	F32 FOWY;

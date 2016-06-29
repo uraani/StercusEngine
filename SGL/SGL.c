@@ -16,6 +16,20 @@ int SGL_Init(void)
 	SGL_InitDataSystem();
 	return 0;
 }
+inline void SGL_InitShadowMapper(SGL_RenderContext* rContext)
+{
+	glGenVertexArrays(1, &rContext->shadowVAO.handle);
+	glGenBuffers(1, &rContext->shadowVAO.VBO);
+	rContext->shaders[SGL_SHADER_SHADOWMAP].bindFunction(&rContext->shadowVAO, rContext->shaders[SGL_SHADER_SHADOWMAP].handle);
+}
+inline void SGL_InitLightVAO(SGL_RenderContext* rContext)
+{
+	glGenVertexArrays(1, &rContext->lightVAO.handle);
+	glGenBuffers(1, &rContext->lightVAO.VBO);
+	glBindBuffer(GL_ARRAY_BUFFER, rContext->lightVAO.VBO);
+	//glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+	rContext->shaders[SGL_SHADER_LIGHT].bindFunction(&rContext->lightVAO, rContext->shaders[SGL_SHADER_LIGHT].handle);
+}
 SGL_Window SGL_CreateWindow(const char* title, I32 GLMajorVersion, I32 GLMinorVersion, U32 bufferCount, I32 x, I32 y, I32 w, I32 h, Uint32 SDLflags)
 {
 #if defined(_WINDOWS)
@@ -81,11 +95,16 @@ SGL_Window SGL_CreateWindow(const char* title, I32 GLMajorVersion, I32 GLMinorVe
 	window.rContext.windowHalfSizef.y = (F32)window.rContext.windowSize.y*0.5f;
 	SDL_assert(bufferCount <= SGL_BUFFER_COUNT_MAX);
 	window.rContext.bufferCount = bufferCount;
-	glEnable(GL_MULTISAMPLE);
+	//glEnable(GL_MULTISAMPLE);
+	SGL_CHECK_GL_ERROR;
 	glEnable(GL_BLEND);
+	SGL_CHECK_GL_ERROR;
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-	glEnable(GL_POINT_SPRITE);
+	//SGL_CHECK_GL_ERROR;
+	//glEnable(GL_POINT_SPRITE);
+	SGL_CHECK_GL_ERROR;
 	glEnable(GL_VERTEX_PROGRAM_POINT_SIZE);
+	SGL_CHECK_GL_ERROR;
 	glPointParameteri(GL_POINT_SPRITE_COORD_ORIGIN, GL_LOWER_LEFT);
 	SGL_CHECK_GL_ERROR;
 	SDL_GL_SetSwapInterval(0);
@@ -94,6 +113,8 @@ SGL_Window SGL_CreateWindow(const char* title, I32 GLMajorVersion, I32 GLMinorVe
 		window.rContext.cameras[i].camType = 0;
 	}
 	SGL_LoadShaders(&window.rContext);
+	SGL_InitShadowMapper(&window.rContext);
+	SGL_InitLightVAO(&window.rContext);
 	return window;
 }
 
@@ -255,6 +276,48 @@ inline SGL_UpdateCameras(SGL_RenderContext* rContext)
 			//rContext->cameras[i].vPMatrix = SM_M4Rotate(&rContext->cameras[i].vPMatrix, rContext->cameras[i].rotation.z, &forward);
 			break;
 		}
+		case SGL_CAMERA_TYPE_ORTHO_FORCED_SIZE:
+		{
+			const float left = rContext->cameras[i].forcedSize.x * -rContext->cameras[i].scale;
+			const float right = rContext->cameras[i].forcedSize.x * rContext->cameras[i].scale;
+			const float bottom = rContext->cameras[i].forcedSize.y * -rContext->cameras[i].scale;
+			const float top = rContext->cameras[i].forcedSize.y * rContext->cameras[i].scale;
+			//rContext->cameras[i].vPMatrix.m00 = 2.0f / (right - left);
+			//rContext->cameras[i].vPMatrix.m11 = 2.0f / (top - bottom);
+			//rContext->cameras[i].vPMatrix.m22 = -1.0f;
+			////rContext->cameras[i].vPMatrix.m22 = -2.0f / (rContext->cameras[i].farPlane - rContext->cameras[i].nearPlane);
+			//rContext->cameras[i].vPMatrix.m30 = -(right + left) / (right - left);
+			//rContext->cameras[i].vPMatrix.m31 = -(top + bottom) / (top - bottom);
+			//rContext->cameras[i].vPMatrix.m32 = 0.0f;
+
+			rContext->cameras[i].vPMatrix.m00 = 2.0f / (right - left);
+			rContext->cameras[i].vPMatrix.m01 = 0.0f;
+			rContext->cameras[i].vPMatrix.m02 = 0.0f;
+			rContext->cameras[i].vPMatrix.m03 = 0.0f;
+
+			rContext->cameras[i].vPMatrix.m10 = 0.0f;
+			rContext->cameras[i].vPMatrix.m11 = 2.0f / (top - bottom);
+			rContext->cameras[i].vPMatrix.m12 = 0.0f;
+			rContext->cameras[i].vPMatrix.m13 = 0.0f;
+
+			rContext->cameras[i].vPMatrix.m20 = 0.0f;
+			rContext->cameras[i].vPMatrix.m21 = 0.0f;
+			rContext->cameras[i].vPMatrix.m22 = -1.0f;
+			//rContext->cameras[i].vPMatrix.m22 = -2.0f / (rContext->cameras[i].farPlane - rContext->cameras[i].nearPlane);
+			rContext->cameras[i].vPMatrix.m23 = 0.0f;
+
+			rContext->cameras[i].vPMatrix.m30 = -(right + left) / (right - left);
+			rContext->cameras[i].vPMatrix.m31 = -(top + bottom) / (top - bottom);
+			rContext->cameras[i].vPMatrix.m32 = 0.0f;
+			rContext->cameras[i].vPMatrix.m33 = 1.0f;
+
+			//rContext->cameras[i].vPMatrix.m32 = -(rContext->cameras[i].farPlane + rContext->cameras[i].nearPlane) / (rContext->cameras[i].farPlane - rContext->cameras[i].nearPlane);
+			SGL_Mat4 rot = SM_QToM4(&rContext->cameras[i].rotation);
+			rContext->cameras[i].vPMatrix = SM_M4Multiply(&rot, &rContext->cameras[i].vPMatrix);
+			//SGL_Vec4 forward = { 0.0f, 0.0f, 1.0f, 0.0f };
+			//rContext->cameras[i].vPMatrix = SM_M4Rotate(&rContext->cameras[i].vPMatrix, rContext->cameras[i].rotation.z, &forward);
+			break;
+		}
 		case SGL_CAMERA_TYPE_PERSPECTIVE:
 		{
 			const float aspect = rContext->windowHalfSizef.x / rContext->windowHalfSizef.y;
@@ -300,6 +363,7 @@ void SGL_StartRender(SGL_Window * window)
 }
 void SGL_EndRender(SGL_Window * window)
 {
+	window->rContext.boundShader = 0;
 	REMOVE_FLAGS(window->rContext.state, SGL_RENDER_STATE_RENDERING);
 	SDL_GL_SwapWindow(window->handle);
 }

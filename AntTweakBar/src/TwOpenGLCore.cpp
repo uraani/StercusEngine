@@ -32,7 +32,8 @@ extern const char *g_ErrCantUnloadOGL;
         char msg[256];
         while( (err= glGetError())!=0 )
         {
-            SDL_Log(msg, "%s(%d) : [%s] GL_CORE_ERROR=0x%x\n", file, line, func, err);
+			SDL_snprintf(msg, 256, "%s(%d) : [%s] GL_CORE_ERROR=0x%x\n", file, line, func, err);
+            //SDL_Log(msg, "%s(%d) : [%s] GL_CORE_ERROR=0x%x\n", file, line, func, err);
 #ifdef defined(_WIN32)
             OutputDebugString(msg);
 #endif
