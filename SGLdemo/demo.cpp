@@ -1,5 +1,6 @@
 #include <SGL.h>
 #include "entity.h"
+#include "input.h"
 #include <AntTweakBar.h>
 #include <thread>
 #include <chrono>
@@ -27,6 +28,7 @@ int main(int argc, char* argv[])
 	SGL_Window window = SGL_CreateWindow("SGLDemo", 4, 5, bufferCount, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 0, 0, SDL_WINDOW_MAXIMIZED | SDL_WINDOW_OPENGL);
 	SGL_Camera* camera0 = SGL_CreateCamera(&window.rContext, SGL_CAMERA_TYPE_ORTHO, SGL_CAMERA_ORTHO, 0.1f, 2.0f, degreesToRadians(45.0f), 1.0f);
 	SGL_Vec2 cameraStartPos = { camera0->position.x, camera0->position.y };
+	InputManager input = InputManager();
 	//SGL_Camera* cameraScreenSpace = SGL_CreateCamera(&window.rContext, SGL_CAMERA_TYPE_ORTHO, SGL_CAMERA_ORTHO, 0.1f, 2.0f, degreesToRadians(45.0f), 1.0f);
 	SGL_BindCamera(&window.rContext, SGL_CAMERA_ORTHO);
 	SGL_DataSelect("Demo_data");
@@ -70,7 +72,7 @@ int main(int argc, char* argv[])
 	U32 anim = false;
 	F32 animSpeed = 0.1f;
 	//SGL_PointRenderer pr = SGL_CreatePointRenderer(particleMaxCount, SGL_SHADER_COLOR, &window.rContext);
-	SGL_DynamicRenderer ssr = SGL_CreateSimpleSpriteRenderer(particleMaxCount, &tex[1], &window.rContext);
+	SGL_DynamicRenderer ssr = SGL_CreateSpriteRenderer(particleMaxCount, &tex[1], &window.rContext);
 	const U32 bigMountainCount = 8;
 	const U32 smallMountainCount = 4;
 	F32 mountainsBigParallax = 0.25f;
@@ -287,6 +289,7 @@ int main(int argc, char* argv[])
 			SGL_DestroySSRenderer(&ssr);
 			ssr = SGL_CreateSimpleSpriteRenderer(particleMaxCount, &tex[1], &window.rContext);
 		}
+		input.Update();
 		SDL_Event e = SDL_Event();
 
 		while (SDL_PollEvent(&e))
@@ -320,91 +323,40 @@ int main(int argc, char* argv[])
 				}
 				break;
 			}
-			case SDL_KEYDOWN:
-			{
-				switch (e.key.keysym.sym)
-				{
-				case SDLK_a:
-				{
-					movement.x = -1.0f;
-					break;
-				}
-				case SDLK_d:
-				{
-					movement.x = 1.0f;
-					break;
-				}
-				case SDLK_w:
-				{
-					movement.y = 1.0f;
-					break;
-				}
-				case SDLK_s:
-				{
-					movement.y = -1.0f;
-					break;
-				}
-				case SDLK_e:
-				{
-					zoom = 0.9995f;
-					break;
-				}
-				case SDLK_q:
-				{
-					zoom = 1.0005f;
-					break;
-				}
-				default:
-					break;
-				}
-				break;
-			}
-			case SDL_KEYUP:
-			{
-				switch (e.key.keysym.sym)
-				{
-				case SDLK_ESCAPE:
-				{
-					quit = true;
-					break;
-				}
-				case SDLK_a:
-				{
-					movement.x = 0.0f;
-					break;
-				}
-				case SDLK_d:
-				{
-					movement.x = 0.0f;
-					break;
-				}
-				case SDLK_w:
-				{
-					movement.y = 0.0f;
-					break;
-				}
-				case SDLK_s:
-				{
-					movement.y = 0.0f;
-					break;
-				}
-				case SDLK_e:
-				{
-					zoom = 1.0f;
-					break;
-				}
-				case SDLK_q:
-				{
-					zoom = 1.0f;
-					break;
-				}
-				default:
-					break;
-				}
-			}
 			default:
 				break;
 			}
+		}
+		movement.x = 0.0f;
+		movement.y = 0.0f;
+		zoom = 1.0f;
+		if (input.IsKeyUp(SDLK_ESCAPE))
+		{
+			quit = true;
+		}
+		if (input.IsKeyPressed(SDLK_d))
+		{
+			movement.x += 1.0f;
+		}
+		if (input.IsKeyPressed(SDLK_a))
+		{
+			movement.x -= 1.0f;
+		}
+		if (input.IsKeyPressed(SDLK_w))
+		{
+			movement.y += 1.0f;
+		}
+		if (input.IsKeyPressed(SDLK_s))
+		{
+			movement.y -= 1.0f;
+		}
+		if (input.IsKeyPressed(SDLK_q))
+		{
+			zoom += 0.0005;
+		}
+		if (input.IsKeyPressed(SDLK_e))
+		{
+			zoom -= 0.0005;
 		}
 		texReg = { spriteSize*spriteOffset,spriteSize,spriteSize, spriteSize };
 		if (anim)
@@ -417,7 +369,7 @@ int main(int argc, char* argv[])
 			}
 		}
 		gpuStall = SDL_GetTicks();
-		SGL_RendererSync(ssr.syncs[ssr.bufferOffset]);
+		//SGL_RendererSync(ssr.syncs[ssr.bufferOffset]);
 		gpuStall = SDL_GetTicks() - gpuStall;
 		int x, y;
 		SDL_GetMouseState(&x, &y);
@@ -481,7 +433,7 @@ int main(int argc, char* argv[])
 		//SGL_DrawLightSector(lightSizef, lightPos, SM_V2Normalize(pos), M_PI, &frameBufferTex1, &sectorRenderer, &window.rContext);
 		//SGL_StaticSpriteRendererDraw(&frameBufferRenderer, &window.rContext);
 		glBlendFunc(GL_SRC_ALPHA, GL_ONE);
-		SGL_SimpleSpriteRendererDraw(&ssr, &window.rContext);
+		SGL_SpriteRendererDraw(&ssr, &window.rContext);
 		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 		SGL_CHECK_GL_ERROR;
 		TwDraw();

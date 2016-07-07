@@ -67,6 +67,7 @@ extern SGL_DynamicRenderer SGL_CreateSectorRenderer(const SGL_RenderContext* rCo
 extern SGL_DynamicRenderer SGL_CreatePointSpriteRenderer(U32 spriteCountMax, const SGL_Tex2D* tex, const SGL_RenderContext* rContext);
 extern SGL_DynamicRenderer SGL_CreatePointRenderer(U32 spriteCountMax, const U32 shaderEnum, const SGL_RenderContext* rContext);
 extern SGL_DynamicRenderer SGL_CreateSimpleSpriteRenderer(U32 spriteCountMax, const SGL_Tex2D* tex, const SGL_RenderContext* rContext);
+extern SGL_DynamicRenderer SGL_CreateSpriteRenderer(U32 spriteCountMax, const SGL_Tex2D * tex, const SGL_RenderContext * rContext);
 extern SGL_StaticRenderer SGL_CreateStaticSpriteRenderer(U32 spriteCountMax, const SGL_Tex2D* tex, const SGL_RenderContext* rContext);
 extern SGL_StaticRenderer SGL_CreateStaticColorRenderer(U32 spriteCountMax, U32 shader, const SGL_RenderContext* rContext);
 inline void WaitBuffer(GLsync gSync)
@@ -271,6 +272,7 @@ extern void SGL_StaticSpriteRendererDraw(SGL_StaticRenderer* renderer, const SGL
 extern void SGL_StaticSpriteRendererDrawRange(SGL_StaticRenderer* renderer, const SGL_RenderContext* rContext, U32 startSprite, U32 count, SGL_Vec2 offset);
 extern void SGL_StaticRendererDrawSP(SGL_StaticRenderer* renderer, const SGL_RenderContext* rContext);
 extern void SGL_SimpleSpriteRendererDraw(SGL_DynamicRenderer* renderer, const SGL_RenderContext* rContext);
+extern void SGL_SpriteRendererDraw(SGL_DynamicRenderer* renderer, const SGL_RenderContext * rContext);
 extern void SGL_PointSpriteRendererDraw(SGL_DynamicRenderer* renderer, const SGL_RenderContext* rContext);
 extern void SGL_PointRendererDraw(SGL_DynamicRenderer * renderer, const SGL_RenderContext * rContext);
 extern void SGL_DestroySSRenderer(SGL_DynamicRenderer* renderer);

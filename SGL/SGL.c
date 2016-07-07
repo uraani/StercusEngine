@@ -97,6 +97,8 @@ SGL_Window SGL_CreateWindow(const char* title, I32 GLMajorVersion, I32 GLMinorVe
 	window.rContext.bufferCount = bufferCount;
 	//glEnable(GL_MULTISAMPLE);
 	SGL_CHECK_GL_ERROR;
+	glEnable(GL_PRIMITIVE_RESTART);
+	glPrimitiveRestartIndex(UINT_MAX);
 	glEnable(GL_BLEND);
 	SGL_CHECK_GL_ERROR;
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);

@@ -76,6 +76,51 @@ SGL_DynamicRenderer SGL_CreatePointRenderer(U32 spriteCountMax, const U32 shader
 	pr.spriteCountMax = spriteCountMax;
 	return pr;
 }
+SGL_DynamicRenderer SGL_CreateSpriteRenderer(U32 spriteCountMax, const SGL_Tex2D * tex, const SGL_RenderContext * rContext)
+{
+	SGL_DynamicRenderer ssr;
+	ssr.mesh.vertexCount = spriteCountMax * 4;
+	ssr.mesh.indexCount = spriteCountMax * 6;
+	ssr.texHandle = tex->handle;
+	ssr.shaderHandle = rContext->shaders[SGL_SHADER_SPRITE].handle;
+	ssr.maxOffset = rContext->bufferCount;
+	ssr.bufferOffset = 0;
+	glGenBuffers(1, &ssr.VAO.VBO);
+	glGenBuffers(1, &ssr.VAO.EBO);
+	glGenVertexArrays(1, &ssr.VAO.handle);
+	glBindVertexArray(ssr.VAO.handle);
+	glBindBuffer(GL_ARRAY_BUFFER, ssr.VAO.VBO);
+	glBufferData(GL_ARRAY_BUFFER, rContext->shaders[SGL_SHADER_SPRITE].vertexSize *  spriteCountMax * 4, NULL, GL_STREAM_DRAW);
+	GLbitfield flags = GL_MAP_WRITE_BIT | GL_MAP_UNSYNCHRONIZED_BIT | GL_MAP_INVALIDATE_BUFFER_BIT;
+	ssr.mesh.vertexData = glMapBufferRange(GL_ARRAY_BUFFER, 0, rContext->shaders[SGL_SHADER_SPRITE].vertexSize * spriteCountMax * 4, flags);
+	//ssr.mesh.vertexData = glMapBufferRange(GL_ARRAY_BUFFER, 0, rContext->shaders[SGL_SHADER_SPRITE].vertexSize * spriteCountMax * 4 * ssr.maxOffset, flags);
+	SGL_CHECK_GL_ERROR;
+	ssr.mesh.indexData = SDL_malloc(sizeof(U32) * spriteCountMax * 5);
+	for (U32 i = 0; i < spriteCountMax; i++)
+	{
+		ssr.mesh.indexData[i * 5 + 0] = i * 4 + 1;
+		ssr.mesh.indexData[i * 5 + 1] = i * 4 + 2;
+		ssr.mesh.indexData[i * 5 + 2] = i * 4 + 0;
+		ssr.mesh.indexData[i * 5 + 3] = i * 4 + 3;
+		ssr.mesh.indexData[i * 5 + 4] = UINT_MAX;
+		//ssr.mesh.indexData[i * 6 + 5] = i * 4 + 0;
+	}
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ssr.VAO.EBO);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(U32) * spriteCountMax * 5, ssr.mesh.indexData, GL_STATIC_DRAW);
+	SDL_free(ssr.mesh.indexData);
+	SGL_CHECK_GL_ERROR;
+	rContext->shaders[SGL_SHADER_SPRITE].bindFunction(&ssr.VAO, rContext->shaders[SGL_SHADER_SPRITE].handle);
+	ssr.texSize.x = (F32)tex->width;
+	ssr.texSize.y = (F32)tex->height;
+	for (size_t i = 0; i < ssr.maxOffset; i++)
+	{
+		//ssr.syncs[i] = NULL;
+		ssr.spriteCount[i] = 0;
+		//LockBuffer(&ssr.syncs[i]);
+	}
+	ssr.spriteCountMax = spriteCountMax;
+	return ssr;
+}
 SGL_DynamicRenderer SGL_CreateSimpleSpriteRenderer(U32 spriteCountMax, const SGL_Tex2D * tex, const SGL_RenderContext * rContext)
 {
 	SGL_DynamicRenderer ssr;
@@ -440,6 +485,24 @@ void SGL_StaticRendererDrawSP(SGL_StaticRenderer * scr, const SGL_RenderContext 
 	glDrawElements(GL_TRIANGLES, scr->spriteCount * 6, GL_UNSIGNED_INT, NULL);
 	glBindVertexArray(0);
 	SGL_CHECK_GL_ERROR;
+}
+void SGL_SpriteRendererDraw(SGL_DynamicRenderer* ssr, const SGL_RenderContext * rContext)
+{
+	glBindBuffer(GL_ARRAY_BUFFER, ssr->VAO.VBO);
+	glUnmapBuffer(GL_ARRAY_BUFFER);
+	glBindTexture(GL_TEXTURE_2D, ssr->texHandle);
+	SGL_BindShader(rContext, ssr->shaderHandle);
+	glBindVertexArray(ssr->VAO.handle);
+	//glBufferSubData(GL_ARRAY_BUFFER, 0, rContext->shaders[SGL_SHADER_SPRITE].vertexSize *  ssr->spriteCount[0] * 4, ssr->mesh.vertexData);
+	glDrawElements(GL_TRIANGLE_STRIP, ssr->spriteCount[ssr->bufferOffset] * 6, GL_UNSIGNED_INT, NULL);
+	//Orphan the buffer
+	GLbitfield flags = GL_MAP_WRITE_BIT | GL_MAP_UNSYNCHRONIZED_BIT | GL_MAP_INVALIDATE_BUFFER_BIT;
+	ssr->mesh.vertexData = glMapBufferRange(GL_ARRAY_BUFFER, 0, rContext->shaders[SGL_SHADER_SPRITE].vertexSize * ssr->spriteCountMax * 4, flags);
+	//glBufferData(GL_ARRAY_BUFFER, rContext->shaders[SGL_SHADER_SPRITE].vertexSize *  ssr->spriteCountMax * 4, NULL, GL_STREAM_DRAW);
+	glBindVertexArray(0);
+	//LockBuffer(&ssr->syncs[ssr->bufferOffset]);
+	ssr->spriteCount[ssr->bufferOffset] = 0;
+	//ssr->bufferOffset = (ssr->bufferOffset + 1) % ssr->maxOffset;
 }
 void SGL_SimpleSpriteRendererDraw(SGL_DynamicRenderer* ssr, const SGL_RenderContext * rContext)
 {
