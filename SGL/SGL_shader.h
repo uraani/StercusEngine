@@ -24,7 +24,7 @@ typedef struct _SGL_Shader
 	//size in byte units
 	U32 vertexSize;
 	//function that binds attributes to VAO
-	void(*bindFunction)(void* vao, U32 shaderHandle);
+	void(*bindFunction)(U32 VAO, U32 VBO, U32 shaderHandle);
 	//shaders name
 	const char* name;
 } SGL_Shader;

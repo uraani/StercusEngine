@@ -20,7 +20,7 @@ inline void SGL_InitShadowMapper(SGL_RenderContext* rContext)
 {
 	glGenVertexArrays(1, &rContext->shadowVAO.handle);
 	glGenBuffers(1, &rContext->shadowVAO.VBO);
-	rContext->shaders[SGL_SHADER_SHADOWMAP].bindFunction(&rContext->shadowVAO, rContext->shaders[SGL_SHADER_SHADOWMAP].handle);
+	rContext->shaders[SGL_SHADER_SHADOWMAP].bindFunction(rContext->shadowVAO.handle, rContext->shadowVAO.VBO, rContext->shaders[SGL_SHADER_SHADOWMAP].handle);
 }
 inline void SGL_InitLightVAO(SGL_RenderContext* rContext)
 {
@@ -28,7 +28,7 @@ inline void SGL_InitLightVAO(SGL_RenderContext* rContext)
 	glGenBuffers(1, &rContext->lightVAO.VBO);
 	glBindBuffer(GL_ARRAY_BUFFER, rContext->lightVAO.VBO);
 	//glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
-	rContext->shaders[SGL_SHADER_LIGHT].bindFunction(&rContext->lightVAO, rContext->shaders[SGL_SHADER_LIGHT].handle);
+	rContext->shaders[SGL_SHADER_LIGHT].bindFunction(rContext->lightVAO.handle, rContext->lightVAO.VBO, rContext->shaders[SGL_SHADER_LIGHT].handle);
 }
 SGL_Window SGL_CreateWindow(const char* title, I32 GLMajorVersion, I32 GLMinorVersion, U32 bufferCount, I32 x, I32 y, I32 w, I32 h, Uint32 SDLflags)
 {

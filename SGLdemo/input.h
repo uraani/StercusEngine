@@ -1,6 +1,6 @@
 #pragma once
 #include <SGL_math.h>
-typedef U8 Key;
+typedef U8 Key; //this is so wrong, i know.
 enum MOUSE_BUTTONS
 {
 	MOUSE_LEFT,
@@ -124,6 +124,10 @@ InputManager::InputManager()
 	anyKey = keyCount;
 	keyCount++;
 	keys = (Key*)SDL_calloc(keyCount, sizeof(Key));
+	for (size_t i = 0; i < MOUSE_BTN_COUNT; i++)
+	{
+		mouse.buttons[i] = 0;
+	}
 }
 
 InputManager::~InputManager()

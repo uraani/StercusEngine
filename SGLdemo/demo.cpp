@@ -72,7 +72,7 @@ int main(int argc, char* argv[])
 	U32 anim = false;
 	F32 animSpeed = 0.1f;
 	//SGL_PointRenderer pr = SGL_CreatePointRenderer(particleMaxCount, SGL_SHADER_COLOR, &window.rContext);
-	SGL_DynamicRenderer ssr = SGL_CreateSpriteRenderer(particleMaxCount, &tex[1], &window.rContext);
+	SGL_SpriteRenderer ssr = SGL_CreateSpriteRenderer(particleMaxCount, &tex[1], &window.rContext);
 	const U32 bigMountainCount = 8;
 	const U32 smallMountainCount = 4;
 	F32 mountainsBigParallax = 0.25f;
@@ -187,7 +187,7 @@ int main(int argc, char* argv[])
 	// Create a texture for our color buffer 
 	glGenTextures(1, &colorTex);
 	glBindTexture(GL_TEXTURE_2D, colorTex);
-	glTexStorage2D(GL_TEXTURE_2D, 1, GL_RGBA8, window.rContext.windowSize.x, window.rContext.windowSize.y);
+	glTexStorage2D(GL_TEXTURE_2D, 1, GL_RGBA8, 4096, 4096);
 	// We’re going to read from this, but it won’t have mipmaps, 
 	// so turn off mipmaps for this texture. 
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST); 
@@ -282,13 +282,13 @@ int main(int argc, char* argv[])
 		}
 		time = SDL_GetTicks();
 		frameCount++;
-		if (bufferCount != lastBufferCount)
-		{
-			window.rContext.bufferCount = bufferCount;
-			lastBufferCount = bufferCount;
-			SGL_DestroySSRenderer(&ssr);
-			ssr = SGL_CreateSimpleSpriteRenderer(particleMaxCount, &tex[1], &window.rContext);
-		}
+		//if (bufferCount != lastBufferCount)
+		//{
+		//	window.rContext.bufferCount = bufferCount;
+		//	lastBufferCount = bufferCount;
+		//	SGL_DestroySSRenderer(&ssr);
+		//	ssr = SGL_CreateSimpleSpriteRenderer(particleMaxCount, &tex[1], &window.rContext);
+		//}
 		input.Update();
 		SDL_Event e = SDL_Event();
 
@@ -352,11 +352,11 @@ int main(int argc, char* argv[])
 		}
 		if (input.IsKeyPressed(SDLK_q))
 		{
-			zoom += 0.0005;
+			zoom += 0.5 * timeDelta;
 		}
 		if (input.IsKeyPressed(SDLK_e))
 		{
-			zoom -= 0.0005;
+			zoom -= 0.5 * timeDelta;
 		}
 		texReg = { spriteSize*spriteOffset,spriteSize,spriteSize, spriteSize };
 		if (anim)
@@ -381,8 +381,8 @@ int main(int argc, char* argv[])
 		if (SDL_GetMouseState(NULL, NULL) & SDL_BUTTON(SDL_BUTTON_LEFT)) 
 		{
 			lightPos = pos;
-			lightPos.x -= fmodf(lightPos.x, 1.0f) + 0.375f;
-			lightPos.y -= fmodf(lightPos.y, 1.0f) + 0.375f;
+			//lightPos.x -= fmodf(lightPos.x, 1.0f) + 0.375f;
+			//lightPos.y -= fmodf(lightPos.y, 1.0f) + 0.375f;
 		}
 		for (size_t i = 0; i < particleCount; i++)
 		{
@@ -410,28 +410,28 @@ int main(int argc, char* argv[])
 			window.rContext.cameras[window.rContext.boundCamera].scale *= zoom;
 		}
 		SGL_StartRender(&window);
-		//glBindFramebuffer(GL_FRAMEBUFFER, fbo);
-		//glClearColor(0.0, 0.0, 0.0, 0.0);
-		//glClear(GL_COLOR_BUFFER_BIT);
-		//SGL_StaticSpriteRendererDraw(&testRender, &window.rContext);
-		//SGL_StaticSpriteRendererDraw(&frameBufferRenderer1, &window.rContext);
-		//glBindFramebuffer(GL_FRAMEBUFFER, shadowFbo);
-		//glViewport(0, 0, lightSize, 1);
-		//glClearColor(0.0, 0.0, 0.0, 1.0);
-		//glClear(GL_COLOR_BUFFER_BIT);
-		////SGL_Vec2 lightDir = SM_V2Substract(pos, lightPos);
-		//SGL_Vec2 lightDir = {1.0f,0.0f};
-		//float lightAngle = SM_V2Magnitude(pos)*0.004f;
-		//lightAngle = lightAngle > M_PI ? M_PI : lightAngle;
-		//SGL_MapSectorShadows(lightSizef, lightPos, SM_V2Normalize(pos), M_PI, &frameBufferTex, &window.rContext);
-		//glViewport(0, 0, window.rContext.windowSize.x, window.rContext.windowSize.y);
-		//glBindFramebuffer(GL_FRAMEBUFFER, 0);
+		glBindFramebuffer(GL_FRAMEBUFFER, fbo);
+		glClearColor(0.0, 0.0, 0.0, 0.0);
+		glClear(GL_COLOR_BUFFER_BIT);
+		SGL_StaticSpriteRendererDraw(&testRender, &window.rContext);
+		SGL_StaticSpriteRendererDraw(&frameBufferRenderer1, &window.rContext);
+		glBindFramebuffer(GL_FRAMEBUFFER, shadowFbo);
+		glViewport(0, 0, lightSize, 1);
+		glClearColor(0.0, 0.0, 0.0, 1.0);
+		glClear(GL_COLOR_BUFFER_BIT);
+		//SGL_Vec2 lightDir = SM_V2Substract(pos, lightPos);
+		SGL_Vec2 lightDir = {1.0f,0.0f};
+		float lightAngle = SM_V2Magnitude(pos)*0.004f;
+		lightAngle = lightAngle > M_PI ? M_PI : lightAngle;
+		SGL_MapSectorShadows(lightSizef, lightPos, SM_V2Normalize(pos), M_PI, &frameBufferTex, &window.rContext);
+		glViewport(0, 0, window.rContext.windowSize.x, window.rContext.windowSize.y);
+		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 		SGL_StaticRendererDrawSP(&background, &window.rContext);
 		//SGL_StaticSpriteRendererDrawRange(&mountains, &window.rContext, 0, smallMountainCount, { (window.rContext.cameras[window.rContext.boundCamera].position.x - cameraStartPos.x)*mountainsSmallParallax, (window.rContext.cameras[window.rContext.boundCamera].position.y - cameraStartPos.y)*mountainsSmallParallax});
 		//SGL_StaticSpriteRendererDrawRange(&mountains, &window.rContext, smallMountainCount, bigMountainCount, { (window.rContext.cameras[window.rContext.boundCamera].position.x - cameraStartPos.x)*mountainsBigParallax, (window.rContext.cameras[window.rContext.boundCamera].position.y - cameraStartPos.y)*mountainsBigParallax });
 
-		//SGL_DrawLightSector(lightSizef, lightPos, SM_V2Normalize(pos), M_PI, &frameBufferTex1, &sectorRenderer, &window.rContext);
-		//SGL_StaticSpriteRendererDraw(&frameBufferRenderer, &window.rContext);
+		SGL_DrawLightSector(lightSizef, lightPos, SM_V2Normalize(pos), M_PI, &frameBufferTex1, &sectorRenderer, &window.rContext);
+		SGL_StaticSpriteRendererDraw(&frameBufferRenderer, &window.rContext);
 		glBlendFunc(GL_SRC_ALPHA, GL_ONE);
 		SGL_SpriteRendererDraw(&ssr, &window.rContext);
 		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);

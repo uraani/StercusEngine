@@ -1,8 +1,8 @@
 #include "SGL_texture.h"
 //#include "SGL.h"
 #include "GL\glew.h"
-SGL_TexParams SGL_ParamsLinear = { GL_REPEAT, GL_REPEAT, GL_LINEAR, GL_LINEAR, { 1.0f, 0.0f, 1.0f, 1.0f } };
-SGL_TexParams SGL_ParamsNearest = { GL_REPEAT, GL_REPEAT, GL_NEAREST, GL_NEAREST,{ 1.0f, 0.0f, 1.0f, 1.0f } };
+SGL_TexParams SGL_ParamsLinear = { GL_REPEAT, GL_REPEAT, GL_LINEAR, GL_LINEAR, { 0.0f, 0.0f, 0.0f, 0.0f } };
+SGL_TexParams SGL_ParamsNearest = { GL_REPEAT, GL_REPEAT, GL_NEAREST, GL_NEAREST,{ 0.0f, 0.0f, 0.0f, 0.0f } };
 
 void SGL_CreateTextures(SGL_Tex2D* textures, SGL_TexParams* params, U32 count)
 {
@@ -20,8 +20,7 @@ void SGL_CreateTextures(SGL_Tex2D* textures, SGL_TexParams* params, U32 count)
 		{
 			glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, params[i].borderColor);
 		}
-		glTexImage2D(GL_TEXTURE_2D, 0, textures[i].format, textures[i].width, textures[i].height, 0, 
-		textures[i].type, GL_UNSIGNED_BYTE, textures[i].data);
+		glTexImage2D(GL_TEXTURE_2D, 0, textures[i].format, (I32)textures[i].size.x, (I32)textures[i].size.y, 0, textures[i].type, GL_UNSIGNED_BYTE, textures[i].data);
 		SDL_free(textures[i].data);
 		glGenerateMipmap(GL_TEXTURE_2D);
 		glBindTexture(GL_TEXTURE_2D, 0);

@@ -516,12 +516,11 @@ const U32 shaderVertSizes[] =
 	sizeof(SGL_Vec2) + sizeof(SGL_Vec2),
 	sizeof(SGL_Vec2) + sizeof(SGL_Vec2),
 };
-void sectorShaderBindFunction(void* vao, U32 shaderHandle)
+void sectorShaderBindFunction(U32 VAO, U32 VBO, U32 shaderHandle)
 {
-	SGL_VAO* VAO = (SGL_VAO*)vao;
-	glBindVertexArray(VAO->handle);
+	glBindVertexArray(VAO);
+	glBindBuffer(GL_ARRAY_BUFFER, VBO);
 	glUseProgram(shaderHandle);
-	glBindBuffer(GL_ARRAY_BUFFER, VAO->VBO);
 
 	glEnableVertexAttribArray(0);
 	glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, shaderVertSizes[SGL_SHADER_SECTOR], BUFFER_OFFSET(0));
@@ -533,67 +532,51 @@ void sectorShaderBindFunction(void* vao, U32 shaderHandle)
 	glBindVertexArray(0);
 	SGL_CHECK_GL_ERROR;
 }
-void colorShaderBindFunction(void* vao, U32 shaderHandle)
+void colorShaderBindFunction(U32 VAO, U32 VBO, U32 shaderHandle)
 {
-	SGL_VAO* VAO = (SGL_VAO*)vao;
-	glBindVertexArray(VAO->handle);
+	glBindVertexArray(VAO);
+	glBindBuffer(GL_ARRAY_BUFFER, VBO);
 	glUseProgram(shaderHandle);
-	glBindBuffer(GL_ARRAY_BUFFER, VAO->VBO);
 
 	glEnableVertexAttribArray(0);
 	glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, shaderVertSizes[SGL_SHADER_COLOR], BUFFER_OFFSET(0));
-
 	glEnableVertexAttribArray(1);
 	glVertexAttribPointer(1, 4, GL_UNSIGNED_BYTE, GL_TRUE, shaderVertSizes[SGL_SHADER_COLOR], BUFFER_OFFSET(sizeof(SGL_Vec2)));
 
 	glBindVertexArray(0);
 	SGL_CHECK_GL_ERROR;
 }
-void spriteShaderBindFunction(void* vao, U32 shaderHandle)
+void spriteShaderBindFunction(U32 VAO, U32 VBO, U32 shaderHandle)
 {
-	SGL_VAO* VAO = (SGL_VAO*)vao;
-	glBindVertexArray(VAO->handle);
+	glBindVertexArray(VAO);
+	glBindBuffer(GL_ARRAY_BUFFER, VBO);
 	glUseProgram(shaderHandle);
-	glBindBuffer(GL_ARRAY_BUFFER, VAO->VBO);
 
 	glEnableVertexAttribArray(0);
 	glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, shaderVertSizes[SGL_SHADER_SPRITE], BUFFER_OFFSET(0));
-
 	glEnableVertexAttribArray(2);
 	glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, shaderVertSizes[SGL_SHADER_SPRITE], BUFFER_OFFSET(sizeof(SGL_Vec2)));
 
 	glBindVertexArray(0);
 	SGL_CHECK_GL_ERROR;
 }
-void coloredSpriteShaderBindFunction(void* vao, U32 shaderHandle)
+void coloredSpriteShaderBindFunction(U32 VAO, U32 VBO, U32 shaderHandle)
 {
-	SGL_VAO* VAO = (SGL_VAO*)vao;
-	glGenBuffers(1, &VAO->VBO);
-
-	glGenVertexArrays(1, &VAO->handle);
-	glBindVertexArray(VAO->handle);
-
-	glBindBuffer(GL_ARRAY_BUFFER, VAO->VBO);
-	//glBufferData(GL_ARRAY_BUFFER, vertexCount * shaderVertSizes[SGL_SHADER_COLOREDSPRITE], NULL, drawType);
-
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, VAO->EBO);
-	//glBufferData(GL_ELEMENT_ARRAY_BUFFER, indexCount * sizeof(U32), NULL, drawType);
-
+	glBindVertexArray(VAO);
+	glBindBuffer(GL_ARRAY_BUFFER, VBO);
 	glUseProgram(shaderHandle);
 
 	glEnableVertexAttribArray(0);
 	glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, shaderVertSizes[SGL_SHADER_COLOREDSPRITE], BUFFER_OFFSET(0));
-
 	glEnableVertexAttribArray(1);
 	glVertexAttribPointer(1, 4, GL_UNSIGNED_BYTE, GL_TRUE, shaderVertSizes[SGL_SHADER_COLOREDSPRITE], BUFFER_OFFSET(sizeof(SGL_Vec2)));
-
 	glEnableVertexAttribArray(2);
 	glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, shaderVertSizes[SGL_SHADER_COLOREDSPRITE], BUFFER_OFFSET(sizeof(SGL_Vec2)+sizeof(SGL_Color)));
 
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 	glBindVertexArray(0);
 }
-const void(*shaderFunctions[])(void* vao, U32 shaderHandle) =
+const void(*shaderFunctions[])(U32 VAO, U32 VBO, U32 shaderHandle) =
 {
 	NULL,
 	&colorShaderBindFunction,
