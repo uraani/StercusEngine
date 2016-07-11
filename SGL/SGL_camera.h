@@ -5,7 +5,7 @@ typedef enum _SGL_CameraID
 	SGL_CAMERA_GUI,
 	SGL_CAMERA_ORTHO,
 	SGL_CAMERA_PERSPECTIVE,
-	SGL_CAMERA_CUSTOM0,
+	SGL_CAMERA_LIGHT,
 	SGL_CAMERA_CUSTOM1,
 	SGL_CAMERA_CUSTOM2,
 	SGL_CAMERA_CUSTOM3,
@@ -16,7 +16,7 @@ typedef enum SGL_CameraType
 {
 	SGL_CAMERA_TYPE_UNUSED,
 	SGL_CAMERA_TYPE_ORTHO,
-	SGL_CAMERA_TYPE_ORTHO_FORCED_SIZE,
+	SGL_CAMERA_TYPE_LIGHT,
 	SGL_CAMERA_TYPE_PERSPECTIVE
 } SGL_CameraType;
 typedef struct _SGL_Camera
@@ -32,4 +32,4 @@ typedef struct _SGL_Camera
 	U32 camType;
 } SGL_Camera;
 typedef struct _SGL_RenderContext SGL_RenderContext;
-extern SGL_Camera* SGL_CreateCamera(SGL_RenderContext* rContext, const unsigned int type, const unsigned int id, const float nearPlane, const float farPlane, const float FOWY, const float scale);
+extern SGL_Camera* SGL_CreateCamera(const unsigned int type, const unsigned int id, const float nearPlane, const float farPlane, const float FOWY, const float scale, SGL_RenderContext* rContext);

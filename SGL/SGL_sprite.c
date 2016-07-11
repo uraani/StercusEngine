@@ -243,7 +243,7 @@ void SGL_DrawLightSector(float lightSize, SGL_Vec2 position, SGL_Vec2 direction,
 	glBindBuffer(GL_ARRAY_BUFFER, renderer->VAO.VBO);
 	glBufferData(GL_ARRAY_BUFFER, (steps+3)*sizeof(SGL_ColoredSpriteVertex), circleVertices, GL_STATIC_DRAW);
 	glBindTexture(GL_TEXTURE_2D, tex->handle);
-	SGL_BindShader(rContext, rContext->shaders[SGL_SHADER_LIGHT].handle);
+	SGL_BindShader(rContext->shaders[SGL_SHADER_LIGHT].handle, rContext);
 	GLint loc = glGetUniformLocation(rContext->shaders[SGL_SHADER_LIGHT].handle, "resolution");
 	if (loc != -1)
 	{
@@ -253,7 +253,7 @@ void SGL_DrawLightSector(float lightSize, SGL_Vec2 position, SGL_Vec2 direction,
 	SGL_CHECK_GL_ERROR;
 	if (rContext->debug)
 	{
-		SGL_BindShader(rContext, rContext->shaders[SGL_SHADER_SECTOR].handle);
+		SGL_BindShader(rContext->shaders[SGL_SHADER_SECTOR].handle, rContext);
 		glDrawArrays(GL_TRIANGLE_FAN, 0, (steps + 3));
 	}
 	SGL_CHECK_GL_ERROR;
@@ -273,7 +273,7 @@ void SGL_MapShadows(float lightSize, U32 texHandle, const SGL_RenderContext * rC
 	};
 	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
 	glBindTexture(GL_TEXTURE_2D, texHandle);
-	SGL_BindShader(rContext, rContext->shaders[SGL_SHADER_SHADOWMAP].handle);
+	SGL_BindShader(rContext->shaders[SGL_SHADER_SHADOWMAP].handle, rContext);
 	GLint loc = glGetUniformLocation(rContext->shaders[SGL_SHADER_SHADOWMAP].handle, "resolution");
 	if (loc != -1)
 	{
@@ -293,19 +293,20 @@ void SGL_MapSectorShadows(float lightSize, SGL_Vec2 position, SGL_Vec2 direction
 	SGL_CHECK_GL_ERROR;
 	glBindTexture(GL_TEXTURE_2D, tex->handle);
 	SGL_CHECK_GL_ERROR;
-	SGL_BindShader(rContext, rContext->shaders[SGL_SHADER_SHADOWMAP].handle);
+	SGL_BindShader(rContext->shaders[SGL_SHADER_SHADOWMAP].handle, rContext);
 	SGL_CHECK_GL_ERROR;
 	GLint loc = glGetUniformLocation(rContext->shaders[SGL_SHADER_SHADOWMAP].handle, "sizePosScale");
 	SGL_CHECK_GL_ERROR;
 	SGL_Vec4 posV4 = { position.x, position.y, 0.0f, 1.0f };
 	//you actually must do this later on
 	//you should also take the camera rotation and scale into consideration when multiplying the variables with 0.5f or maybe not?
-	posV4 = SM_M4V4Multiply(&rContext->cameras[rContext->boundCamera].vPMatrix, &posV4);
+	////posV4 = SM_M4V4Multiply(&rContext->cameras[rContext->boundCamera].vPMatrix, &posV4);
 	SGL_Vec4 camPosV4 = SM_M4V4Multiply(&rContext->cameras[rContext->boundCamera].vPMatrix, &rContext->cameras[rContext->boundCamera].position);
 	posV4.x -= camPosV4.x;
 	posV4.y -= camPosV4.y;
 	posV4.x *= 0.5f;
 	posV4.y *= 0.5f;
+
 	if (loc != -1)
 	{
 		SGL_Vec2 sizePosScale[3] =
@@ -317,9 +318,9 @@ void SGL_MapSectorShadows(float lightSize, SGL_Vec2 position, SGL_Vec2 direction
 
 			//{ position.x * rContext->cameras[rContext->boundCamera].vPMatrix.m00 + position.y * rContext->cameras[rContext->boundCamera].vPMatrix.m01,
 			//position.x * rContext->cameras[rContext->boundCamera].vPMatrix.m10 + position.y * rContext->cameras[rContext->boundCamera].vPMatrix.m11 },
-			{ posV4.x, posV4.y },
-			{ lightSize / (F32)tex->size.x / rContext->cameras[rContext->boundCamera].scale, lightSize / (F32)tex->size.y / rContext->cameras[rContext->boundCamera].scale }
-			//{ 1.0f , 1.0f }
+			//{ posV4.x, posV4.y },
+			//{ -0.375f , -0.375f },
+			{ lightSize / (F32)tex->size.x, lightSize / (F32)tex->size.y}
 		};
 		glUniform2fv(loc, 3, sizePosScale);
 		SGL_CHECK_GL_ERROR;
@@ -413,7 +414,7 @@ void SGL_DrawShadows(float lightSize, U32 texHandle, const SGL_RenderContext * r
 	glBindBuffer(GL_ARRAY_BUFFER, rContext->lightVAO.VBO);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
 	glBindTexture(GL_TEXTURE_2D, texHandle);
-	SGL_BindShader(rContext, rContext->shaders[SGL_SHADER_LIGHT].handle);
+	SGL_BindShader(rContext->shaders[SGL_SHADER_LIGHT].handle, rContext);
 	GLint loc = glGetUniformLocation(rContext->shaders[SGL_SHADER_LIGHT].handle, "resolution");
 	if (loc != -1)
 	{
@@ -426,7 +427,7 @@ void SGL_DrawShadows(float lightSize, U32 texHandle, const SGL_RenderContext * r
 void SGL_StaticSpriteRendererDraw(SGL_StaticRenderer * ssr, const SGL_RenderContext * rContext)
 {
 	glBindTexture(GL_TEXTURE_2D, ssr->texHandle);
-	SGL_BindShader(rContext, ssr->shaderHandle);
+	SGL_BindShader(ssr->shaderHandle, rContext);
 	glBindVertexArray(ssr->VAO.handle);
 	glDrawElements(GL_TRIANGLES, ssr->spriteCount * 6, GL_UNSIGNED_INT, NULL);
 	glBindVertexArray(0);
@@ -434,7 +435,7 @@ void SGL_StaticSpriteRendererDraw(SGL_StaticRenderer * ssr, const SGL_RenderCont
 void SGL_StaticSpriteRendererDrawRange(SGL_StaticRenderer * ssr, const SGL_RenderContext * rContext, U32 startSprite, U32 count, SGL_Vec2 offset)
 {
 	glBindTexture(GL_TEXTURE_2D, ssr->texHandle);
-	SGL_BindShader(rContext, ssr->shaderHandle);
+	SGL_BindShader(ssr->shaderHandle, rContext);
 	GLint loc = glGetUniformLocation(ssr->shaderHandle, "offset");
 	if (loc != -1)
 	{
@@ -447,7 +448,7 @@ void SGL_StaticSpriteRendererDrawRange(SGL_StaticRenderer * ssr, const SGL_Rende
 }
 void SGL_StaticRendererDrawSP(SGL_StaticRenderer * scr, const SGL_RenderContext * rContext)
 {
-	SGL_BindShader(rContext, scr->shaderHandle);
+	SGL_BindShader(scr->shaderHandle, rContext);
 	glBindVertexArray(scr->VAO.handle);
 	glDrawElements(GL_TRIANGLES, scr->spriteCount * 6, GL_UNSIGNED_INT, NULL);
 	glBindVertexArray(0);
@@ -458,7 +459,7 @@ void SGL_SpriteRendererDraw(SGL_SpriteRenderer* ssr, const SGL_RenderContext * r
 	glBindBuffer(GL_ARRAY_BUFFER, ssr->VAO.VBO);
 	glUnmapBuffer(GL_ARRAY_BUFFER);
 	glBindTexture(GL_TEXTURE_2D, ssr->texHandle);
-	SGL_BindShader(rContext, ssr->shaderHandle);
+	SGL_BindShader(ssr->shaderHandle, rContext);
 	glBindVertexArray(ssr->VAO.handle);
 	glDrawElements(GL_TRIANGLE_STRIP, ssr->spriteCount * 6, GL_UNSIGNED_INT, NULL);
 	//Orphan the buffer
@@ -470,7 +471,7 @@ void SGL_SpriteRendererDraw(SGL_SpriteRenderer* ssr, const SGL_RenderContext * r
 void SGL_SimpleSpriteRendererDraw(SGL_DynamicRenderer* ssr, const SGL_RenderContext * rContext)
 {
 	glBindTexture(GL_TEXTURE_2D, ssr->texHandle);
-	SGL_BindShader(rContext, ssr->shaderHandle);
+	SGL_BindShader(ssr->shaderHandle, rContext);
 	glBindVertexArray(ssr->VAO.handle);
 	glDrawElementsBaseVertex(GL_TRIANGLES, ssr->spriteCount * 6, GL_UNSIGNED_INT, NULL, ssr->mesh.vertexCount);
 	glBindVertexArray(0);
@@ -479,7 +480,7 @@ void SGL_SimpleSpriteRendererDraw(SGL_DynamicRenderer* ssr, const SGL_RenderCont
 void SGL_PointSpriteRendererDraw(SGL_DynamicRenderer * renderer, const SGL_RenderContext * rContext)
 {
 	glBindTexture(GL_TEXTURE_2D, renderer->texHandle);
-	SGL_BindShader(rContext, renderer->shaderHandle);
+	SGL_BindShader(renderer->shaderHandle, rContext);
 	GLint loc = glGetUniformLocation(renderer->shaderHandle, "texSize");
 	if (loc != -1)
 	{
@@ -492,7 +493,7 @@ void SGL_PointSpriteRendererDraw(SGL_DynamicRenderer * renderer, const SGL_Rende
 }
 void SGL_PointRendererDraw(SGL_DynamicRenderer * renderer, const SGL_RenderContext * rContext)
 {
-	SGL_BindShader(rContext, renderer->shaderHandle);
+	SGL_BindShader(renderer->shaderHandle, rContext);
 	glBindVertexArray(renderer->VAO.handle);
 	glDrawArrays(GL_POINTS, renderer->spriteCountMax, renderer->spriteCount);
 	glBindVertexArray(0);

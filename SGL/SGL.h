@@ -1,5 +1,6 @@
 #pragma once
-
+#ifndef _SGL_h
+#define _SGL_h
 #if defined(ANDROID)
 #include "GLES3/gl3.h"
 #include "GLES3/gl3ext.h"
@@ -23,8 +24,20 @@ extern void SGL_ConvertPNGToIconArray(const char* imagePath, const char* fileNam
 extern void SGL_RunGLTest(const SGL_Window* window);
 extern void SGL_StartRender(SGL_Window* rContext);
 extern void SGL_EndRender(SGL_Window* rContext);
-extern void SGL_BindCamera(SGL_RenderContext* rContext, U32 id);
-inline void SGL_BindShader(SGL_RenderContext* rContext, U32 shaderHandle)
+inline void SGL_SetVPMatrix(SGL_Mat4* matrix, const SGL_RenderContext* rContext)
+{
+	glBindBuffer(GL_UNIFORM_BUFFER, rContext->uniformMatrixHandle);
+	glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(SGL_Mat4), matrix);
+}
+inline void SGL_BindCamera(U32 id, SGL_RenderContext* rContext)
+{
+	rContext->boundCamera = id;
+	if (CHECK_FLAGS(rContext->state, SGL_RENDER_STATE_RENDERING))
+	{
+		SGL_SetVPMatrix(&rContext->cameras[rContext->boundCamera].vPMatrix, rContext);
+	}
+}
+inline void SGL_BindShader(U32 shaderHandle, SGL_RenderContext* rContext)
 {
 	if (rContext->boundShader != shaderHandle)
 	{
@@ -48,4 +61,5 @@ inline void _CheckGLErrors(const char *file, int line)
 extern SGL_Window SGL_CreateWindow(const char* title, I32 GLMajorVersion, I32 GLMinorVersion, U32 bufferCount, I32 x, I32 y, I32 w, I32 h, Uint32 SDLflags);
 #ifdef __cplusplus
 }
+#endif
 #endif

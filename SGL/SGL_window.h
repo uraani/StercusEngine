@@ -32,6 +32,7 @@ typedef struct _SGL_RenderContext
 	SGL_Vec2i windowSize;
 	SGL_VAO shadowVAO;
 	SGL_VAO lightVAO;
+	U32 lightMapSize;
 	SGL_bool debug;
 	U32 bufferCount;
 	U32 state;
