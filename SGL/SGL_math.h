@@ -278,6 +278,19 @@ inline const SGL_Vec2 SM_M3V2Multiply(const SGL_Mat3* a, const SGL_Vec2 b)
 	//r.y = i01;
 	return r;
 }
+inline const SGL_Vec4 SM_V4M4Multiply(const SGL_Vec4* b, const SGL_Mat4* a)
+{
+	SGL_Vec4 r;
+	const float i00 = a->m00 * b->x + a->m10 * b->y + a->m20 * b->z + a->m30 * b->w;
+	const float i01 = a->m01 * b->x + a->m11 * b->y + a->m21 * b->z + a->m31 * b->w;
+	const float i02 = a->m02 * b->x + a->m12 * b->y + a->m22 * b->z + a->m32 * b->w;
+	const float i03 = a->m03 * b->x + a->m13 * b->y + a->m23 * b->z + a->m33 * b->w;
+	r.x = i00;
+	r.y = i01;
+	r.z = i02;
+	r.w = i03;
+	return r;
+}
 inline const SGL_Vec4 SM_M4V4Multiply(const SGL_Mat4* a, const SGL_Vec4* b)
 {
 	SGL_Vec4 r;
@@ -971,6 +984,88 @@ inline const SGL_Mat4 SM_M4Rotate(const SGL_Mat4* m, const F32 angle, const SGL_
 	r = SM_M4Multiply(m, &r);
 	r.v3 = m->v3;
 	return r;
+}
+inline const SGL_Mat4 SM_M4Inverse(const SGL_Mat4* a)
+{
+	F32 Coef00 = a->m22 * a->m33 - a->m32 * a->m23;
+	F32 Coef02 = a->m12 * a->m33 - a->m32 * a->m13;
+	F32 Coef03 = a->m12 * a->m23 - a->m22 * a->m13;
+	F32 Coef04 = a->m21 * a->m33 - a->m31 * a->m23;
+	F32 Coef06 = a->m11 * a->m33 - a->m31 * a->m13;
+	F32 Coef07 = a->m11 * a->m23 - a->m21 * a->m13;
+	F32 Coef08 = a->m21 * a->m32 - a->m31 * a->m22;
+	F32 Coef10 = a->m11 * a->m32 - a->m31 * a->m12;
+	F32 Coef11 = a->m11 * a->m22 - a->m21 * a->m12;
+	F32 Coef12 = a->m20 * a->m33 - a->m30 * a->m23;
+	F32 Coef14 = a->m10 * a->m33 - a->m30 * a->m13;
+	F32 Coef15 = a->m10 * a->m23 - a->m20 * a->m13;
+	F32 Coef16 = a->m20 * a->m32 - a->m30 * a->m22;
+	F32 Coef18 = a->m10 * a->m32 - a->m30 * a->m12;
+	F32 Coef19 = a->m10 * a->m22 - a->m20 * a->m12;
+	F32 Coef20 = a->m20 * a->m31 - a->m30 * a->m21;
+	F32 Coef22 = a->m10 * a->m31 - a->m30 * a->m11;
+	F32 Coef23 = a->m10 * a->m21 - a->m20 * a->m11;
+
+	SGL_Vec4 Fac0 = { Coef00, Coef00, Coef02, Coef03 };
+	SGL_Vec4 Fac1 = { Coef04, Coef04, Coef06, Coef07 };
+	SGL_Vec4 Fac2 = { Coef08, Coef08, Coef10, Coef11 };
+	SGL_Vec4 Fac3 = { Coef12, Coef12, Coef14, Coef15 };
+	SGL_Vec4 Fac4 = { Coef16, Coef16, Coef18, Coef19 };
+	SGL_Vec4 Fac5 = { Coef20, Coef20, Coef22, Coef23 };
+
+	SGL_Vec4 Vec0 = { a->m10, a->m00, a->m00, a->m00 };
+	SGL_Vec4 Vec1 = { a->m11, a->m01, a->m01, a->m01 };
+	SGL_Vec4 Vec2 = { a->m12, a->m02, a->m02, a->m02 };
+	SGL_Vec4 Vec3 = { a->m13, a->m03, a->m03, a->m03 };
+
+	SGL_Vec4 tmp0 = SM_V4Multiply(&Vec1, &Fac0);
+	SGL_Vec4 tmp1 = SM_V4Multiply(&Vec2, &Fac1);
+	tmp0 = SM_V4Subtract(&tmp0, &tmp1);
+	tmp1 = SM_V4Multiply(&Vec3, &Fac2);
+	SGL_Vec4 Inv0 = SM_V4Add(&tmp0, &tmp1);
+
+	tmp0 = SM_V4Multiply(&Vec0, &Fac0);
+	tmp1 = SM_V4Multiply(&Vec2, &Fac3);
+	tmp0 = SM_V4Subtract(&tmp0, &tmp1);
+	tmp1 = SM_V4Multiply(&Vec3, &Fac4);
+	SGL_Vec4 Inv1 = SM_V4Add(&tmp0, &tmp1);
+
+	tmp0 = SM_V4Multiply(&Vec0, &Fac1);
+	tmp1 = SM_V4Multiply(&Vec1, &Fac3);
+	tmp0 = SM_V4Subtract(&tmp0, &tmp1);
+	tmp1 = SM_V4Multiply(&Vec3, &Fac5);
+	SGL_Vec4 Inv2 = SM_V4Add(&tmp0, &tmp1);
+
+	tmp0 = SM_V4Multiply(&Vec0, &Fac2);
+	tmp1 = SM_V4Multiply(&Vec1, &Fac4);
+	tmp0 = SM_V4Subtract(&tmp0, &tmp1);
+	tmp1 = SM_V4Multiply(&Vec2, &Fac5);
+	SGL_Vec4 Inv3 = SM_V4Add(&tmp0, &tmp1);
+
+	SGL_Vec4 SignA = { +1.0f, -1.0f, +1.0f, -1.0f };
+	SGL_Vec4 SignB = { -1.0f, +1.0f, -1.0f, +1.0f };
+	SGL_Mat4 Inverse;
+	Inverse.v0 = SM_V4Multiply(&Inv0, &SignA);
+	Inverse.v1 = SM_V4Multiply(&Inv1, &SignB);
+	Inverse.v2 = SM_V4Multiply(&Inv2, &SignA);
+	Inverse.v3 = SM_V4Multiply(&Inv3, &SignB);
+
+	tmp0.x = Inverse.m00;
+	tmp0.y = Inverse.m10;
+	tmp0.z = Inverse.m20;
+	tmp0.w = Inverse.m30;
+
+	tmp0 = SM_V4Multiply(&a->v0, &tmp0);
+	F32 OneOverDeterminant = 1.0f / ((tmp0.x + tmp0.y) + (tmp0.z + tmp0.w));
+	tmp0.x = OneOverDeterminant;
+	tmp0.y = OneOverDeterminant;
+	tmp0.z = OneOverDeterminant;
+	tmp0.w = OneOverDeterminant;
+	Inverse.v0 = SM_V4Multiply(&Inverse.v0, &tmp0);
+	Inverse.v1 = SM_V4Multiply(&Inverse.v1, &tmp0);
+	Inverse.v2 = SM_V4Multiply(&Inverse.v2, &tmp0);
+	Inverse.v3 = SM_V4Multiply(&Inverse.v3, &tmp0);
+	return Inverse;
 }
 inline const SGL_Mat4 SM_Perspective(const F32 FOWY, const F32 aspect, const F32 nearPlane, const F32 farPlane)
 {

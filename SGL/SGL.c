@@ -244,13 +244,6 @@ inline SGL_UpdateCameras(SGL_RenderContext* rContext)
 			const float right = rContext->windowHalfSizef.x * rContext->cameras[i].scale;
 			const float bottom = rContext->windowHalfSizef.y * -rContext->cameras[i].scale;
 			const float top = rContext->windowHalfSizef.y * rContext->cameras[i].scale;
-			//rContext->cameras[i].vPMatrix.m00 = 2.0f / (right - left);
-			//rContext->cameras[i].vPMatrix.m11 = 2.0f / (top - bottom);
-			//rContext->cameras[i].vPMatrix.m22 = -1.0f;
-			////rContext->cameras[i].vPMatrix.m22 = -2.0f / (rContext->cameras[i].farPlane - rContext->cameras[i].nearPlane);
-			//rContext->cameras[i].vPMatrix.m30 = -(right + left) / (right - left);
-			//rContext->cameras[i].vPMatrix.m31 = -(top + bottom) / (top - bottom);
-			//rContext->cameras[i].vPMatrix.m32 = 0.0f;
 
 			rContext->cameras[i].vPMatrix.m00 = 2.0f / (right - left);
 			rContext->cameras[i].vPMatrix.m01 = 0.0f;
@@ -265,7 +258,6 @@ inline SGL_UpdateCameras(SGL_RenderContext* rContext)
 			rContext->cameras[i].vPMatrix.m20 = 0.0f;
 			rContext->cameras[i].vPMatrix.m21 = 0.0f;
 			rContext->cameras[i].vPMatrix.m22 = -1.0f;
-			//rContext->cameras[i].vPMatrix.m22 = -2.0f / (rContext->cameras[i].farPlane - rContext->cameras[i].nearPlane);
 			rContext->cameras[i].vPMatrix.m23 = 0.0f;
 			
 			rContext->cameras[i].vPMatrix.m30 = -(right + left) / (right - left);
@@ -273,7 +265,6 @@ inline SGL_UpdateCameras(SGL_RenderContext* rContext)
 			rContext->cameras[i].vPMatrix.m32 = 0.0f;
 			rContext->cameras[i].vPMatrix.m33 = 1.0f;
 
-			//rContext->cameras[i].vPMatrix.m32 = -(rContext->cameras[i].farPlane + rContext->cameras[i].nearPlane) / (rContext->cameras[i].farPlane - rContext->cameras[i].nearPlane);
 			SGL_Mat4 rot = SM_QToM4(&rContext->cameras[i].rotation);
 			rContext->cameras[i].vPMatrix = SM_M4Multiply(&rot, &rContext->cameras[i].vPMatrix);
 			//SGL_Vec4 forward = { 0.0f, 0.0f, 1.0f, 0.0f };
@@ -309,6 +300,9 @@ inline SGL_UpdateCameras(SGL_RenderContext* rContext)
 			rContext->cameras[i].vPMatrix.m33 = 1.0f;
 
 			rContext->cameras[i].position = rContext->cameras[SGL_CAMERA_ORTHO].position;
+			//raycast distances are calculated from texture, camera position needs to be rounded in order to prevent stuttering of distances 
+			rContext->cameras[i].position.x = roundf(rContext->cameras[i].position.x);
+			rContext->cameras[i].position.y = roundf(rContext->cameras[i].position.y);
 			break;
 		}
 		case SGL_CAMERA_TYPE_PERSPECTIVE:

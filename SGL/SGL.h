@@ -27,7 +27,13 @@ extern void SGL_EndRender(SGL_Window* rContext);
 inline void SGL_SetVPMatrix(SGL_Mat4* matrix, const SGL_RenderContext* rContext)
 {
 	glBindBuffer(GL_UNIFORM_BUFFER, rContext->uniformMatrixHandle);
-	glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(SGL_Mat4), matrix);
+	//for some reason openGL sometimes refuses to update the buffer contents if you use BufferSubData or BufferData ??!?!!
+	//glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(SGL_Mat4), matrix);
+	//glBufferData(GL_UNIFORM_BUFFER, sizeof(SGL_Mat4), matrix, GL_STREAM_DRAW);
+	//this on the otherhand works !?!
+	SGL_Mat4* mat = (SGL_Mat4*)glMapBuffer(GL_UNIFORM_BUFFER, GL_WRITE_ONLY);
+	*mat = *matrix;
+	glUnmapBuffer(GL_UNIFORM_BUFFER);
 }
 inline void SGL_BindCamera(U32 id, SGL_RenderContext* rContext)
 {

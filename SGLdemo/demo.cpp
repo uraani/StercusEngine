@@ -63,7 +63,8 @@ int main(int argc, char* argv[])
 	//U32 spriteCount = 0;
 	U32 psCount = 0;
 	U32 actualDrawCount = 0;
-	const U32 lightSize = 512;
+	SGL_Vec3 falloff = {1.0f,1.0f,1.0f};
+	const U32 lightSize = 128;
 	const F32 lightSizef = (F32)lightSize;
 	F32 rotation = degreesToRadians(-0.0f);
 	float speed = 0.0f;
@@ -164,7 +165,7 @@ int main(int argc, char* argv[])
 	U32 frameCount = 0;
 	SGL_Vec2 movement = { 0.0f,0.0f };
 	float zoom = 1.0f;
-
+//	float rotation = 0.0f;
 	U32 gpuStall = 0;
 	TwInit(TW_OPENGL_CORE, NULL);
 	TwWindowSize(window.rContext.windowSize.x, window.rContext.windowSize.y);
@@ -176,6 +177,9 @@ int main(int argc, char* argv[])
 	TwAddVarRO(bar, "Height", TW_TYPE_INT32, &window.rContext.windowSize.y, " label='Window height:' help='Height of the graphics window (in pixels)' ");
 	TwAddVarRO(bar, "FPS", TW_TYPE_UINT32, &fps, " label='FPS:' help='Frames Per Second' ");
 	TwAddVarRO(bar, "GPUStall", TW_TYPE_UINT32, &gpuStall, " label='GPU Stall:' help='Microseconds spent waiting for buffer to update' ");
+	TwAddVarRW(bar, "FalloffX", TW_TYPE_FLOAT, &falloff.x, " label='FalloffX:' min=-0.0 max=100.0 step=0.1 help='Screenspace x component' ");
+	TwAddVarRW(bar, "FalloffY", TW_TYPE_FLOAT, &falloff.y, " label='FalloffY:' min=-0.0 max=100.0 step=0.1 help='Screenspace y component' ");
+	TwAddVarRW(bar, "FalloffZ", TW_TYPE_FLOAT, &falloff.z, " label='FalloffZ:' min=-0.0 max=100.0 step=0.1 help='Screenspace z component' ");
 	TwAddVarRW(bar, "Debug", TW_TYPE_BOOL32, &window.rContext.debug, " label='Debug Draw:' help='Defines the number of particles in the scene.' ");
 	TwAddVarRW(bar, "ParticleCount", TW_TYPE_UINT32, &particleCount," label='Sprite Count:' min=0 max=" PARTICLE_COUNT_STRING " step=10 help='Defines the number of particles in the scene.' ");
 	TwAddVarRW(bar, "BufferCount", TW_TYPE_UINT32, &bufferCount, " label='Buffer Count:' min=1 max=3 step=1 help='Defines the number of buffers used in the scene.' ");
@@ -221,11 +225,11 @@ int main(int argc, char* argv[])
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	//glViewport(0, 0, window.rContext.windowSize.x, window.rContext.windowSize.y);
 	SGL_Tex2D frameBufferTex = { nullptr, colorTex, GL_BGRA, GL_RGBA8, window.rContext.lightMapSize, window.rContext.lightMapSize };
-	SGL_StaticRenderer frameBufferRenderer = SGL_CreateStaticSpriteRenderer(1, &frameBufferTex, &window.rContext);
+	SGL_SpriteRenderer frameBufferRenderer = SGL_CreateSpriteRenderer(1, &frameBufferTex, &window.rContext);
 	//frameBufferRenderer.shaderHandle = window.rContext.shaders[SGL_SHADER_SP_SPRITE].handle;
-	//SGL_AddStaticSpriteMask(&frameBufferRenderer);
-	SGL_AddStaticSpritePS(&frameBufferRenderer, { 0.0f,0.0f }, { (F32)window.rContext.lightMapSize,  (F32)window.rContext.lightMapSize }, { 0.0f,0.0f,  (F32)window.rContext.lightMapSize,  (F32)window.rContext.lightMapSize });
-	SGL_StaticSpriteRendererCommit(&frameBufferRenderer);
+	//SGL_AddStaticSpriteMask(&frameBufferRenderer, {(F32)window.rContext.windowSize.x/(F32)window.rContext.lightMapSize, (F32)window.rContext.windowSize.y / (F32)window.rContext.lightMapSize });
+	////SGL_AddStaticSpritePS(&frameBufferRenderer, { 0.0f,0.0f }, { (F32)window.rContext.lightMapSize,  (F32)window.rContext.lightMapSize }, { 0.0f,0.0f,  (F32)window.rContext.lightMapSize,  (F32)window.rContext.lightMapSize });
+	//SGL_StaticSpriteRendererCommit(&frameBufferRenderer);
 	U32 shadowFbo;
 	U32 shadowTex;
 	// Create a framebuffer object and bind it 
@@ -269,7 +273,9 @@ int main(int argc, char* argv[])
 	SGL_StaticSpriteRendererCommit(&frameBufferRenderer1);
 	SGL_DynamicRenderer sectorRenderer = SGL_CreateSectorRenderer(&window.rContext);
 	GLsync syncObj = NULL;
+	bool toggle = false;
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	bool disableMouse = false;
 	while (!quit)
 	{
 		timeDelta = float(SDL_GetTicks() - time)*0.001f;
@@ -282,23 +288,22 @@ int main(int argc, char* argv[])
 		}
 		time = SDL_GetTicks();
 		frameCount++;
-		//if (bufferCount != lastBufferCount)
-		//{
-		//	window.rContext.bufferCount = bufferCount;
-		//	lastBufferCount = bufferCount;
-		//	SGL_DestroySSRenderer(&ssr);
-		//	ssr = SGL_CreateSimpleSpriteRenderer(particleMaxCount, &tex[1], &window.rContext);
-		//}
 		input.Update();
 		SDL_Event e = SDL_Event();
-
 		while (SDL_PollEvent(&e))
 		{
 			if (e.key.keysym.sym == SDLK_RETURN)
 			{
 				int asdfssasf = 0;
 			}
-			TwEventSDL(&e, 2, 0);
+			if(TwEventSDL(&e, 2, 0) != 0 && e.type == SDL_MOUSEBUTTONDOWN)
+			{
+				disableMouse = true;
+			}
+			else if (TwEventSDL(&e, 2, 0) != 0 && e.type == SDL_MOUSEBUTTONUP)
+			{
+				disableMouse = false;
+			}
 			switch (e.type)
 			{
 			case SDL_QUIT:
@@ -334,6 +339,15 @@ int main(int argc, char* argv[])
 		{
 			quit = true;
 		}
+		if (input.IsKeyUp(SDLK_f))
+		{
+			toggle = !toggle;
+		}
+		if (toggle)
+		{
+			timeDelta = 0.002f;
+			movement.x += 1.0f;
+		}
 		if (input.IsKeyPressed(SDLK_d))
 		{
 			movement.x += 1.0f;
@@ -358,6 +372,12 @@ int main(int argc, char* argv[])
 		{
 			zoom -= 0.5 * timeDelta;
 		}
+		if (input.IsKeyPressed(SDLK_r))
+		{
+			rotation += degreesToRadians(45.0f) * timeDelta;
+			SGL_Vec4 forward = { 0.0f,0.0f,1.0f,0.0f };
+			camera0->rotation = SM_QAngleAxis(rotation, &forward);
+		}
 		texReg = { spriteSize*spriteOffset,spriteSize,spriteSize, spriteSize };
 		if (anim)
 		{
@@ -373,12 +393,11 @@ int main(int argc, char* argv[])
 		gpuStall = SDL_GetTicks() - gpuStall;
 		int x, y;
 		SDL_GetMouseState(&x, &y);
-		SGL_Vec2 pos = { (float)(x - window.rContext.windowSize.x/2), (float)(window.rContext.windowSize.y - y - window.rContext.windowSize.y/2) };
-		pos = SM_V2FMultiply(pos, window.rContext.cameras[window.rContext.boundCamera].scale);
-		pos.x += window.rContext.cameras[window.rContext.boundCamera].position.x;
-		pos.y += window.rContext.cameras[window.rContext.boundCamera].position.y;
-
-		if (SDL_GetMouseState(NULL, NULL) & SDL_BUTTON(SDL_BUTTON_LEFT)) 
+		SGL_Vec4 posV4  = { ((F32)x / window.rContext.windowHalfSizef.x) - 1.0f,((F32)y / -window.rContext.windowHalfSizef.y) + 1.0f, 1.0f, 1.0f };
+		SGL_Mat4 inverse = SM_M4Inverse(&camera0->vPMatrix);
+		posV4 = SM_V4M4Multiply(&posV4, &inverse);
+		SGL_Vec2 pos = { posV4.x, posV4.y };
+		if (SDL_GetMouseState(NULL, NULL) & SDL_BUTTON(SDL_BUTTON_LEFT) && !disableMouse) 
 		{
 			lightPos = pos;
 			//lightPos.x -= fmodf(lightPos.x, 1.0f) + 0.375f;
@@ -409,35 +428,45 @@ int main(int argc, char* argv[])
 		{
 			window.rContext.cameras[window.rContext.boundCamera].scale *= zoom;
 		}
-		SGL_StartRender(&window);
-		//SGL_Mat4 lightMatrix = SGL_CreateLightProjection(&window.rContext.cameras[SGL_CAMERA_ORTHO].position, &window.rContext);
 		SGL_BindCamera(SGL_CAMERA_LIGHT, &window.rContext);
-
-		//glBindFramebuffer(GL_FRAMEBUFFER, fbo);
-		//glViewport(0, 0, window.rContext.lightMapSize, window.rContext.lightMapSize);
-		//glClearColor(0.0, 0.0, 0.0, 0.0);
-		//glClear(GL_COLOR_BUFFER_BIT);
-		//SGL_StaticSpriteRendererDraw(&testRender, &window.rContext);
-		//SGL_StaticSpriteRendererDraw(&frameBufferRenderer1, &window.rContext);
-		//glBindFramebuffer(GL_FRAMEBUFFER, shadowFbo);
-		//glViewport(0, 0, lightSize, 1);
-		//glClearColor(0.0, 0.0, 0.0, 1.0);
-		//glClear(GL_COLOR_BUFFER_BIT);
-		////SGL_Vec2 lightDir = SM_V2Substract(pos, lightPos);
-		//SGL_Vec2 lightDir = {1.0f,0.0f};
-		//float lightAngle = SM_V2Magnitude(pos)*0.004f;
-		//lightAngle = lightAngle > M_PI ? M_PI : lightAngle;
-		//SGL_MapSectorShadows(lightSizef, lightPos, SM_V2Normalize(pos), M_PI, &frameBufferTex, &window.rContext);
-		//glViewport(0, 0, window.rContext.windowSize.x, window.rContext.windowSize.y);
-		//glBindFramebuffer(GL_FRAMEBUFFER, 0);
-		//SGL_BindCamera(SGL_CAMERA_ORTHO, &window.rContext);
+		SGL_StartRender(&window);
+		SGL_bool debug = window.rContext.debug;
+		window.rContext.debug = SGL_FALSE;
+		{
+			//glBindBuffer(GL_UNIFORM_BUFFER, window.rContext.uniformMatrixHandle);
+			//SGL_Mat4 mat;
+			//glGetBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(SGL_Mat4), &mat);
+			SGL_Vec2 lightPos = { window.rContext.cameras[SGL_CAMERA_LIGHT].position.x, window.rContext.cameras[SGL_CAMERA_LIGHT].position.y };
+			SGL_AddSpritePS(&frameBufferRenderer, lightPos, { (F32)window.rContext.lightMapSize,(F32)window.rContext.lightMapSize },
+			{ 0.0f,0.0f,(F32)window.rContext.lightMapSize,(F32)window.rContext.lightMapSize });
+		}
+		glBindFramebuffer(GL_FRAMEBUFFER, fbo);
+		glViewport(0, 0, window.rContext.lightMapSize, window.rContext.lightMapSize);
+		glClearColor(0.0, 0.0, 0.0, 0.0);
+		glClear(GL_COLOR_BUFFER_BIT);
+		SGL_StaticSpriteRendererDraw(&testRender, &window.rContext);
+		SGL_StaticSpriteRendererDraw(&frameBufferRenderer1, &window.rContext);
+		glBindFramebuffer(GL_FRAMEBUFFER, shadowFbo);
+		glViewport(0, 0, lightSize, 1);
+		glClearColor(0.0, 0.0, 0.0, 1.0);
+		glClear(GL_COLOR_BUFFER_BIT);
+		//SGL_Vec2 lightDir = SM_V2Substract(pos, lightPos);
+		SGL_Vec2 lightDir = {1.0f,0.0f};
+		float lightAngle = SM_V2Magnitude(pos)*0.004f;
+		lightAngle = lightAngle > M_PI ? M_PI : lightAngle;
+		SGL_MapSectorShadows(lightSizef, lightPos, SM_V2Normalize(lightDir), M_PI, &frameBufferTex, &window.rContext);
+		glViewport(0, 0, window.rContext.windowSize.x, window.rContext.windowSize.y);
+		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+		window.rContext.debug = debug;
+		SGL_BindCamera(SGL_CAMERA_ORTHO, &window.rContext);
 		SGL_StaticRendererDrawSP(&background, &window.rContext);
 		//SGL_StaticSpriteRendererDrawRange(&mountains, &window.rContext, 0, smallMountainCount, { (window.rContext.cameras[window.rContext.boundCamera].position.x - cameraStartPos.x)*mountainsSmallParallax, (window.rContext.cameras[window.rContext.boundCamera].position.y - cameraStartPos.y)*mountainsSmallParallax});
 		//SGL_StaticSpriteRendererDrawRange(&mountains, &window.rContext, smallMountainCount, bigMountainCount, { (window.rContext.cameras[window.rContext.boundCamera].position.x - cameraStartPos.x)*mountainsBigParallax, (window.rContext.cameras[window.rContext.boundCamera].position.y - cameraStartPos.y)*mountainsBigParallax });
-
-		//SGL_DrawLightSector(lightSizef, lightPos, SM_V2Normalize(pos), M_PI, &frameBufferTex1, &sectorRenderer, &window.rContext);
-		//SGL_StaticSpriteRendererDraw(&frameBufferRenderer, &window.rContext);
+		//SGL_StaticSpriteRendererDraw(&testRender, &window.rContext);
+		//SGL_StaticSpriteRendererDraw(&frameBufferRenderer1, &window.rContext);
+		SGL_SpriteRendererDraw(&frameBufferRenderer, &window.rContext);
 		glBlendFunc(GL_SRC_ALPHA, GL_ONE);
+		SGL_DrawLightSector(lightSizef, lightPos, SM_V2Normalize(lightDir), falloff, M_PI,  &frameBufferTex1, &sectorRenderer, &window.rContext);
 		SGL_SpriteRendererDraw(&ssr, &window.rContext);
 		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 		SGL_CHECK_GL_ERROR;

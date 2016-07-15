@@ -197,25 +197,27 @@ SGL_StaticRenderer SGL_CreateStaticColorRenderer(U32 spriteCountMax, U32 shader,
 	scr.spriteCountMax = spriteCountMax;
 	return scr;
 }
-void SGL_DrawLightSector(float lightSize, SGL_Vec2 position, SGL_Vec2 direction, F32 angle,const SGL_Tex2D* tex, SGL_DynamicRenderer * renderer, const SGL_RenderContext * rContext)
+void SGL_DrawLightSector(float lightSize, SGL_Vec2 position, SGL_Vec2 direction, SGL_Vec3 falloff, F32 angle,const SGL_Tex2D* tex, SGL_DynamicRenderer * renderer, const SGL_RenderContext * rContext)
 {
 	const F64 dirAngle = SDL_atan2((F64)direction.y, (F64)direction.x);
 	const F64 padAngle = 12.566370614272 / (F64)lightSize;
 	const F32 startAngle = (F32)(dirAngle - ((F64)angle+ padAngle));
-	const F32 stepAngle = 50.2654824576f/lightSize;
+	const F32 stepAngle = 50.2654824576f/ (lightSize < 64.0f ? 64.0f : lightSize);
+	//stepAngle = stepAngle < M_PI*0.25f ? stepAngle : M_PI*0.25f;
 	F32 lastStepAngle = (angle+(F32)padAngle)*2.0f;
 	lastStepAngle = lastStepAngle > (F32)(2.0*M_PI) ? (F32)(2.0*M_PI) / stepAngle : lastStepAngle / stepAngle;
 	U32 steps = (U32)lastStepAngle;
 	SGL_ColoredSpriteVertex* circleVertices = (SGL_ColoredSpriteVertex*)renderer->mesh.vertexData;
 	//SGL_Vec2 center = { 0.0f,0.0f };
-	SGL_Color color = { 0,255,255,255 };
-	SGL_Color colors[] = { { 255,0,255,128 },{ 0,255,0,128 } };
+	SGL_Color color = { 0,255,255,64 };
+	SGL_Color colors[] = { { 255,0,255,64 },{ 0,255,0,64 } };
 	circleVertices[0].pos = position;
 	circleVertices[0].uvs.x = 0.5f;
 	//this is bit weird, but y axis is reversed
 	circleVertices[0].uvs.y = 0.5f;
 	circleVertices[0].color = color;
-	const F32 halfLight = lightSize*0.5f;
+	//const F32 halfLight = lightSize*0.5f;
+	const F32 halfLight = lightSize*0.5f*10.0f;
 	for (U32 i = 0; i <= steps; i++)
 	{
 		F32 angle = startAngle + stepAngle * (F32)i;
@@ -226,7 +228,8 @@ void SGL_DrawLightSector(float lightSize, SGL_Vec2 position, SGL_Vec2 direction,
 		circleVertices[i+1].uvs.x = cos*0.5f + 0.5f;
 		//this is bit weird, but y axis is reversed
 		circleVertices[i+1].uvs.y = sin*-0.5f + 0.5f;
-		circleVertices[i+1].color = colors[i%2];
+		//circleVertices[i+1].color = colors[i%2];
+		circleVertices[i + 1].color = colors[0];
 	}
 	{
 		F32 angle = startAngle + stepAngle * lastStepAngle;
@@ -237,7 +240,8 @@ void SGL_DrawLightSector(float lightSize, SGL_Vec2 position, SGL_Vec2 direction,
 		circleVertices[steps+2].uvs.x = cos*0.5f + 0.5f;
 		//this is bit weird, but y axis is reversed
 		circleVertices[steps+2].uvs.y = sin*-0.5f + 0.5f;
-		circleVertices[steps+2].color = colors[steps%2];
+		//circleVertices[steps+2].color = colors[steps%2];
+		circleVertices[steps + 2].color = colors[0];
 	}
 	glBindVertexArray(renderer->VAO.handle);
 	glBindBuffer(GL_ARRAY_BUFFER, renderer->VAO.VBO);
@@ -247,13 +251,18 @@ void SGL_DrawLightSector(float lightSize, SGL_Vec2 position, SGL_Vec2 direction,
 	GLint loc = glGetUniformLocation(rContext->shaders[SGL_SHADER_LIGHT].handle, "resolution");
 	if (loc != -1)
 	{
-		glUniform2f(loc, lightSize, lightSize);
+		glUniform2f(loc, lightSize*10.0f, lightSize*10.0f);
+	}
+	loc = glGetUniformLocation(rContext->shaders[SGL_SHADER_LIGHT].handle, "falloff");
+	if (loc != -1)
+	{
+		glUniform3f(loc, falloff.x, falloff.y, falloff.z);
 	}
 	glDrawArrays(GL_TRIANGLE_FAN, 0, (steps + 3));
 	SGL_CHECK_GL_ERROR;
 	if (rContext->debug)
 	{
-		SGL_BindShader(rContext->shaders[SGL_SHADER_SECTOR].handle, rContext);
+		SGL_BindShader(rContext->shaders[SGL_SHADER_TRIANGLE_DEBUG].handle, rContext);
 		glDrawArrays(GL_TRIANGLE_FAN, 0, (steps + 3));
 	}
 	SGL_CHECK_GL_ERROR;
@@ -295,34 +304,31 @@ void SGL_MapSectorShadows(float lightSize, SGL_Vec2 position, SGL_Vec2 direction
 	SGL_CHECK_GL_ERROR;
 	SGL_BindShader(rContext->shaders[SGL_SHADER_SHADOWMAP].handle, rContext);
 	SGL_CHECK_GL_ERROR;
-	GLint loc = glGetUniformLocation(rContext->shaders[SGL_SHADER_SHADOWMAP].handle, "sizePosScale");
 	SGL_CHECK_GL_ERROR;
-	SGL_Vec4 posV4 = { position.x, position.y, 0.0f, 1.0f };
-	//you actually must do this later on
-	//you should also take the camera rotation and scale into consideration when multiplying the variables with 0.5f or maybe not?
-	////posV4 = SM_M4V4Multiply(&rContext->cameras[rContext->boundCamera].vPMatrix, &posV4);
-	SGL_Vec4 camPosV4 = SM_M4V4Multiply(&rContext->cameras[rContext->boundCamera].vPMatrix, &rContext->cameras[rContext->boundCamera].position);
-	posV4.x -= camPosV4.x;
-	posV4.y -= camPosV4.y;
-	posV4.x *= 0.5f;
-	posV4.y *= 0.5f;
-
+	GLint loc = glGetUniformLocation(rContext->shaders[SGL_SHADER_SHADOWMAP].handle, "sizePosUpscale");
 	if (loc != -1)
 	{
-		SGL_Vec2 sizePosScale[3] =
+		SGL_Vec4 posV4 = { position.x, position.y, 0.0f, 1.0f };
+		posV4 = SM_M4V4Multiply(&rContext->cameras[SGL_CAMERA_LIGHT].vPMatrix, &posV4);
+		SGL_Vec4 camPosV4 = SM_M4V4Multiply(&rContext->cameras[SGL_CAMERA_LIGHT].vPMatrix, &rContext->cameras[SGL_CAMERA_LIGHT].position);
+		posV4.x -= camPosV4.x;
+		posV4.y -= camPosV4.y;
+		posV4.x *= 0.5f;
+		posV4.y *= 0.5f;
+		SGL_Vec2 sizePosUpscale[3] =
 		{
-			{ lightSize, lightSize },
+			{ lightSize*10.0f, lightSize*10.0f},
 			//for testing purposes only
 			//a->m00 * b->x + a->m01 * b->y
 			//a->m10 * b->x + a->m11 * b->y
 
 			//{ position.x * rContext->cameras[rContext->boundCamera].vPMatrix.m00 + position.y * rContext->cameras[rContext->boundCamera].vPMatrix.m01,
 			//position.x * rContext->cameras[rContext->boundCamera].vPMatrix.m10 + position.y * rContext->cameras[rContext->boundCamera].vPMatrix.m11 },
-			//{ posV4.x, posV4.y },
+			{ posV4.x + 0.5f, posV4.y + 0.5f},
 			//{ -0.375f , -0.375f },
-			{ lightSize / (F32)tex->size.x, lightSize / (F32)tex->size.y}
+			{ lightSize / (F32)tex->size.x * 10.0f, lightSize / (F32)tex->size.y * 10.0f }
 		};
-		glUniform2fv(loc, 3, sizePosScale);
+		glUniform2fv(loc, 3, sizePosUpscale);
 		SGL_CHECK_GL_ERROR;
 	}
 	if (dx0 < -M_PI)
@@ -430,6 +436,11 @@ void SGL_StaticSpriteRendererDraw(SGL_StaticRenderer * ssr, const SGL_RenderCont
 	SGL_BindShader(ssr->shaderHandle, rContext);
 	glBindVertexArray(ssr->VAO.handle);
 	glDrawElements(GL_TRIANGLES, ssr->spriteCount * 6, GL_UNSIGNED_INT, NULL);
+	if (rContext->debug)
+	{
+		SGL_BindShader(rContext->shaders[SGL_SHADER_TRIANGLE_DEBUG].handle, rContext);
+		glDrawElements(GL_TRIANGLES, ssr->spriteCount * 6, GL_UNSIGNED_INT, NULL);
+	}
 	glBindVertexArray(0);
 }
 void SGL_StaticSpriteRendererDrawRange(SGL_StaticRenderer * ssr, const SGL_RenderContext * rContext, U32 startSprite, U32 count, SGL_Vec2 offset)
@@ -462,6 +473,11 @@ void SGL_SpriteRendererDraw(SGL_SpriteRenderer* ssr, const SGL_RenderContext * r
 	SGL_BindShader(ssr->shaderHandle, rContext);
 	glBindVertexArray(ssr->VAO.handle);
 	glDrawElements(GL_TRIANGLE_STRIP, ssr->spriteCount * 6, GL_UNSIGNED_INT, NULL);
+	if (rContext->debug)
+	{
+		SGL_BindShader(rContext->shaders[SGL_SHADER_TRIANGLE_DEBUG].handle, rContext);
+		glDrawElements(GL_TRIANGLE_STRIP, ssr->spriteCount * 6, GL_UNSIGNED_INT, NULL);
+	}
 	//Orphan the buffer
 	GLbitfield flags = GL_MAP_WRITE_BIT | GL_MAP_UNSYNCHRONIZED_BIT | GL_MAP_INVALIDATE_BUFFER_BIT;
 	ssr->vertexData = glMapBufferRange(GL_ARRAY_BUFFER, 0, rContext->shaders[SGL_SHADER_SPRITE].vertexSize * ssr->spriteCountMax * 4, flags);

@@ -125,34 +125,32 @@ inline void SGL_AddPointPC(SGL_DynamicRenderer* pr, SGL_Vec2 pos, SGL_Color col)
 	vertexData[spriteOffset].color = col;
 	pr->spriteCount++;
 }
-inline void SGL_AddStaticSpriteMask(SGL_StaticRenderer* scr)
+inline void SGL_AddStaticSpriteMask(SGL_StaticRenderer* scr, SGL_Vec2 maskSize)
 {
 	SDL_assert(scr->spriteCount < scr->spriteCountMax);
-	const SGL_Vec2 quadPosition[] =
+	maskSize.x *= 0.5f;
+	maskSize.y *= 0.5f;
+	const SGL_Vec2 uvs[] =
 	{
-		{ 1.0f, 1.0f },
-		{ -1.0f, 1.0f },
-		{ -1.0f,-1.0f },
-		{ 1.0f,-1.0f },
+		{ maskSize.x + 0.5f, maskSize.y + 0.5f },
+		{-maskSize.x + 0.5f,-maskSize.y + 0.5f },
 	};
 	SGL_SpriteData* vertexData = (SGL_SpriteData*)scr->mesh.vertexData;
 	size_t spriteOffset = scr->spriteCount;
-	vertexData[spriteOffset].verts[0].pos.x =  1.0f;
-	vertexData[spriteOffset].verts[0].pos.y =  1.0f;
-	vertexData[spriteOffset].verts[0].uvs.x =  1.0f;
-	vertexData[spriteOffset].verts[0].uvs.y =  1.0f;
-	vertexData[spriteOffset].verts[1].pos.x = -1.0f;
-	vertexData[spriteOffset].verts[1].pos.y =  1.0f;
-	vertexData[spriteOffset].verts[1].uvs.x =  0.0f;
-	vertexData[spriteOffset].verts[1].uvs.y =  1.0f;
-	vertexData[spriteOffset].verts[2].pos.x = -1.0f;
-	vertexData[spriteOffset].verts[2].pos.y = -1.0f;
-	vertexData[spriteOffset].verts[2].uvs.x =  0.0f;
-	vertexData[spriteOffset].verts[2].uvs.y =  0.0f;
-	vertexData[spriteOffset].verts[3].pos.x =  1.0f;
-	vertexData[spriteOffset].verts[3].pos.y = -1.0f;
-	vertexData[spriteOffset].verts[3].uvs.x =  1.0f;
-	vertexData[spriteOffset].verts[3].uvs.y =  0.0f;
+	vertexData[spriteOffset].verts[0].pos.x = 1.0f;
+	vertexData[spriteOffset].verts[0].pos.y = 1.0f;
+	vertexData[spriteOffset].verts[0].uvs   = uvs[0];
+	vertexData[spriteOffset].verts[1].pos.x =-1.0f;
+	vertexData[spriteOffset].verts[1].pos.y = 1.0f;
+	vertexData[spriteOffset].verts[1].uvs.x = uvs[1].x;
+	vertexData[spriteOffset].verts[1].uvs.y = uvs[0].y;
+	vertexData[spriteOffset].verts[2].pos.x =-1.0f;
+	vertexData[spriteOffset].verts[2].pos.y =-1.0f;
+	vertexData[spriteOffset].verts[2].uvs   = uvs[1];
+	vertexData[spriteOffset].verts[3].pos.x = 1.0f;
+	vertexData[spriteOffset].verts[3].pos.y =-1.0f;
+	vertexData[spriteOffset].verts[3].uvs.x = uvs[0].x;
+	vertexData[spriteOffset].verts[3].uvs.y = uvs[1].y;
 	scr->spriteCount++;
 }
 inline void SGL_AddStaticColoredRectanglePS(SGL_StaticRenderer* scr, SGL_Vec2 pos, SGL_Vec2 size, SGL_Color* colors)
@@ -272,7 +270,7 @@ inline void SGL_AddSpriteM3(SGL_DynamicRenderer* ssr, SGL_Mat3* mat3, SGL_TexReg
 	vertexData[spriteOffset].verts[3].uvs.y = uvs.f[1];
 	ssr->spriteCount++;
 }
-extern void SGL_DrawLightSector(float lightSize, SGL_Vec2 position, SGL_Vec2 direction, F32 angle,const SGL_Tex2D* tex, SGL_DynamicRenderer* renderer, const SGL_RenderContext* rContext);
+extern void SGL_DrawLightSector(float lightSize, SGL_Vec2 position, SGL_Vec2 direction, SGL_Vec3 falloff, F32 angle,const SGL_Tex2D* tex, SGL_DynamicRenderer* renderer, const SGL_RenderContext* rContext);
 extern void SGL_MapShadows(float lightSize, U32 texHandle, const SGL_RenderContext* rContext);
 extern void SGL_MapSectorShadows(float lightSize, SGL_Vec2 position, SGL_Vec2 direction, F32 angle,const SGL_Tex2D* tex, const SGL_RenderContext * rContext);
 extern void SGL_DrawShadows(float lightSize, U32 texHandle, const SGL_RenderContext* rContext);

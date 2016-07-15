@@ -34,6 +34,59 @@ const SGL_ShaderInfo debugShader[] =
 		NULL
 	}
 };
+const SGL_ShaderInfo triangleDebugShader[] =
+{
+	{
+		GL_VERTEX_SHADER,
+		GLSL
+	(
+		layout(location = 0) in vec2 vPosition;
+		void main()
+		{
+			gl_Position = vec4(vPosition, 0.0, 1.0);
+		}
+	)
+	},
+	{
+		GL_GEOMETRY_SHADER,
+		GLSL
+	(
+		layout(std140) uniform globalMatrices\n
+		{ \n
+			mat4 vPMatrix; \n
+		}; \n
+		layout(triangles) in;
+		layout(line_strip, max_vertices = 4) out;
+		void main()
+		{
+			gl_Position = vPMatrix * (gl_in[0].gl_Position);
+			EmitVertex();
+			gl_Position = vPMatrix * (gl_in[1].gl_Position);
+			EmitVertex();
+			gl_Position = vPMatrix * (gl_in[2].gl_Position);
+			EmitVertex();
+			gl_Position = vPMatrix * (gl_in[0].gl_Position);
+			EmitVertex();
+			EndPrimitive();
+		}
+	)
+	},
+	{
+		GL_FRAGMENT_SHADER,
+		GLSL
+	(
+		out vec4 fColor;
+		void main()
+		{
+			fColor = vec4(1.0,0.0,0.0,1.0);
+		}
+	)
+	},
+	{
+		GL_NONE,
+		NULL
+	}
+};
 const SGL_ShaderInfo colorShader[] =
 {
 	{
@@ -320,22 +373,22 @@ const SGL_ShaderInfo shadowMapShader[] =
 			#define PI 3.14159265358979\n
 			in vec2 texCoord;
 			uniform sampler2D u_texture;
-			uniform vec2 sizePosScale[3];
+			uniform vec2 sizePosUpscale[3];
 			//uniform vec4 lightPosScale;
-			const float THRESHOLD = 0.9;
+			const float THRESHOLD = 0.75;
 			//const vec2 scale = vec2(0.266666, 0.4776119);
 			out vec4 fColor;
 			void main()
 			{
 				float distance = 1.0;
-				for (float y = 0.0; y<sizePosScale[0].y; y += 1.0)
+				for (float y = 0.0; y<sizePosUpscale[0].y; y += 1.0)
 				{
-					vec2 norm = vec2(texCoord.s, y / sizePosScale[0].y) * 2.0 - 1.0;
+					vec2 norm = vec2(texCoord.s, y / sizePosUpscale[0].y) * 2.0 - 1.0;
 					float theta = PI*1.5 + norm.x * PI;
 					float r = (1.0 + norm.y) * 0.5;
-					vec2 coord = (vec2(-r * sin(theta), -r * cos(theta)) * 0.5)* sizePosScale[2] + 0.5 + sizePosScale[1]; //remove the 0.5 and add it to sizePosScale[1] before sending it to shader??
+					vec2 coord = (vec2(-r * sin(theta), -r * cos(theta)) * 0.5)* sizePosUpscale[2] + sizePosUpscale[1]; //remove the 0.5 and add it to sizePosScale[1] before sending it to shader??
 					vec4 data = texture2D(u_texture, coord);
-					float dst = y / sizePosScale[0].y;
+					float dst = y / sizePosUpscale[0].y;
 					float caster = data.a;
 					if (caster > THRESHOLD)
 					{
@@ -385,9 +438,15 @@ const SGL_ShaderInfo lightShader[] =
 			in vec4 color;
 			uniform sampler2D u_texture;
 			uniform vec2 resolution;
+			uniform vec3 falloff;
 			float sample(vec2 coord, float r)
 			{
 				return step(r, texture2D(u_texture, coord).r);
+			}
+			float attenuation(float x)
+			{
+				//return pow(4.0f*x*(1.0f - x), k);
+				return 1.0 / (falloff.x + (falloff.y*x) + (falloff.z*x*x));
 			}
 			out vec4 fColor;
 			void main()
@@ -398,7 +457,8 @@ const SGL_ShaderInfo lightShader[] =
 				float coord = (theta + PI) / (2.0*PI);
 				vec2 tc = vec2(coord, 0.0);
 				float center = sample(tc, r);
-				float blur = (1. / resolution.x)  * smoothstep(0., 1., r);
+				//soft shadows
+				float blur = (1.0 / resolution.x)  * smoothstep(0.0, 1.0, r);
 				float sum = 0.0;
 				sum += sample(vec2(tc.x - 4.0*blur, tc.y), r) * 0.05;
 				sum += sample(vec2(tc.x - 3.0*blur, tc.y), r) * 0.09;
@@ -409,62 +469,11 @@ const SGL_ShaderInfo lightShader[] =
 				sum += sample(vec2(tc.x + 2.0*blur, tc.y), r) * 0.12;
 				sum += sample(vec2(tc.x + 3.0*blur, tc.y), r) * 0.09;
 				sum += sample(vec2(tc.x + 4.0*blur, tc.y), r) * 0.05;
+				//smoothstepping unnecesary if the distance fading is done with vertex colors
 				fColor = color * vec4(vec3(1.0), sum * smoothstep(1.0, 0.0, r));
+				//fColor = color * vec4(vec3(1.0), sum);
 				//hard shadows
 				//fColor = color * vec4(vec3(1.0), center * smoothstep(1.0, 0.0, r));
-			}
-		)
-	},
-	{
-		GL_NONE,
-		NULL
-	}
-};
-const SGL_ShaderInfo sectorDebugShader[] =
-{
-	{
-		GL_VERTEX_SHADER,
-		GLSL
-		(
-			layout(location = 0) in vec2 vPosition;
-			void main()
-			{
-				gl_Position = vec4(vPosition, 0.0, 1.0);
-			}
-		)
-	},
-	{
-		GL_GEOMETRY_SHADER,
-		GLSL
-		(
-			layout(std140) uniform globalMatrices\n
-			{ \n
-				mat4 vPMatrix; \n
-			}; \n
-			layout(triangles) in;
-			layout(line_strip, max_vertices = 4) out;
-			void main()
-			{
-				gl_Position = vPMatrix * (gl_in[0].gl_Position);
-				EmitVertex();
-				gl_Position = vPMatrix * (gl_in[1].gl_Position);
-				EmitVertex();
-				gl_Position = vPMatrix * (gl_in[2].gl_Position);
-				EmitVertex();
-				gl_Position = vPMatrix * (gl_in[0].gl_Position);
-				EmitVertex();
-				EndPrimitive();
-			}
-		)
-	},
-	{
-		GL_FRAGMENT_SHADER,
-		GLSL
-		(
-			out vec4 fColor;
-			void main()
-			{
-				fColor = vec4(1.0,0.0,0.0,1.0);
 			}
 		)
 	},
@@ -476,13 +485,14 @@ const SGL_ShaderInfo sectorDebugShader[] =
 const char* shaderNames[] =
 {
 	"         Debug Shader",
+	"Triangle Debug Shader",
 	"         Color Shader",
 	"        Sprite Shader",
 	" Offset Sprite Shader",
 	"   PointSprite Shader",
 	"Colored Sprite Shader",
 	"         Light Shader",
-	"  Sector Debug Shader",
+	"   Light Debug Shader",
 	"      SP Color Shader",
 	"     SP Sprite Shader",
 	"     Shadowmap Shader",
@@ -491,13 +501,13 @@ const char* shaderNames[] =
 const SGL_ShaderInfo* builtInShaders[] =
 {
 	&debugShader,
+	&triangleDebugShader,
 	&colorShader,
 	&spriteShader,
 	&offsetSpriteShader,
 	&pointSpriteShader,
 	&coloredSpriteShader,
 	&lightShader,
-	&sectorDebugShader,
 	&screenSpaceColorShader,
 	&screenSpaceSpriteShader,
 	&shadowMapShader,
@@ -505,33 +515,17 @@ const SGL_ShaderInfo* builtInShaders[] =
 const U32 shaderVertSizes[] =
 {
 	sizeof(SGL_Vec2),
+	sizeof(SGL_Vec2),
 	sizeof(SGL_Vec2) + sizeof(SGL_Color),
 	sizeof(SGL_Vec2) + sizeof(SGL_Vec2),
 	sizeof(SGL_Vec2) + sizeof(SGL_Vec2),
 	sizeof(SGL_Vec2) + sizeof(SGL_Vec3),
 	sizeof(SGL_Vec2) + sizeof(SGL_Vec2) + sizeof(SGL_Color),
 	sizeof(SGL_Vec2) + sizeof(SGL_Vec2) + sizeof(SGL_Color),
-	sizeof(SGL_Vec2) + sizeof(SGL_Color) + sizeof(float),
 	sizeof(SGL_Vec2) + sizeof(SGL_Color),
 	sizeof(SGL_Vec2) + sizeof(SGL_Vec2),
 	sizeof(SGL_Vec2) + sizeof(SGL_Vec2),
 };
-void sectorShaderBindFunction(U32 VAO, U32 VBO, U32 shaderHandle)
-{
-	glBindVertexArray(VAO);
-	glBindBuffer(GL_ARRAY_BUFFER, VBO);
-	glUseProgram(shaderHandle);
-
-	glEnableVertexAttribArray(0);
-	glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, shaderVertSizes[SGL_SHADER_SECTOR], BUFFER_OFFSET(0));
-	glEnableVertexAttribArray(1);
-	glVertexAttribPointer(1, 4, GL_UNSIGNED_BYTE, GL_TRUE, shaderVertSizes[SGL_SHADER_SECTOR], BUFFER_OFFSET(sizeof(SGL_Vec2)));
-	glEnableVertexAttribArray(3);
-	glVertexAttribPointer(3, 1, GL_FLOAT, GL_FALSE, shaderVertSizes[SGL_SHADER_SECTOR], BUFFER_OFFSET(sizeof(SGL_Vec2)+sizeof(SGL_Color)));
-
-	glBindVertexArray(0);
-	SGL_CHECK_GL_ERROR;
-}
 void colorShaderBindFunction(U32 VAO, U32 VBO, U32 shaderHandle)
 {
 	glBindVertexArray(VAO);
@@ -579,13 +573,13 @@ void coloredSpriteShaderBindFunction(U32 VAO, U32 VBO, U32 shaderHandle)
 const void(*shaderFunctions[])(U32 VAO, U32 VBO, U32 shaderHandle) =
 {
 	NULL,
+	NULL,
 	&colorShaderBindFunction,
 	&spriteShaderBindFunction,
 	&spriteShaderBindFunction,
-	NULL,
+	&spriteShaderBindFunction,
 	&coloredSpriteShaderBindFunction,
 	&coloredSpriteShaderBindFunction,
-	NULL,
 	&colorShaderBindFunction,
 	&spriteShaderBindFunction,
 	&spriteShaderBindFunction,
@@ -727,7 +721,7 @@ inline void BindUniformMatrixBlock(SGL_RenderContext * rContext)
 {
 	glGenBuffers(1, &rContext->uniformMatrixHandle);
 	glBindBuffer(GL_UNIFORM_BUFFER, rContext->uniformMatrixHandle);
-	glBufferData(GL_UNIFORM_BUFFER, sizeof(SGL_Mat4), NULL, GL_DYNAMIC_DRAW);
+	glBufferData(GL_UNIFORM_BUFFER, sizeof(SGL_Mat4), NULL, GL_STREAM_DRAW);
 	glBindBuffer(GL_UNIFORM_BUFFER, 0);
 	glBindBufferBase(GL_UNIFORM_BUFFER, 0, rContext->uniformMatrixHandle);
 }
